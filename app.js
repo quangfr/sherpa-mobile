@@ -25,10 +25,32 @@ const $$=sel=>document.querySelector(sel);
 const $$all=sel=>document.querySelectorAll(sel);
 const on=(el,ev,fn,opt)=>el?.addEventListener(ev,fn,opt);
 const formatHours=(value)=>{ const num=Number(value); if(!Number.isFinite(num)) return '0'; return num.toString().replace('.',','); };
+function formatActivityDate(dateStr){
+  if(!dateStr) return '—';
+  const date=parseDate(dateStr);
+  if(!date) return '—';
+  const today=new Date();
+  const diff=daysDiff(date,today);
+  const params=(store?.params)||DEFAULT_PARAMS;
+  const recentDays=Math.max(1,Number(params.activites_recent_jours)||30);
+  const upcomingDays=Math.max(1,Number(params.activites_a_venir_jours)||30);
+  if(diff===0) return "Aujourd'hui";
+  if(diff===-1) return 'Hier';
+  if(diff===-2) return 'Avant-hier';
+  if(diff<0 && -diff<=recentDays){
+    const days=-diff;
+    return `Il y a ${days} jour${days>1?'s':''}`;
+  }
+  if(diff>0 && diff<=upcomingDays){
+    return `Dans ${diff} jour${diff>1?'s':''}`;
+  }
+  return date.toLocaleDateString('fr-FR');
+}
+$$all('[data-close]').forEach(btn=>on(btn,'click',()=>{ const target=btn.dataset.close ? $(btn.dataset.close) : btn.closest('dialog'); target?.close('cancel'); }));
 function autoSizeKeepMax(el, bucket){ if(!el) return; el.style.height='auto'; const h=el.scrollHeight; bucket.value=Math.max(bucket.value||0,h); el.style.height=bucket.value+'px'; }
 let ACT_DESC_MAX={value:120}, CONS_DESC_MAX={value:120};
 /* DEFAULT STORE */
-const DEFAULT_PARAMS={delai_alerte_jours:7,fin_mission_sous_jours:60,stb_recent_jours:30,avis_manquant_depuis_jours:60,objectif_recent_jours:15,objectif_bar_max_heures:10};
+const DEFAULT_PARAMS={delai_alerte_jours:7,fin_mission_sous_jours:60,stb_recent_jours:30,avis_manquant_depuis_jours:60,objectif_recent_jours:15,activites_recent_jours:30,activites_a_venir_jours:30,objectif_bar_max_heures:10};
 let store=load();
 /* LOAD / SAVE */
 function load(){
@@ -71,6 +93,8 @@ openTab(localStorage.getItem(TAB_KEY)||'activite');
 /* DASHBOARD (inchangé) */
 function dashboard(){
 const p=store.params||DEFAULT_PARAMS, today=new Date();
+const recentDays=Math.max(1,Number(p.activites_recent_jours)||30);
+const upcomingDays=Math.max(1,Number(p.activites_a_venir_jours)||30);
 const hasRecent=(cid,type,days)=>store.activities.some(a=>a.consultant_id===cid && a.type===type && parseDate(a.date_publication)>=addDays(today,-days));
 const alerteCut=addDays(today,-p.delai_alerte_jours);
 const alerteList = store.consultants.filter(c => store.activities.some(a=>a.consultant_id===c.id && a.type==='ALERTE' && parseDate(a.date_publication)>=alerteCut));
@@ -81,6 +105,8 @@ $('db-fin-w').textContent=p.delai_alerte_jours;
 $('db-fin-x').textContent=p.fin_mission_sous_jours;
 $('db-stb-y').textContent=p.stb_recent_jours;
 $('db-avis-z').textContent=p.avis_manquant_depuis_jours;
+const recentLabel=$('db-actions-recent'); if(recentLabel) recentLabel.textContent=recentDays;
+const upcomingLabel=$('db-actions-upcoming'); if(upcomingLabel) upcomingLabel.textContent=upcomingDays;
 const fmt=(arr,box,title)=>{
 const out=$(box); out.innerHTML='';
 arr.forEach(c=>{
@@ -96,9 +122,35 @@ fmt(alerteList,'db-alerte-list','db-alerte-title');
 fmt(finList,'db-fin-list','db-fin-title');
 fmt(stbList,'db-stb-list','db-stb-title');
 fmt(avisList,'db-avis-list','db-avis-title');
+const zeroHourActs=store.activities.filter(a=>a.type==='ACTION_ST_BERNARD' && Number(a.heures||0)<=0);
+const recentCut=addDays(today,-recentDays);
+const upcomingCut=addDays(today,upcomingDays);
+const recentZero=zeroHourActs.filter(a=>{ const d=parseDate(a.date_publication); return d && d<=today && d>=recentCut; }).sort((a,b)=>b.date_publication.localeCompare(a.date_publication));
+const upcomingZero=zeroHourActs.filter(a=>{ const d=parseDate(a.date_publication); return d && d>today && d<=upcomingCut; }).sort((a,b)=>a.date_publication.localeCompare(b.date_publication));
+const renderActions=(arr,listId,countId)=>{
+  const listEl=$(listId);
+  const countEl=$(countId);
+  if(listEl) listEl.innerHTML='';
+  arr.forEach(a=>{
+    const row=document.createElement('div');
+    row.className='db-row';
+    const consultant=store.consultants.find(c=>c.id===a.consultant_id);
+    const title=esc(consultant?.nom||'—');
+    const desc=esc(a.description||'—');
+    row.innerHTML=`<div class="row space" style="gap:6px"><span class="linklike" data-open-act="${a.id}">${title}</span><span class="sub">${esc(formatActivityDate(a.date_publication||''))}</span></div><div class="sub">${desc}</div>`;
+    const link=row.querySelector('[data-open-act]');
+    if(link){
+      on(link,'click',()=>{ openTab('activite',true); openActivityModal(a.id); });
+    }
+    listEl?.appendChild(row);
+  });
+  if(countEl) countEl.textContent=arr.length;
+};
+renderActions(recentZero,'db-actions-recent-list','db-actions-recent-count');
+renderActions(upcomingZero,'db-actions-upcoming-list','db-actions-upcoming-count');
 }
 /* STATE */
-let state={filters:{consultant_id:'',type:'',month:'',objectif_id:''},objectifs_consultant_id:''};
+let state={filters:{consultant_id:'',type:'',month:'RECENT',objectif_id:''},objectifs_consultant_id:''};
 /* CONSULTANTS */
 function statusOf(c){
 const p=store.params||DEFAULT_PARAMS, today=new Date();
@@ -148,39 +200,53 @@ function updateFilterHighlights(){
   selectConsultant?.classList.toggle('active',!!state.filters.consultant_id);
   selectType?.classList.toggle('active',!!state.filters.type);
   selectObjectif?.classList.toggle('active',!!state.filters.objectif_id);
-  selectMonth?.classList.toggle('active',!!state.filters.month);
+  const monthActive=state.filters.month && state.filters.month!=='RECENT';
+  selectMonth?.classList.toggle('active',monthActive);
 }
 function refreshMonthOptions(){
   if(!selectMonth) return;
+  const params=store.params||DEFAULT_PARAMS;
+  const recentDays=Math.max(1,Number(params.activites_recent_jours)||30);
+  const upcomingDays=Math.max(1,Number(params.activites_a_venir_jours)||30);
+  const today=new Date();
+  const startMonth=monthKey(addDays(today,-recentDays));
   const months=[...new Set(
     store.activities
       .map(a=>monthKey(a.date_publication||''))
       .filter(Boolean)
-  )].sort((a,b)=>b.localeCompare(a));
-  const options=['<option value="">📅Tous</option>',...months.map(m=>`<option value="${m}">${formatMonthLabel(m)}</option>`)];
+  )]
+  .filter(m=>!startMonth || m<=startMonth)
+  .sort((a,b)=>b.localeCompare(a));
+  const options=[
+    `<option value="RECENT">Derniers ${recentDays} jours</option>`,
+    `<option value="UPCOMING">À moins de ${upcomingDays}j</option>`,
+    '<option value="PLANNED">Planifié</option>',
+    ...months.map(m=>`<option value="${m}">${formatMonthLabel(m)}</option>`)
+  ];
   const html=options.join('');
   if(html!==monthOptionsCache){
     selectMonth.innerHTML=html;
     monthOptionsCache=html;
   }
-  if(months.includes(state.filters.month)){
+  const values=[...selectMonth.options].map(o=>o.value);
+  if(values.includes(state.filters.month)){
     selectMonth.value=state.filters.month;
   }else{
-    selectMonth.value='';
-    if(state.filters.month) state.filters.month='';
+    state.filters.month='RECENT';
+    selectMonth.value='RECENT';
   }
 }
 on(selectType,'change',e=>{state.filters.type=e.target.value; renderActivities();});
-on(selectMonth,'change',e=>{state.filters.month=e.target.value; renderActivities();});
-on(selectObjectif,'change',e=>{state.filters.objectif_id=e.target.value; renderActivities();});
 $('btn-reset-filters').onclick=()=>{
-  state.filters={consultant_id:'',type:'',month:'',objectif_id:''};
+  state.filters={consultant_id:'',type:'',month:'RECENT',objectif_id:''};
   if(selectConsultant) selectConsultant.value='';
   if(selectType) selectType.value='';
-  if(selectMonth) selectMonth.value='';
+  if(selectMonth) selectMonth.value='RECENT';
   if(selectObjectif) selectObjectif.value='';
   renderActivities();
 };
+on(selectMonth,'change',e=>{ state.filters.month=e.target.value||'RECENT'; renderActivities(); });
+on(selectObjectif,'change',e=>{state.filters.objectif_id=e.target.value; renderActivities();});
 on(selectConsultant,'change',e=>{ state.filters.consultant_id=e.target.value; renderActivities(); });
 const TYPE_META={
 ACTION_ST_BERNARD:{emoji:'🐕‍🦺', pill:'stb', label:'Action STB'},
@@ -192,11 +258,24 @@ ALERTE:{emoji:'🚨', pill:'alerte', label:'Alerte'}
 function renderActivities(){
 refreshMonthOptions();
 const {consultant_id,type,month,objectif_id}=state.filters;
+const params=store.params||DEFAULT_PARAMS;
+const recentDays=Math.max(1,Number(params.activites_recent_jours)||30);
+const upcomingDays=Math.max(1,Number(params.activites_a_venir_jours)||30);
+const today=new Date();
+const monthFilter=month||'RECENT';
 const list= store.activities
 .filter(a=>!consultant_id || a.consultant_id===consultant_id)
 .filter(a=>!type || a.type===type)
 .filter(a=>!objectif_id || (a.objectif_id||'')===objectif_id)
-.filter(a=>!month || monthKey(a.date_publication||'')===month)
+.filter(a=>{
+  const key=monthKey(a.date_publication||'');
+  const date=parseDate(a.date_publication||'');
+  const diff=date!=null?daysDiff(date,today):null;
+  if(monthFilter==='RECENT') return diff!=null && diff<=0 && diff>=-recentDays;
+  if(monthFilter==='UPCOMING') return diff!=null && diff>0 && diff<=upcomingDays;
+  if(monthFilter==='PLANNED') return diff!=null && diff>0;
+  return monthFilter ? key===monthFilter : true;
+})
 .sort((a,b)=>b.date_publication.localeCompare(a.date_publication));
 badgeCount.textContent=list.length;
 actTBody.innerHTML='';
@@ -216,6 +295,9 @@ if(headerSegment || !descText) segments.push(headerSegment || '—');
 if(descText) segments.push(descHtml);
 const descContent=segments.join(' — ');
 const hasMobileContent=descContent.trim().length>0;
+const friendlyDate=formatActivityDate(a.date_publication||'');
+const friendlyDateHtml=esc(friendlyDate);
+const rawDateTitle=esc(a.date_publication||'');
 const tr=document.createElement('tr'); tr.classList.add('clickable');
 tr.innerHTML = mobile
 ? `
@@ -223,7 +305,7 @@ tr.innerHTML = mobile
 <div class="row" style="gap:8px">
 <span class="pill ${meta.pill}">${meta.emoji} ${meta.label}</span>
 <span class="linklike" data-cpop="${c?.id||''}"><b>${esc(c?.nom||'—')}</b></span>
-<span class="sub">· ${esc(a.date_publication||'')}</span>
+<span class="sub">· ${friendlyDateHtml}</span>
 </div>
 <div class="mobile-desc${isExpanded?' expanded':''}" data-act="${a.id}">
 <div class="text clamp-8">${descContent}</div>
@@ -233,7 +315,7 @@ ${hasMobileContent?`<button type="button" class="toggle-more" data-expand="${a.i
 : `
 <td class="desktop-only">
 <div><span class="pill ${meta.pill} type-pill">${meta.emoji} ${meta.label}</span></div>
-<div class="sub">${esc(a.date_publication||'')}</div>
+<div class="sub" title="${rawDateTitle}">${friendlyDateHtml}</div>
 </td>
 <td class="desktop-only">
 <span class="linklike" data-cpop="${c?.id||''}"><b>${esc(c?.nom||'—')}</b></span>
@@ -380,6 +462,8 @@ $('p-fin_mission_sous').value=p.fin_mission_sous_jours;
 $('p-stb_recent').value=p.stb_recent_jours;
 $('p-avis_manquant').value=p.avis_manquant_depuis_jours;
 $('p-objectif_recent').value=p.objectif_recent_jours;
+$('p-activites_recent').value=p.activites_recent_jours ?? 30;
+$('p-activites_avenir').value=p.activites_a_venir_jours ?? 30;
 $('p-objectif_bar_max').value=p.objectif_bar_max_heures ?? 10;
 }
 $('btn-save-params').onclick=()=>{
@@ -389,6 +473,8 @@ p.fin_mission_sous_jours=Number($('p-fin_mission_sous').value||60);
 p.stb_recent_jours=Number($('p-stb_recent').value||30);
 p.avis_manquant_depuis_jours=Number($('p-avis_manquant').value||60);
 p.objectif_recent_jours=Number($('p-objectif_recent').value||15);
+p.activites_recent_jours=Math.max(1, Number($('p-activites_recent').value||30));
+p.activites_a_venir_jours=Math.max(1, Number($('p-activites_avenir').value||30));
 p.objectif_bar_max_heures=Math.max(1, Number($('p-objectif_bar_max').value||10));
 save(); alert('Paramètres enregistrés.');
 };
@@ -402,7 +488,7 @@ const faObj=$('fa-objectif');
 const faDesc=$('fa-desc');
 const btnFaGoto=$('fa-goto-consultant');
 const btnFaDelete=$$('#dlg-activity .actions [data-action="delete"]');
-faType.onchange=()=>{const isSTB=faType.value==='ACTION_ST_BERNARD'; faHeuresWrap.classList.toggle('hidden',!isSTB); if(isSTB && !faHeures.value) faHeures.value=1; updateFaObjOptions();};
+faType.onchange=()=>{const isSTB=faType.value==='ACTION_ST_BERNARD'; faHeuresWrap.classList.toggle('hidden',!isSTB); if(isSTB && faHeures.value==='') faHeures.value=0; updateFaObjOptions();};
 faConsult.onchange=updateFaObjOptions;
 btnFaGoto.onclick=()=>{ const cid=faConsult.value; if(cid){ dlgA.close(); openConsultantModal(cid); } };
 function updateFaObjOptions(){
@@ -417,11 +503,11 @@ currentActivityId=id;
 faConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
 $('fa-date').value=todayStr();
 faDesc.value='';
-faType.value='ACTION_ST_BERNARD'; faHeuresWrap.classList.remove('hidden'); faHeures.value=1;
+faType.value='ACTION_ST_BERNARD'; faHeuresWrap.classList.remove('hidden'); faHeures.value=0;
 faObj.innerHTML='<option value="">(aucun)</option>';
 if(id){
 const a=store.activities.find(x=>x.id===id); if(!a) return;
-faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; faHeures.value=a.heures||1; updateFaObjOptions(); faObj.value=a.objectif_id||''; faType.onchange();
+faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; faHeures.value=(a.heures??0); updateFaObjOptions(); faObj.value=a.objectif_id||''; faType.onchange();
 }else{ updateFaObjOptions(); }
 autoSizeKeepMax(faDesc, ACT_DESC_MAX);
 on(faDesc,'input',()=>autoSizeKeepMax(faDesc, ACT_DESC_MAX),{once:false});
@@ -429,8 +515,11 @@ dlgA.showModal();
 }
 $('form-activity').onsubmit=(e)=>{
 e.preventDefault();
-const data={ consultant_id:faConsult.value, type:faType.value, date_publication:$('fa-date').value, description:faDesc.value.trim(), heures: faType.value==='ACTION_ST_BERNARD' ? Number(faHeures.value||1): undefined, objectif_id: faObj.value || undefined };
-const missing = !data.consultant_id || !data.type || !data.date_publication || !data.description || (data.type==='ACTION_ST_BERNARD' && !(data.heures>0));
+const isSTB=faType.value==='ACTION_ST_BERNARD';
+const heuresValue=isSTB ? Number(faHeures.value??0) : undefined;
+const data={ consultant_id:faConsult.value, type:faType.value, date_publication:$('fa-date').value, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, objectif_id: faObj.value || undefined };
+const heuresInvalid=isSTB && (!Number.isFinite(heuresValue) || heuresValue<0);
+const missing = !data.consultant_id || !data.type || !data.date_publication || !data.description || heuresInvalid;
 if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
 if(currentActivityId){ Object.assign(store.activities.find(x=>x.id===currentActivityId),data,{updated_at:nowISO()}); }else{ store.activities.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }

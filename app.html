@@ -8,42 +8,43 @@
 <div class="card"><div class="row space"><div class="title">⏳ Fin de mission &lt; <span id="db-fin-x"></span>j</div><div class="pill" id="db-fin-title">0</div></div><div id="db-fin-list" class="db-list"></div></div>
 <div class="card"><div class="row space"><div class="title">🐕‍🦺 Action STB &gt; <span id="db-stb-y"></span>j</div><div class="pill" id="db-stb-title">0</div></div><div id="db-stb-list" class="db-list"></div></div>
 <div class="card"><div class="row space"><div class="title">🗣️ Avis &gt; <span id="db-avis-z"></span>j</div><div class="pill" id="db-avis-title">0</div></div><div id="db-avis-list" class="db-list"></div></div>
+<div class="card" id="db-actions-card"><div class="row space" style="margin-bottom:6px"><div class="title">🐾 Actions en cours &lt; <span id="db-actions-recent"></span>j</div><div class="pill" id="db-actions-recent-count">0</div></div><div id="db-actions-recent-list" class="db-list" style="margin-bottom:8px"></div><div class="row space" style="margin-bottom:6px"><div class="title">📅 Actions à &lt; <span id="db-actions-upcoming"></span>j</div><div class="pill" id="db-actions-upcoming-count">0</div></div><div id="db-actions-upcoming-list" class="db-list"></div></div>
 </div>
 </section>
 <!-- ACTIVITÉ -->
 <section class="view" id="view-activite" style="overflow:hidden">
 <div class="pane" id="acts-pane">
 <div class="pane-header">
-<div class="row space">
+<div class="row space header-top">
 <div class="row" style="gap:10px">
 <div class="title">🗂️ Activités</div>
 <div class="pill" id="activities-count">0</div>
 </div>
-      <div class="row actions-bar">
-        <button class="btn small primary" id="btn-new-activity">Ajouter</button>
-        <button class="btn small" id="btn-new-consultant">➕👤</button>
-        <button class="btn small" id="btn-reset-filters">Réinitialiser</button>
-      </div>
-    </div>
-    <div class="filters">
-      <div class="filters-grid">
-        <select class="filter-select" data-filter="consultant" id="filter-consultant" title="Filtrer par consultant" aria-label="Filtrer par consultant">
-          <option value="">👤Tous</option>
-        </select>
-        <select class="filter-select" data-filter="type" id="filter-type" title="Filtrer par type" aria-label="Filtrer par type">
-          <option value="">🗂️Tous</option>
-          <option value="ACTION_ST_BERNARD">🐕‍🦺 Action STB</option>
-          <option value="NOTE">📝 Note</option>
-          <option value="VERBATIM">💬 Verbatim</option>
-          <option value="AVIS">🗣️ Avis</option>
-          <option value="ALERTE">🚨 Alerte</option>
-        </select>
-        <select class="filter-select" data-filter="objectif" id="filter-objectif" title="Filtrer par objectif" aria-label="Filtrer par objectif">
-          <option value="">🎯Tous</option>
-        </select>
-        <select class="filter-select" data-filter="month" id="filter-month" title="Filtrer par mois" aria-label="Filtrer par mois">
-          <option value="">📅Tous</option>
-        </select>
+      <div class="header-right">
+        <div class="row actions-bar">
+          <button class="btn small primary" id="btn-new-activity">Ajouter</button>
+          <button class="btn small" id="btn-new-consultant">➕👤</button>
+          <button class="btn small" id="btn-reset-filters">Réinitialiser</button>
+        </div>
+        <div class="filters">
+          <div class="filters-grid">
+            <select class="filter-select" data-filter="consultant" id="filter-consultant" title="Filtrer par consultant" aria-label="Filtrer par consultant">
+              <option value="">👤Tous</option>
+            </select>
+            <select class="filter-select" data-filter="type" id="filter-type" title="Filtrer par type" aria-label="Filtrer par type">
+              <option value="">🗂️Tous</option>
+              <option value="ACTION_ST_BERNARD">🐕‍🦺 Action STB</option>
+              <option value="NOTE">📝 Note</option>
+              <option value="VERBATIM">💬 Verbatim</option>
+              <option value="AVIS">🗣️ Avis</option>
+              <option value="ALERTE">🚨 Alerte</option>
+            </select>
+            <select class="filter-select" data-filter="objectif" id="filter-objectif" title="Filtrer par objectif" aria-label="Filtrer par objectif">
+              <option value="">🎯Tous</option>
+            </select>
+            <select class="filter-select" data-filter="month" id="filter-month" title="Filtrer par date" aria-label="Filtrer par date"></select>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -59,19 +60,16 @@
 <section class="view" id="view-objectif">
 <div class="pane" id="objectif-pane">
 <div class="pane-header">
-<div class="row space" style="margin-bottom:6px">
-<div class="row" style="gap:8px">
+<div class="row space objectif-header">
 <div class="title">🎯 Objectifs</div>
-<button class="btn small primary" id="btn-new-objectif">+Ajouter un objectif</button>
-</div>
-</div>
-<div class="row" style="gap:8px;margin-bottom:6px">
-<button class="btn small" id="btn-reset-objectif-filters">Réinitialiser</button>
+<div class="row objectif-controls">
 <select id="filter-objectif-consultant" title="Filtrer par consultant"><option value="">👤 Tous les consultants</option></select>
+<button class="btn small" id="btn-reset-objectif-filters">Réinitialiser</button>
+<button class="btn small primary" id="btn-new-objectif">Ajouter</button>
 </div>
 </div>
-<div class="pane-body hover-scroll" style="
-    margin-top: 20px;><div class="grid g4" id="objectifs-grid"></div></div>
+</div>
+<div class="pane-body hover-scroll"><div class="grid g4" id="objectifs-grid"></div></div>
 </div>
 </section>
 <!-- RÉGLAGES -->
@@ -85,6 +83,8 @@
 <label>stb_recent_jours <input type="number" id="p-stb_recent" min="1"/></label>
 <label>avis_manquant_depuis_jours <input type="number" id="p-avis_manquant" min="1"/></label>
 <label>objectif_recent_jours <input type="number" id="p-objectif_recent" min="1"/></label>
+<label>activites_recent_jours <input type="number" id="p-activites_recent" min="1"/></label>
+<label>activites_a_venir_jours <input type="number" id="p-activites_avenir" min="1"/></label>
 <label>objectif_bar_max_heures <input type="number" id="p-objectif_bar_max" min="1" step="1"/></label>
 </div>
 <div class="row" style="margin-top:8px"><button class="btn primary small" id="btn-save-params">Enregistrer</button></div>
@@ -107,9 +107,12 @@
 </main>
 <!-- MODALES -->
 <dialog id="dlg-activity"><form method="dialog" class="modal" id="form-activity">
-<div class="row space" style="margin-bottom:8px">
+<div class="row space modal-header">
 <h3>✏️ Activité</h3>
+<div class="row" style="gap:6px">
 <button type="button" class="btn small" id="fa-goto-consultant">👤Voir le consultant</button>
+<button type="button" class="btn ghost modal-close" data-close="dlg-activity" aria-label="Fermer">✕</button>
+</div>
 </div>
 <div class="grid2">
 <label>Consultant <select name="consultant_id" required id="fa-consultant"></select></label>
@@ -119,12 +122,12 @@
 </select></label>
 <label>Date <input type="date" name="date_publication" required id="fa-date"/></label>
 <label>Objectif <select name="objectif_id" id="fa-objectif"></select></label>
-<label id="fa-heures-wrap" class="hidden">Heures (STB) <input type="number" min="0.25" step="0.25" name="heures" id="fa-heures"/></label>
+<label id="fa-heures-wrap" class="hidden">Heures réalisées <input type="number" min="0" step="0.25" name="heures" id="fa-heures"/></label>
 <label style="grid-column:1/-1">Description <textarea name="description" required id="fa-desc" placeholder="Description…"></textarea></label>
 </div>
-    <div class="actions"><button type="button" class="btn danger" data-action="delete">Supprimer</button><button value="cancel" class="btn">Annuler</button><button value="ok" class="btn primary">Enregistrer</button></div>
+    <div class="actions"><button type="button" class="btn danger" data-action="delete">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
-<dialog id="dlg-objectif"><form method="dialog" class="modal" id="form-objectif"><h3>✏️ Objectif</h3>
+<dialog id="dlg-objectif"><form method="dialog" class="modal" id="form-objectif"><div class="row space modal-header"><h3>✏️ Objectif</h3><button type="button" class="btn ghost modal-close" data-close="dlg-objectif" aria-label="Fermer">✕</button></div>
 <div class="grid2">
 <label>Titre* <input name="titre" required id="fo-titre"/></label>
 <label>Description <textarea id="fo-desc" name="description" placeholder="Description…" style="min-height:300px;resize:none;overflow:hidden"></textarea></label>
@@ -133,12 +136,15 @@
 <div id="fo-consultants" class="hover-scroll" style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:6px;margin-top:6px"></div>
 </div>
 </div>
-<div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="cancel" class="btn">Annuler</button><button value="ok" class="btn primary">Enregistrer</button></div>
+<div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
 <dialog id="dlg-consultant"><form method="dialog" class="modal" id="form-consultant">
-<div class="row space" style="margin-bottom:8px">
+<div class="row space modal-header">
 <h3>✏️ Consultant</h3>
+<div class="row" style="gap:6px">
 <button type="button" class="btn small" id="fc-goto-objectifs">🎯Voir ses objectifs</button>
+<button type="button" class="btn ghost modal-close" data-close="dlg-consultant" aria-label="Fermer">✕</button>
+</div>
 </div>
 <div class="grid2">
 <label>Nom* <input name="nom" required id="fc-nom"/></label>
@@ -147,7 +153,7 @@
 <label>URL (fiche) <input name="url" id="fc-url" placeholder="https://…"/></label>
 <label style="grid-column:1/-1">Description <textarea name="description" id="fc-desc" placeholder="Notes libres…"></textarea></label>
 </div>
-<div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="cancel" class="btn">Annuler</button><button value="ok" class="btn primary">Enregistrer</button></div>
+<div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
 <script src="app.js" defer></script>
 </body></html>
