@@ -3,6 +3,7 @@
 <main class="wrap">
 <!-- DASHBOARD -->
 <section class="view" id="view-dashboard">
+<div class="row dashboard-toolbar"><button class="btn small primary" id="btn-dashboard-add-consultant">Ajouter un consultant</button></div>
 <div class="grid g4">
 <div class="card"><div class="row space"><div class="title">🚨 En alerte &lt; <span id="db-fin-w"></span>j</div><div class="pill" id="db-alerte-title">0</div></div><div id="db-alerte-list" class="db-list"></div></div>
 <div class="card"><div class="row space"><div class="title">⏳ Fin de mission &lt; <span id="db-fin-x"></span>j</div><div class="pill" id="db-fin-title">0</div></div><div id="db-fin-list" class="db-list"></div></div>
@@ -29,7 +30,6 @@
         <div class="title">🗂️ Activités</div>
         <div class="pill" id="activities-count">0</div>
         <button class="btn small primary" id="btn-new-activity">Ajouter</button>
-        <button class="btn small" id="btn-new-consultant">Nouveau consultant</button>
         <button class="btn small" id="btn-reset-filters">Réinitialiser</button>
       </div>
       <div class="row filters-line">
@@ -66,18 +66,22 @@
       <div class="row space guidee-header">
         <div class="row" style="gap:10px;flex-wrap:wrap">
           <div class="title">🧭 Guidées</div>
-          <button class="btn small primary" id="btn-new-guidee">Créer une guidée</button>
+          <div class="row" style="gap:6px;flex-wrap:wrap">
+            <button class="btn small primary" id="btn-new-guidee">Créer</button>
+            <button class="btn small" id="btn-edit-guidee" disabled>Éditer</button>
+          </div>
         </div>
         <div class="row guidee-filters">
           <select id="filter-guidee-consultant" title="Filtrer par consultant">
             <option value="">👤 Tous</option>
           </select>
-          <select id="filter-guidee" title="Filtrer par guidée">
-            <option value="">🧭 Toutes</option>
-          </select>
           <select id="filter-guidee-thematique" title="Filtrer par thématique">
             <option value="">📚 Toutes</option>
           </select>
+          <select id="filter-guidee" title="Filtrer par guidée">
+            <option value="">🧭 Toutes</option>
+          </select>
+          <button class="btn small" id="btn-guidee-reset">Réinitialiser</button>
         </div>
       </div>
     </div>
@@ -89,6 +93,27 @@
 <!-- RÉGLAGES -->
 <section class="view" id="view-reglages">
 <div class="reglages-grid">
+<div class="card" id="thematiques-card">
+  <div class="row space">
+    <div class="title">📚 Thématiques</div>
+    <div class="row actions-bar"><button class="btn small" id="btn-add-thematique">Ajouter</button><button class="btn small primary" id="btn-save-thematiques">Enregistrer</button></div>
+  </div>
+  <div class="sub" style="margin-top:6px">Modifiez l’emoji, le nom et la couleur. La thématique « Autre » est requise.</div>
+  <div id="thematiques-list" class="thematiques-list"></div>
+</div>
+<div class="card" id="sync-card">
+<div class="row space">
+<div class="title">🔃 Sync GitHub</div>
+<div class="row">
+<button class="btn small" id="btn-import-json">📂 Charger JSON</button>
+<button class="btn small danger" id="btn-reset-storage">🐈‍⬛ Réinitialiser</button>
+<button class="btn small" id="btn-copy-json">📋 Copier JSON</button>
+</div>
+</div>
+<div class="sub" style="margin:6px 0">Aperçu de vos données (lecture seule) — vous pouvez copier le JSON.</div>
+<pre id="json-preview" class="mono hover-scroll" style="max-height:400px;overflow:auto;border:1px solid var(--border);padding:10px;border-radius:10px"></pre>
+<input id="file-import" type="file" accept="application/json,.json" class="hidden"/>
+</div>
 <div class="card">
 <div class="title">⚙️ Paramètres</div>
 <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px">
@@ -103,26 +128,6 @@
 </div>
 <div class="row" style="margin-top:8px"><button class="btn primary small" id="btn-save-params">Enregistrer</button></div>
 <div class="sub" style="margin-top:6px">Les titres du Dashboard & l’affichage des barres se mettent à jour automatiquement.</div>
-</div>
-<div class="card" id="thematiques-card">
-  <div class="row space">
-    <div class="title">📚 Thématiques</div>
-    <div class="row actions-bar"><button class="btn small" id="btn-add-thematique">Ajouter</button><button class="btn small primary" id="btn-save-thematiques">Enregistrer</button></div>
-  </div>
-  <div class="sub" style="margin-top:6px">Modifiez l’emoji, le nom et la couleur. La thématique « Autre » est requise.</div>
-  <div id="thematiques-list" class="thematiques-list"></div>
-</div>
-<div class="card">
-<div class="row space">
-<div class="title">🔃 Sync GitHub</div>
-<div class="row">
-<button class="btn small danger" id="btn-reset-storage">🐈‍⬛ Réinitialiser</button>
-<button class="btn small" id="btn-copy-json">📋 Copier JSON</button>
-</div>
-</div>
-<div class="sub" style="margin:6px 0">Aperçu de vos données (lecture seule) — vous pouvez copier le JSON.</div>
-<pre id="json-preview" class="mono hover-scroll" style="max-height:400px;overflow:auto;border:1px solid var(--border);padding:10px;border-radius:10px"></pre>
-<input id="file-import" type="file" accept="application/json,.json" class="hidden"/>
 </div>
 </div>
 </section>
@@ -152,7 +157,10 @@
 <dialog id="dlg-guidee"><form method="dialog" class="modal" id="form-guidee">
   <div class="row space modal-header">
     <h3>✏️ Guidée</h3>
-    <button type="button" class="btn ghost modal-close" data-close="dlg-guidee" aria-label="Fermer">✕</button>
+    <div class="row" style="gap:6px">
+      <button type="button" class="btn small" id="fg-edit-consultant">Éditer le consultant</button>
+      <button type="button" class="btn ghost modal-close" data-close="dlg-guidee" aria-label="Fermer">✕</button>
+    </div>
   </div>
   <div class="grid2">
     <label>Consultant* <select id="fg-consultant" required></select></label>

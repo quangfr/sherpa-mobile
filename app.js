@@ -277,6 +277,19 @@ openTab('guidee',true);
 renderGuideeFilters();
 renderGuideeTimeline();
 }
+function gotoGuidee(id){
+  if(!id) return;
+  const g=store.guidees.find(x=>x.id===id);
+  state.guidees.guidee_id=id;
+  state.guidees.consultant_id=g?.consultant_id||'';
+  state.guidees.thematique_id=g?.thematique_id||'';
+  if(selectGuideeConsult) selectGuideeConsult.value=state.guidees.consultant_id;
+  if(selectGuideeTheme) selectGuideeTheme.value=state.guidees.thematique_id;
+  if(selectGuidee) selectGuidee.value=id;
+  renderGuideeFilters();
+  renderGuideeTimeline();
+  openTab('guidee',true);
+}
 /* ACTIVITIES */
 const actTBody=$$('#activities-table tbody');
 const selectType=$('filter-type');
@@ -404,10 +417,10 @@ const heuresBadge = a.type==='ACTION_ST_BERNARD' ? `<span class="hours-badge"><b
 const descText=a.description||'';
 const descHtml=esc(descText);
 const isExpanded=expandedMobileActivities.has(a.id);
-const themeLabel=theme && theme.id!=='autre'?`🧭 ${esc(theme.nom)}`:'';
-const guideeLabel=g?`<b>${esc(g.nom||'Sans titre')}</b>`:'';
-const labelParts=[themeLabel,guideeLabel].filter(Boolean).join(' - ');
-const headerSegment=[heuresBadge,labelParts].filter(Boolean).join(' · ');
+const themeName=theme && theme.id!=='autre'?esc(theme.nom):'';
+const guideeLabel=g?`<span class="linklike guidee-title" data-guidee="${g.id}">${theme?`<span class="guidee-icon">${esc(theme.emoji||'📚')}</span>`:''}<b>${esc(g.nom||'Sans titre')}</b></span>`:'';
+const guideeSegment=guideeLabel?`${guideeLabel}${themeName?` <span class="sub">(${themeName})</span>`:''}`: (themeName?`<span class="sub">${themeName}</span>`:'');
+const headerSegment=[heuresBadge,guideeSegment].filter(Boolean).join(' · ');
 const segments=[];
 if(headerSegment || !descText) segments.push(headerSegment || '—');
 if(descText) segments.push(descHtml);
@@ -444,8 +457,9 @@ ${hasMobileContent?`<button type="button" class="toggle-more" data-expand="${a.i
 <div class="clamp-3" title="${descHtml}">${descHtml}</div>
 </td>
 <td class="desktop-only nowrap actions-cell"><button class="btn small" data-edit="${a.id}" title="Éditer">✏️</button><button class="btn small danger" data-del="${a.id}" title="Supprimer">🗑️</button></td>`;
-on(tr,'click',(e)=>{ if(e.target.closest('button,[data-cpop]')) return; openActivityModal(a.id); });
-tr.querySelectorAll('[data-cpop]').forEach(el=>on(el,'click',(e)=>{ e.stopPropagation(); const cid=e.currentTarget.dataset.cpop; if(cid) openConsultantModal(cid); }));
+on(tr,'click',(e)=>{ if(e.target.closest('button,[data-cpop],[data-guidee]')) return; openActivityModal(a.id); });
+tr.querySelectorAll('[data-cpop]').forEach(el=>on(el,'click',(e)=>{ e.stopPropagation(); const cid=e.currentTarget.dataset.cpop; if(cid){ setConsultantFilter(cid); }}));
+tr.querySelectorAll('[data-guidee]').forEach(el=>on(el,'click',(e)=>{ e.stopPropagation(); const gid=e.currentTarget.dataset.guidee; if(gid){ gotoGuidee(gid); }}));
 if(!mobile){
 on(tr.querySelector('[data-edit]'),'click',(e)=>{ e.stopPropagation(); openActivityModal(a.id); });
 on(tr.querySelector('[data-del]'),'click',(e)=>{ e.stopPropagation(); if(confirm('Supprimer cette activité ?')){ store.activities=store.activities.filter(x=>x.id!==a.id); save(); } });
@@ -489,8 +503,11 @@ on(window,'resize',()=>renderActivities());
 const selectGuideeConsult=$('filter-guidee-consultant');
 const selectGuidee=$('filter-guidee');
 const selectGuideeTheme=$('filter-guidee-thematique');
+const btnGuideeReset=$('btn-guidee-reset');
+const btnEditGuidee=$('btn-edit-guidee');
 const timelineEl=$('guidee-timeline');
 const nl2br=text=>esc(text||'').replace(/\n/g,'<br/>');
+function updateGuideeEditButton(){ if(btnEditGuidee) btnEditGuidee.disabled=!state.guidees.guidee_id; }
 function renderGuideeFilters(){
   if(selectGuideeConsult){
     const opts=['<option value="">👤 Tous</option>',
@@ -538,6 +555,7 @@ function renderGuideeFilters(){
       state.guidees.guidee_id='';
     }
   }
+  updateGuideeEditButton();
 }
 function formatTimelineDate(dateStr){
   const date=parseDate(dateStr);
@@ -560,20 +578,22 @@ function renderGuideeTimeline(){
     const theme=getThematique(g.thematique_id);
     const icon=theme?.emoji||'🧭';
     const color=theme?.color||'#6366f1';
-    const labelParts=[theme && theme.id!=='autre'?`${theme.emoji||'🧭'} ${theme.nom}`:null,g.nom||'Sans titre'].filter(Boolean).join(' - ');
     const startDate=g.date_debut||todayStr();
     const endDate=g.date_fin||startDate;
     const gEvents=[];
+    const themeLabel=theme && theme.id!=='autre'?`${theme.emoji||'🧭'} ${theme.nom}`:'';
     if(startDate){
-      gEvents.push({type:'start',date:startDate,description:`Démarrage de la guidée « ${labelParts||g.nom||'Sans titre'} »`,icon,color,guidee:g,consultant,theme});
+      const startText=themeLabel?`Démarrage de la guidée (${themeLabel})`:'Démarrage de la guidée';
+      gEvents.push({type:'start',date:startDate,description:startText,icon,color,guidee:g,consultant,theme});
     }
-    if(consultantId){
-      store.activities.filter(a=>a.guidee_id===g.id).forEach(a=>{
+    store.activities
+      .filter(a=>a.guidee_id===g.id)
+      .forEach(a=>{
         gEvents.push({type:'activity',date:a.date_publication||startDate,description:a.description||'',icon,color,guidee:g,consultant,theme,activity:a});
       });
-    }
     if(endDate){
-      gEvents.push({type:'end',date:endDate,description:`Fin de la guidée « ${labelParts||g.nom||'Sans titre'} »`,icon,color,guidee:g,consultant,theme});
+      const endText=themeLabel?`Fin de la guidée (${themeLabel})`:'Fin de la guidée';
+      gEvents.push({type:'end',date:endDate,description:endText,icon,color,guidee:g,consultant,theme});
     }
     const dated=gEvents.filter(ev=>parseDate(ev.date));
     if(!dated.length) return;
@@ -606,28 +626,32 @@ function renderGuideeTimeline(){
     return;
   }
   timelineEl.innerHTML='';
+  let lastGuideeId=null;
+  let flipRight=true;
   events.forEach(ev=>{
     const g=ev.guidee;
     const consultant=ev.consultant;
     const item=document.createElement('div');
     item.className=`timeline-item ${ev.status}`;
-    let titleHtml='';
-    let subtitleHtml='';
-    let descHtml='';
-    if(ev.type==='activity'){
-      titleHtml=`<button type="button" class="linklike" data-filter-guidee="${g.id}">${esc(g.nom||'Sans titre')}</button>`;
-      if(consultant){ subtitleHtml=`<span class="sub">· <button type="button" class="linklike" data-filter-consultant="${consultant.id}">${esc(consultant.nom)}</button></span>`; }
-      descHtml=`<div class="timeline-desc">${nl2br(ev.description)}</div>`;
-    }else{
-      const consName=consultant?.nom||'—';
-      if(consultant){ titleHtml=`<button type="button" class="linklike" data-filter-consultant="${consultant.id}">${esc(consName)}</button>`; }
-      else titleHtml=`<span>${esc(consName)}</span>`;
-      const themeText=ev.theme && ev.theme.id!=='autre'?`${ev.theme.emoji||'🧭'} ${ev.theme.nom}`:'';
-      const guideeLink=`<button type="button" class="linklike" data-filter-guidee="${g.id}">${esc(g.nom||'Sans titre')}</button>`;
-      const verb=ev.type==='start'?'Démarrage':'Fin';
-      descHtml=`<div class="timeline-desc">${verb} de la guidée ${guideeLink}${themeText?` <span class="sub">(${esc(themeText)})</span>`:''}</div>`;
+    if(g?.id!==lastGuideeId){
+      flipRight=!flipRight;
+      lastGuideeId=g?.id||null;
     }
-    item.innerHTML=`<div class="timeline-marker">${esc(ev.icon)}</div><div class="timeline-body"><div class="timeline-date">${formatTimelineDate(ev.date)}</div><div class="timeline-title">${titleHtml} ${subtitleHtml}</div>${descHtml}</div>`;
+    const theme=ev.theme;
+    const themeEmoji=theme?.emoji||'🧭';
+    const guideeTitle=`<button type="button" class="linklike guidee-title" data-filter-guidee="${g.id}">${theme?`<span class="guidee-icon">${esc(themeEmoji)}</span>`:''}<b>${esc(g.nom||'Sans titre')}</b></button>`;
+    const consultantMeta=consultant?`<button type="button" class="linklike" data-filter-consultant="${consultant.id}">${esc(consultant.nom)}</button>`:`<span>—</span>`;
+    const metaHtml=`<div class="timeline-meta">${consultantMeta} · <span>${esc(formatTimelineDate(ev.date))}</span></div>`;
+    const segments=[];
+    if(ev.type==='activity' && ev.activity?.type==='ACTION_ST_BERNARD'){
+      segments.push(`<span class="hours-badge"><b>${esc(formatHours(ev.activity.heures??0))}h</b></span>`);
+    }
+    segments.push(guideeTitle);
+    const descText=ev.description?nl2br(ev.description):'';
+    if(descText){ segments.push(`— ${descText}`); }
+    const textHtml=`<div class="timeline-text">${segments.join(' ')}</div>`;
+    item.innerHTML=`<div class="timeline-marker">${esc(ev.icon)}</div><div class="timeline-body">${metaHtml}${textHtml}</div>`;
+    if(flipRight) item.classList.add('side-right');
     const marker=item.querySelector('.timeline-marker');
     if(marker){
       const base=ev.color||'#6366f1';
@@ -646,14 +670,7 @@ function renderGuideeTimeline(){
   });
   timelineEl.querySelectorAll('[data-filter-guidee]').forEach(btn=>on(btn,'click',e=>{
     const id=e.currentTarget.dataset.filterGuidee;
-    const g=store.guidees.find(x=>x.id===id);
-    if(g){
-      state.guidees.guidee_id=id;
-      state.guidees.consultant_id=g.consultant_id||'';
-      state.guidees.thematique_id=g.thematique_id||'';
-      renderGuideeFilters();
-      renderGuideeTimeline();
-    }
+    if(id) gotoGuidee(id);
   }));
   timelineEl.querySelectorAll('[data-filter-consultant]').forEach(btn=>on(btn,'click',e=>{
     state.guidees.consultant_id=e.currentTarget.dataset.filterConsultant||'';
@@ -686,6 +703,14 @@ on(selectGuidee,'change',e=>{
       if(selectGuideeTheme) selectGuideeTheme.value=state.guidees.thematique_id;
     }
   }
+  renderGuideeFilters();
+  renderGuideeTimeline();
+});
+btnGuideeReset?.addEventListener('click',()=>{
+  state.guidees={consultant_id:'',thematique_id:'',guidee_id:''};
+  if(selectGuideeConsult) selectGuideeConsult.value='';
+  if(selectGuideeTheme) selectGuideeTheme.value='';
+  if(selectGuidee) selectGuidee.value='';
   renderGuideeFilters();
   renderGuideeTimeline();
 });
@@ -857,6 +882,8 @@ const fgTheme=$('fg-thematique');
 const fgDebut=$('fg-debut');
 const fgFin=$('fg-fin');
 const fgDesc=$('fg-desc');
+const btnFgEditConsultant=$('fg-edit-consultant');
+let guideeFormInitial=null;
 function populateGuideeFormConsultants(){
   if(!fgConsult) return;
   fgConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
@@ -870,6 +897,54 @@ function populateGuideeFormThematics(selected){
     const fallback=getThematique('autre');
     fgTheme.value=fallback?.id||store.thematiques[0]?.id||'';
   }
+}
+function collectGuideeForm(){
+  const debut=fgDebut.value||todayStr();
+  const fin=fgFin.value||debut;
+  return {
+    consultant_id:fgConsult.value,
+    nom:fgNom.value.trim(),
+    thematique_id:fgTheme.value||'autre',
+    date_debut:debut,
+    date_fin:fin,
+    description:fgDesc.value.trim()
+  };
+}
+function commitGuideeForm(closeDialog=true){
+  const form=collectGuideeForm();
+  if(!form.consultant_id || !form.nom){
+    if(closeDialog) dlgG.close('cancel');
+    return false;
+  }
+  const payload={
+    consultant_id:form.consultant_id,
+    nom:form.nom,
+    description:form.description||undefined,
+    date_debut:form.date_debut,
+    date_fin:form.date_fin,
+    thematique_id:form.thematique_id||'autre',
+    updated_at:nowISO()
+  };
+  let targetId=currentGuideeId;
+  if(currentGuideeId){
+    Object.assign(store.guidees.find(x=>x.id===currentGuideeId),payload);
+  }else{
+    targetId=uid();
+    currentGuideeId=targetId;
+    store.guidees.push({id:targetId,...payload,created_at:nowISO()});
+  }
+  state.guidees.guidee_id=targetId||'';
+  state.guidees.consultant_id=payload.consultant_id||'';
+  state.guidees.thematique_id=payload.thematique_id||'';
+  if(closeDialog) dlgG.close('ok');
+  save();
+  renderGuideeFilters();
+  renderGuideeTimeline();
+  if(selectGuidee) selectGuidee.value=state.guidees.guidee_id;
+  if(selectGuideeConsult) selectGuideeConsult.value=state.guidees.consultant_id;
+  if(selectGuideeTheme) selectGuideeTheme.value=state.guidees.thematique_id;
+  guideeFormInitial=collectGuideeForm();
+  return true;
 }
 function openGuideeModal(id=null){
   currentGuideeId=id;
@@ -887,26 +962,30 @@ function openGuideeModal(id=null){
   fgFin.value=g?.date_fin||defaultEnd;
   autoSizeKeepMax(fgDesc,{value:fgDesc.scrollHeight});
   on(fgDesc,'input',()=>autoSizeKeepMax(fgDesc,{value:fgDesc.scrollHeight}),{once:false});
+  guideeFormInitial=collectGuideeForm();
   dlgG.showModal();
 }
-$('btn-new-guidee').onclick=()=>openGuideeModal();
-$('form-guidee').onsubmit=(e)=>{
-  e.preventDefault();
-  const consultant_id=fgConsult.value;
-  const nom=fgNom.value.trim();
-  const thematique_id=fgTheme.value||'autre';
-  const date_debut=fgDebut.value||todayStr();
-  const date_fin=fgFin.value||date_debut;
-  const description=fgDesc.value.trim()||undefined;
-  if(!consultant_id || !nom){ dlgG.close('cancel'); return; }
-  const payload={consultant_id,nom,description,date_debut,date_fin,thematique_id:thematique_id||'autre',updated_at:nowISO()};
-  if(currentGuideeId){ Object.assign(store.guidees.find(x=>x.id===currentGuideeId),payload); }
-  else{ store.guidees.push({id:uid(),...payload,created_at:nowISO()}); }
-  dlgG.close('ok');
-  save();
-  renderGuideeFilters();
-  renderGuideeTimeline();
-};
+$('btn-new-guidee')?.addEventListener('click',()=>openGuideeModal());
+$('form-guidee').onsubmit=(e)=>{ e.preventDefault(); commitGuideeForm(true); };
+btnEditGuidee?.addEventListener('click',()=>{ if(state.guidees.guidee_id){ openGuideeModal(state.guidees.guidee_id); } });
+btnFgEditConsultant?.addEventListener('click',()=>{
+  const consultantId=fgConsult.value;
+  if(!consultantId){ alert('Sélectionnez un consultant avant de l’éditer.'); return; }
+  const currentSnapshot=collectGuideeForm();
+  const dirty=JSON.stringify(currentSnapshot)!==JSON.stringify(guideeFormInitial);
+  if(dirty){
+    const shouldSave=confirm('Sauvegarder les modifications de la guidée avant d’éditer le consultant ?');
+    if(shouldSave){
+      const saved=commitGuideeForm(true);
+      if(!saved) return;
+    }else{
+      dlgG.close('cancel');
+    }
+  }else{
+    dlgG.close('cancel');
+  }
+  openConsultantModal(consultantId);
+});
 $$('#dlg-guidee .actions [value="del"]').onclick=(e)=>{
   e.preventDefault();
   if(!currentGuideeId){ dlgG.close(); return; }
@@ -924,6 +1003,8 @@ const dlgC=$('dlg-consultant');
 let currentConsultantId=null;
 const fcDesc=$('fc-desc');
 const btnFcGoto=$('fc-goto-guidees');
+const btnDashboardAddConsultant=$('btn-dashboard-add-consultant');
+const btnNewConsultant=$('btn-new-consultant');
 function openConsultantModal(id=null){
 currentConsultantId=id;
 const c=id? store.consultants.find(x=>x.id===id) : {nom:'',titre_mission:'',date_fin:'',url:'',description:''};
@@ -933,7 +1014,8 @@ on(fcDesc,'input',()=>autoSizeKeepMax(fcDesc, CONS_DESC_MAX),{once:false});
 dlgC.showModal();
 }
 btnFcGoto.onclick=()=>{ if(currentConsultantId){ dlgC.close(); gotoConsultantGuidees(currentConsultantId); } };
-$('btn-new-consultant').onclick=()=>openConsultantModal();
+btnDashboardAddConsultant?.addEventListener('click',()=>openConsultantModal());
+btnNewConsultant?.addEventListener('click',()=>openConsultantModal());
 $('form-consultant').onsubmit=(e)=>{
 e.preventDefault();
 const data={ nom:$('fc-nom').value.trim(), titre_mission:$('fc-titre').value.trim()||undefined, date_fin:$('fc-fin').value||undefined, url:$('fc-url').value||undefined, description:fcDesc.value.trim()||undefined };
@@ -947,8 +1029,10 @@ $$('#dlg-consultant .actions [value="del"]').onclick=(e)=>{ e.preventDefault(); 
 /* SYNC */
 function updateSyncPreview(){ const el=$('json-preview'); if(el) el.textContent=JSON.stringify(store,null,2); }
 $('btn-copy-json').onclick=async()=>{ await navigator.clipboard.writeText(JSON.stringify(store,null,2)); alert('JSON copié ✅'); };
+const btnImportJson=$('btn-import-json');
 const fileInput=$('file-import');
 $('btn-reset-storage').onclick=resetFromDataJson;
+btnImportJson?.addEventListener('click',()=>{ if(fileInput){ fileInput.value=''; fileInput.click(); }});
 async function resetFromDataJson(){
 try{
 const base=new URL('.', location.href);
