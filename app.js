@@ -580,15 +580,15 @@ function renderGuideeTimeline(){
     const startDate=g.date_debut||todayStr();
     const endDate=g.date_fin||startDate;
     if(startDate){
-      events.push({id:`start-${g.id}`,type:'start',date:startDate,icon,color,guidee:g,consultant,theme,status:'future'});
+      events.push({id:`start-${g.id}`,type:'start',date:startDate,icon:icon,color:color,guidee:g,consultant:consultant,theme:theme,status:'future'});
     }
     if(!hideActions){
       store.activities.filter(a=>a.guidee_id===g.id).forEach(a=>{
-        events.push({id:`act-${a.id}`,type:'activity',date:a.date_publication||startDate,icon,color,guidee:g,consultant,theme,activity:a,status:'future'});
+        events.push({id:`act-${a.id}`,type:'activity',date:a.date_publication||startDate,icon:icon,color:color,guidee:g,consultant:consultant,theme:theme,activity:a,status:'future'});
       });
     }
     if(endDate){
-      events.push({id:`end-${g.id}`,type:'end',date=endDate,icon,color,guidee:g,consultant,theme,status:'future'});
+      events.push({id:`end-${g.id}`,type:'end',date:endDate,icon:icon,color:color,guidee:g,consultant:consultant,theme:theme,status:'future'});
     }
   });
   const dated=events.filter(ev=>parseDate(ev.date));
