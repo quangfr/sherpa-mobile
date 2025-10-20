@@ -1,5 +1,5 @@
 /* KEYS & UTILS */
-const LS_KEY='SHERPA_STORE_V5';
+const LS_KEY='SHERPA_STORE_V6';
 const TAB_KEY='SHERPA_ACTIVE_TAB';
 const nowISO=()=>new Date().toISOString();
 const todayStr=()=>new Date().toISOString().slice(0,10);
@@ -50,22 +50,102 @@ $$all('[data-close]').forEach(btn=>on(btn,'click',()=>{ const target=btn.dataset
 function autoSizeKeepMax(el, bucket){ if(!el) return; el.style.height='auto'; const h=el.scrollHeight; bucket.value=Math.max(bucket.value||0,h); el.style.height=bucket.value+'px'; }
 let ACT_DESC_MAX={value:120}, CONS_DESC_MAX={value:120};
 /* DEFAULT STORE */
-const DEFAULT_PARAMS={delai_alerte_jours:7,fin_mission_sous_jours:60,stb_recent_jours:30,avis_manquant_depuis_jours:60,objectif_recent_jours:15,activites_recent_jours:30,activites_a_venir_jours:30,objectif_bar_max_heures:10};
+const DEFAULT_PARAMS={delai_alerte_jours:7,fin_mission_sous_jours:60,stb_recent_jours:30,avis_manquant_depuis_jours:60,activites_recent_jours:30,activites_a_venir_jours:30,objectif_recent_jours:15,objectif_bar_max_heures:10};
+const DEFAULT_THEMATIQUES=[
+  {id:'le-cardinal',nom:'Le Cardinal',emoji:'🧊',color:'#3b82f6'},
+  {id:'robert-jr',nom:'Robert Jr',emoji:'🗣️',color:'#ec4899'},
+  {id:'gutenberg',nom:'Gutenberg',emoji:'📖',color:'#6366f1'},
+  {id:'indelebile',nom:'Indélébile',emoji:'⚓',color:'#0ea5e9'},
+  {id:'protocop',nom:'Protocop',emoji:'⚡',color:'#f97316'},
+  {id:'tarantino',nom:'Tarantino',emoji:'🎬',color:'#facc15'},
+  {id:'goal-digger',nom:'Goal Digger',emoji:'🎯',color:'#22c55e'},
+  {id:'promptzilla',nom:'Promptzilla',emoji:'🤖',color:'#14b8a6'},
+  {id:'soulgorithm',nom:'Soulgorithm',emoji:'💡',color:'#a855f7'},
+  {id:'polene',nom:'Pôlène',emoji:'🐝',color:'#f59e0b'},
+  {id:'autre',nom:'Autre',emoji:'🧭',color:'#6b7280'}
+];
+const getThematique=(id)=>{
+  const list=(store?.thematiques)||DEFAULT_THEMATIQUES;
+  return list.find(t=>t.id===id)||list.find(t=>t.id==='autre')||null;
+};
 let store=load();
+let thematiqueDraft=[];
 /* LOAD / SAVE */
+function ensureThematiqueIds(arr){
+  const taken=new Set();
+  return arr.map(t=>{
+    let id=t.id?.trim();
+    if(!id){
+      id=esc(t.nom||'autre').toLowerCase().replace(/[^a-z0-9]+/g,'-')||'autre';
+      if(taken.has(id)){ id+=`-${Math.random().toString(36).slice(2,6)}`; }
+    }
+    taken.add(id);
+    return {...t,id};
+  });
+}
+function migrateStore(data){
+  const migrated={...data};
+  migrated.params={...DEFAULT_PARAMS,...(data.params||{})};
+  migrated.thematiques=ensureThematiqueIds(data.thematiques && data.thematiques.length?data.thematiques:DEFAULT_THEMATIQUES.map(t=>({...t}))); 
+  if(!Array.isArray(migrated.guidees)){
+    migrated.guidees=[];
+  }
+  if(Array.isArray(data.objectifs) && data.objectifs.length && migrated.guidees.length===0){
+    const other=DEFAULT_THEMATIQUES.find(t=>t.id==='autre');
+    const defTheme=other?.id||'autre';
+    data.objectifs.forEach(o=>{
+      const base={
+        id:uid(),
+        consultant_id:null,
+        nom:o.titre||'Sans titre',
+        description:o.description||'',
+        date_debut:todayStr(),
+        date_fin:undefined,
+        thematique_id:defTheme,
+        created_at:o.created_at||nowISO(),
+        updated_at:o.updated_at||nowISO()
+      };
+      const links=Array.isArray(o.consultants)&&o.consultants.length?o.consultants:[{consultant_id:null}];
+      links.forEach((link,idx)=>{
+        const gid=uid();
+        migrated.guidees.push({...base,id:gid,consultant_id:link.consultant_id||null,updated_at:nowISO(),created_at:nowISO(),date_debut:todayStr(),date_fin:undefined});
+        if(Array.isArray(migrated.activities)){
+          migrated.activities.forEach(act=>{
+            if(act.objectif_id===o.id && (!link.consultant_id || act.consultant_id===link.consultant_id)){
+              act.guidee_id=gid;
+            }
+          });
+        }
+      });
+    });
+  }
+  if(Array.isArray(migrated.activities)){
+    migrated.activities=migrated.activities.map(act=>{
+      if(act.objectif_id && !act.guidee_id){
+        const candidate=migrated.guidees.find(g=>g.nom===act.objectif_nom && g.consultant_id===act.consultant_id);
+        if(candidate) act.guidee_id=candidate.id;
+      }
+      delete act.objectif_id;
+      return act;
+    });
+  }
+  delete migrated.objectifs;
+  migrated.meta={...(data.meta||{}),version:6.0,updated_at:nowISO()};
+  return migrated;
+}
 function load(){
 const raw=localStorage.getItem(LS_KEY);
-if(raw){ try{ return JSON.parse(raw);}catch{ console.warn('LocalStorage invalide, on repart vide.'); } }
-const empty={consultants:[],activities:[],objectifs:[],params:{...DEFAULT_PARAMS},meta:{version:5.01,updated_at:nowISO()}};
+if(raw){ try{ const parsed=JSON.parse(raw); return migrateStore(parsed);}catch{ console.warn('LocalStorage invalide, on repart vide.'); } }
+const empty={consultants:[],activities:[],guidees:[],thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})),params:{...DEFAULT_PARAMS},meta:{version:6.0,updated_at:nowISO()}};
 localStorage.setItem(LS_KEY, JSON.stringify(empty));
 return empty;
 }
 function save(){ store.meta=store.meta||{}; store.meta.updated_at=nowISO(); localStorage.setItem(LS_KEY,JSON.stringify(store)); refreshAll(); }
 /* NAV TABS */
 const TABS=[
-{id:'dashboard',labelFull:'🏠 Dashboard',labelShort:'🏠 Das.'},
+{id:'dashboard',labelFull:'👥 Sherpa',labelShort:'👥 Sher.'},
 {id:'activite',labelFull:'🗂️ Activités',labelShort:'🗂️ Act.'},
-{id:'objectif',labelFull:'🎯 Objectifs',labelShort:'🎯 Obj.'},
+{id:'guidee',labelFull:'🧭 Guidées',labelShort:'🧭 Gui.'},
 {id:'reglages',labelFull:'⚙️ Paramètres',labelShort:'⚙️ Par.'}
 ];
 const tabsEl=$('tabs');
@@ -89,7 +169,8 @@ const view=$$('#view-'+id); if(view) view.classList.add('active');
 if(persist) localStorage.setItem(TAB_KEY,id);
 if(id==='reglages') updateSyncPreview();
 }
-openTab(localStorage.getItem(TAB_KEY)||'activite');
+const storedTab=localStorage.getItem(TAB_KEY);
+openTab(storedTab==='objectif'?'guidee':(storedTab||'activite'));
 /* DASHBOARD (inchangé) */
 function dashboard(){
 const p=store.params||DEFAULT_PARAMS, today=new Date();
@@ -150,7 +231,10 @@ renderActions(recentZero,'db-actions-recent-list','db-actions-recent-count');
 renderActions(upcomingZero,'db-actions-upcoming-list','db-actions-upcoming-count');
 }
 /* STATE */
-let state={filters:{consultant_id:'',type:'',month:'RECENT',objectif_id:''},objectifs_consultant_id:''};
+let state={
+  filters:{consultant_id:'',type:'',month:'RECENT',thematique_id:''},
+  guidees:{consultant_id:'',thematique_id:'',guidee_id:''}
+};
 /* CONSULTANTS */
 function statusOf(c){
 const p=store.params||DEFAULT_PARAMS, today=new Date();
@@ -183,23 +267,29 @@ function setConsultantFilter(cid){
   if(selectConsultant) selectConsultant.value=cid||'';
   renderActivities();
 }
-function gotoConsultantObjectives(cid){
-state.objectifs_consultant_id=cid;
-$('filter-objectif-consultant').value=cid;
-openTab('objectif',true); renderObjectifs();
+function gotoConsultantGuidees(cid){
+state.guidees.consultant_id=cid;
+state.guidees.guidee_id='';
+const sel=$('filter-guidee-consultant');
+if(sel){ sel.value=cid||''; }
+const selGuidee=$('filter-guidee'); if(selGuidee){ selGuidee.value=''; }
+openTab('guidee',true);
+renderGuideeFilters();
+renderGuideeTimeline();
 }
 /* ACTIVITIES */
 const actTBody=$$('#activities-table tbody');
 const selectType=$('filter-type');
 const selectMonth=$('filter-month');
-const selectObjectif=$('filter-objectif');
+const selectThematique=$('filter-thematique');
 const badgeCount=$('activities-count');
 const expandedMobileActivities=new Set();
 let monthOptionsCache='';
+let thematiqueOptionsCache='';
 function updateFilterHighlights(){
   selectConsultant?.classList.toggle('active',!!state.filters.consultant_id);
   selectType?.classList.toggle('active',!!state.filters.type);
-  selectObjectif?.classList.toggle('active',!!state.filters.objectif_id);
+  selectThematique?.classList.toggle('active',!!state.filters.thematique_id);
   const monthActive=state.filters.month && state.filters.month!=='RECENT';
   selectMonth?.classList.toggle('active',monthActive);
 }
@@ -218,9 +308,10 @@ function refreshMonthOptions(){
   .filter(m=>!startMonth || m<=startMonth)
   .sort((a,b)=>b.localeCompare(a));
   const options=[
+    '<option value="ALL">Tous</option>',
     `<option value="RECENT">Derniers ${recentDays} jours</option>`,
     `<option value="UPCOMING">À moins de ${upcomingDays}j</option>`,
-    '<option value="PLANNED">Planifié</option>',
+    `<option value="PLANNED">À plus de ${upcomingDays} jours</option>`,
     ...months.map(m=>`<option value="${m}">${formatMonthLabel(m)}</option>`)
   ];
   const html=options.join('');
@@ -236,17 +327,35 @@ function refreshMonthOptions(){
     selectMonth.value='RECENT';
   }
 }
+function refreshThematiqueOptions(){
+  if(!selectThematique) return;
+  const options=['<option value="">📚Toutes</option>',
+    ...store.thematiques.map(t=>`<option value="${esc(t.id)}">${esc(t.emoji||'📚')} ${esc(t.nom)}</option>`)
+  ];
+  const html=options.join('');
+  if(html!==thematiqueOptionsCache){
+    selectThematique.innerHTML=html;
+    thematiqueOptionsCache=html;
+  }
+  const values=[...selectThematique.options].map(o=>o.value);
+  if(values.includes(state.filters.thematique_id)){
+    selectThematique.value=state.filters.thematique_id;
+  }else{
+    selectThematique.value='';
+    state.filters.thematique_id='';
+  }
+}
 on(selectType,'change',e=>{state.filters.type=e.target.value; renderActivities();});
 $('btn-reset-filters').onclick=()=>{
-  state.filters={consultant_id:'',type:'',month:'RECENT',objectif_id:''};
+  state.filters={consultant_id:'',type:'',month:'RECENT',thematique_id:''};
   if(selectConsultant) selectConsultant.value='';
   if(selectType) selectType.value='';
   if(selectMonth) selectMonth.value='RECENT';
-  if(selectObjectif) selectObjectif.value='';
+  if(selectThematique) selectThematique.value='';
   renderActivities();
 };
 on(selectMonth,'change',e=>{ state.filters.month=e.target.value||'RECENT'; renderActivities(); });
-on(selectObjectif,'change',e=>{state.filters.objectif_id=e.target.value; renderActivities();});
+on(selectThematique,'change',e=>{state.filters.thematique_id=e.target.value; renderActivities();});
 on(selectConsultant,'change',e=>{ state.filters.consultant_id=e.target.value; renderActivities(); });
 const TYPE_META={
 ACTION_ST_BERNARD:{emoji:'🐕‍🦺', pill:'stb', label:'Action STB'},
@@ -257,7 +366,8 @@ ALERTE:{emoji:'🚨', pill:'alerte', label:'Alerte'}
 };
 function renderActivities(){
 refreshMonthOptions();
-const {consultant_id,type,month,objectif_id}=state.filters;
+refreshThematiqueOptions();
+const {consultant_id,type,month,thematique_id}=state.filters;
 const params=store.params||DEFAULT_PARAMS;
 const recentDays=Math.max(1,Number(params.activites_recent_jours)||30);
 const upcomingDays=Math.max(1,Number(params.activites_a_venir_jours)||30);
@@ -266,14 +376,19 @@ const monthFilter=month||'RECENT';
 const list= store.activities
 .filter(a=>!consultant_id || a.consultant_id===consultant_id)
 .filter(a=>!type || a.type===type)
-.filter(a=>!objectif_id || (a.objectif_id||'')===objectif_id)
+.filter(a=>{
+  if(!thematique_id) return true;
+  const g=a.guidee_id ? store.guidees.find(x=>x.id===a.guidee_id):null;
+  return g?.thematique_id===thematique_id;
+})
 .filter(a=>{
   const key=monthKey(a.date_publication||'');
   const date=parseDate(a.date_publication||'');
   const diff=date!=null?daysDiff(date,today):null;
+  if(monthFilter==='ALL') return true;
   if(monthFilter==='RECENT') return diff!=null && diff<=0 && diff>=-recentDays;
   if(monthFilter==='UPCOMING') return diff!=null && diff>0 && diff<=upcomingDays;
-  if(monthFilter==='PLANNED') return diff!=null && diff>0;
+  if(monthFilter==='PLANNED') return diff!=null && diff>upcomingDays;
   return monthFilter ? key===monthFilter : true;
 })
 .sort((a,b)=>b.date_publication.localeCompare(a.date_publication));
@@ -282,15 +397,18 @@ actTBody.innerHTML='';
 const mobile = isMobile();
 list.forEach(a=>{
 const c=store.consultants.find(x=>x.id===a.consultant_id);
-const o=a.objectif_id ? store.objectifs.find(x=>x.id===a.objectif_id):null;
+const g=a.guidee_id ? store.guidees.find(x=>x.id===a.guidee_id):null;
+const theme=g? getThematique(g.thematique_id):null;
 const meta=TYPE_META[a.type]||{emoji:'❓',pill:'',label:a.type};
 const heuresBadge = a.type==='ACTION_ST_BERNARD' ? `<span class="hours-badge"><b>${esc(formatHours(a.heures??0))}h</b></span>`:'';
 const descText=a.description||'';
 const descHtml=esc(descText);
 const isExpanded=expandedMobileActivities.has(a.id);
-const objectiveHtml=o?`🎯 <b>${esc(o.titre)}</b>`:'';
+const themeLabel=theme && theme.id!=='autre'?`🧭 ${esc(theme.nom)}`:'';
+const guideeLabel=g?`<b>${esc(g.nom||'Sans titre')}</b>`:'';
+const labelParts=[themeLabel,guideeLabel].filter(Boolean).join(' - ');
+const headerSegment=[heuresBadge,labelParts].filter(Boolean).join(' · ');
 const segments=[];
-const headerSegment=heuresBadge || objectiveHtml ? `${[heuresBadge,objectiveHtml].filter(Boolean).join(' ')}` : '';
 if(headerSegment || !descText) segments.push(headerSegment || '—');
 if(descText) segments.push(descHtml);
 const descContent=segments.join(' — ');
@@ -322,7 +440,7 @@ ${hasMobileContent?`<button type="button" class="toggle-more" data-expand="${a.i
 <div class="sub">${esc(c?.titre_mission||'—')}</div>
 </td>
 <td class="main desktop-only">
-<div class="clamp-1 objective-line" title="${o?esc(o.titre):''}">${headerSegment || '—'}</div>
+<div class="clamp-1 objective-line" title="${g?esc(g.nom):''}">${headerSegment || '—'}</div>
 <div class="clamp-3" title="${descHtml}">${descHtml}</div>
 </td>
 <td class="desktop-only nowrap actions-cell"><button class="btn small" data-edit="${a.id}" title="Éditer">✏️</button><button class="btn small danger" data-del="${a.id}" title="Supprimer">🗑️</button></td>`;
@@ -367,93 +485,210 @@ actTBody.appendChild(tr);
 updateFilterHighlights();
 }
 on(window,'resize',()=>renderActivities());
-/* OBJECTIFS GRID */
-const selectObjConsult=$('filter-objectif-consultant');
-on(selectObjConsult,'change',e=>{ state.objectifs_consultant_id=e.target.value; renderObjectifs(); });
-$('btn-reset-objectif-filters').onclick=()=>{ state.objectifs_consultant_id=''; $('filter-objectif-consultant').value=''; renderObjectifs(); };
-function hoursForObjective(objId, byConsultantId=null, recentDays=null){
-const acts=store.activities.filter(a=>a.type==='ACTION_ST_BERNARD' && a.objectif_id===objId);
-const now=new Date();
-return acts.filter(a=>{
-if(byConsultantId && a.consultant_id!==byConsultantId) return false;
-if(recentDays!=null && parseDate(a.date_publication) < addDays(now,-recentDays)) return false;
-return true;
-}).reduce((s,a)=>s+(Number(a.heures)||0),0);
+/* GUIDÉES */
+const selectGuideeConsult=$('filter-guidee-consultant');
+const selectGuidee=$('filter-guidee');
+const selectGuideeTheme=$('filter-guidee-thematique');
+const timelineEl=$('guidee-timeline');
+const nl2br=text=>esc(text||'').replace(/\n/g,'<br/>');
+function renderGuideeFilters(){
+  if(selectGuideeConsult){
+    const opts=['<option value="">👤 Tous</option>',
+      ...store.consultants.slice().sort((a,b)=>(a.nom||'').localeCompare(b.nom||'')).map(c=>`<option value="${esc(c.id)}">${esc(c.nom)}</option>`)
+    ];
+    const html=opts.join('');
+    if(selectGuideeConsult.innerHTML!==html) selectGuideeConsult.innerHTML=html;
+    if([...selectGuideeConsult.options].some(o=>o.value===state.guidees.consultant_id)){
+      selectGuideeConsult.value=state.guidees.consultant_id;
+    }else{
+      selectGuideeConsult.value='';
+      state.guidees.consultant_id='';
+    }
+  }
+  if(selectGuideeTheme){
+    const opts=['<option value="">📚 Toutes</option>',
+      ...store.thematiques.map(t=>`<option value="${esc(t.id)}">${esc(t.emoji||'📚')} ${esc(t.nom)}</option>`)
+    ];
+    const html=opts.join('');
+    if(selectGuideeTheme.innerHTML!==html) selectGuideeTheme.innerHTML=html;
+    if([...selectGuideeTheme.options].some(o=>o.value===state.guidees.thematique_id)){
+      selectGuideeTheme.value=state.guidees.thematique_id;
+    }else{
+      selectGuideeTheme.value='';
+      state.guidees.thematique_id='';
+    }
+  }
+  if(selectGuidee){
+    const guideeList=store.guidees
+      .filter(g=>!state.guidees.consultant_id || g.consultant_id===state.guidees.consultant_id)
+      .filter(g=>!state.guidees.thematique_id || g.thematique_id===state.guidees.thematique_id)
+      .sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
+    const opts=['<option value="">🧭 Toutes</option>',
+      ...guideeList.map(g=>{
+        const theme=getThematique(g.thematique_id);
+        return `<option value="${esc(g.id)}">${esc(theme?.emoji||'🧭')} ${esc(g.nom||'Sans titre')}</option>`;
+      })
+    ];
+    const html=opts.join('');
+    if(selectGuidee.innerHTML!==html) selectGuidee.innerHTML=html;
+    if([...selectGuidee.options].some(o=>o.value===state.guidees.guidee_id)){
+      selectGuidee.value=state.guidees.guidee_id;
+    }else{
+      selectGuidee.value='';
+      state.guidees.guidee_id='';
+    }
+  }
 }
-function consultantsWithSTBForObjective(objId){
-const ids=new Set(store.activities.filter(a=>a.type==='ACTION_ST_BERNARD' && a.objectif_id===objId).map(a=>a.consultant_id));
-return [...ids];
+function formatTimelineDate(dateStr){
+  const date=parseDate(dateStr);
+  if(!date) return 'Date à définir';
+  return date.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
 }
-function renderObjectifs(){
-const keep=selectObjConsult.value;
-selectObjConsult.innerHTML = '<option value="">👤 Tous les consultants</option>' + store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
-if(keep) selectObjConsult.value=keep;
-const grid=$('objectifs-grid'); grid.innerHTML='';
-const p=store.params||DEFAULT_PARAMS; const onlyCid=state.objectifs_consultant_id; const barMax = Number(p.objectif_bar_max_heures||10);
-store.objectifs.forEach(o=>{
-if(onlyCid && !consultantsWithSTBForObjective(o.id).includes(onlyCid)) return;
-const total=hoursForObjective(o.id,null,null);
-const recent=hoursForObjective(o.id,null,p.objectif_recent_jours);
-const stbIds = consultantsWithSTBForObjective(o.id);
-const rowsAll = stbIds.map(cid=>{
-const c = store.consultants.find(x=>x.id===cid);
-const link = (o.consultants||[]).find(x=>x.consultant_id===cid);
-const pct = clamp01(link?.progression_pct ?? 0);
-const t = hoursForObjective(o.id,c?.id,null);
-const r = hoursForObjective(o.id,c?.id,p.objectif_recent_jours);
-return {c,pct,t,r};
-}).sort((a,b)=> b.pct - a.pct || a.c.nom.localeCompare(b.c.nom));
-let rows = rowsAll;
-if(onlyCid){
-const sel = rowsAll.find(x=>x.c?.id===onlyCid);
-const others = rowsAll.filter(x=>x.c?.id!==onlyCid);
-rows = sel ? [sel, ...others.slice(0,2)] : others.slice(0,3);
+function renderGuideeTimeline(){
+  if(!timelineEl) return;
+  const today=new Date();
+  const consultantId=state.guidees.consultant_id;
+  const themeId=state.guidees.thematique_id;
+  const guideeId=state.guidees.guidee_id;
+  const guidees=store.guidees
+    .filter(g=>!guideeId || g.id===guideeId)
+    .filter(g=>!consultantId || g.consultant_id===consultantId)
+    .filter(g=>!themeId || g.thematique_id===themeId);
+  const events=[];
+  guidees.forEach(g=>{
+    const consultant=store.consultants.find(c=>c.id===g.consultant_id);
+    const theme=getThematique(g.thematique_id);
+    const icon=theme?.emoji||'🧭';
+    const color=theme?.color||'#6366f1';
+    const labelParts=[theme && theme.id!=='autre'?`${theme.emoji||'🧭'} ${theme.nom}`:null,g.nom||'Sans titre'].filter(Boolean).join(' - ');
+    const startDate=g.date_debut||todayStr();
+    const endDate=g.date_fin||startDate;
+    const gEvents=[];
+    if(startDate){
+      gEvents.push({type:'start',date:startDate,description:`Démarrage de la guidée « ${labelParts||g.nom||'Sans titre'} »`,icon,color,guidee:g,consultant,theme});
+    }
+    if(consultantId){
+      store.activities.filter(a=>a.guidee_id===g.id).forEach(a=>{
+        gEvents.push({type:'activity',date:a.date_publication||startDate,description:a.description||'',icon,color,guidee:g,consultant,theme,activity:a});
+      });
+    }
+    if(endDate){
+      gEvents.push({type:'end',date:endDate,description:`Fin de la guidée « ${labelParts||g.nom||'Sans titre'} »`,icon,color,guidee:g,consultant,theme});
+    }
+    const dated=gEvents.filter(ev=>parseDate(ev.date));
+    if(!dated.length) return;
+    let current=null;
+    let minDiff=Infinity;
+    dated.forEach(ev=>{
+      const diff=daysDiff(parseDate(ev.date),today);
+      const abs=Math.abs(diff);
+      if(abs<minDiff || (abs===minDiff && diff>=0 && (current?daysDiff(parseDate(current.date),today)<0:true))){
+        minDiff=abs;
+        current=ev;
+      }
+    });
+    dated.forEach(ev=>{
+      const diff=daysDiff(parseDate(ev.date),today);
+      ev.status='future';
+      if(ev===current) ev.status='current';
+      else if(diff<0) ev.status='past';
+      events.push(ev);
+    });
+  });
+  events.sort((a,b)=>{
+    const cmp=b.date.localeCompare(a.date);
+    if(cmp!==0) return cmp;
+    const weight=val=>val.type==='activity'?1:(val.type==='end'?0:-1);
+    return weight(b)-weight(a);
+  });
+  if(!events.length){
+    timelineEl.innerHTML='<div class="empty">Aucun événement pour les filtres sélectionnés.</div>';
+    return;
+  }
+  timelineEl.innerHTML='';
+  events.forEach(ev=>{
+    const g=ev.guidee;
+    const consultant=ev.consultant;
+    const item=document.createElement('div');
+    item.className=`timeline-item ${ev.status}`;
+    let titleHtml='';
+    let subtitleHtml='';
+    let descHtml='';
+    if(ev.type==='activity'){
+      titleHtml=`<button type="button" class="linklike" data-filter-guidee="${g.id}">${esc(g.nom||'Sans titre')}</button>`;
+      if(consultant){ subtitleHtml=`<span class="sub">· <button type="button" class="linklike" data-filter-consultant="${consultant.id}">${esc(consultant.nom)}</button></span>`; }
+      descHtml=`<div class="timeline-desc">${nl2br(ev.description)}</div>`;
+    }else{
+      const consName=consultant?.nom||'—';
+      if(consultant){ titleHtml=`<button type="button" class="linklike" data-filter-consultant="${consultant.id}">${esc(consName)}</button>`; }
+      else titleHtml=`<span>${esc(consName)}</span>`;
+      const themeText=ev.theme && ev.theme.id!=='autre'?`${ev.theme.emoji||'🧭'} ${ev.theme.nom}`:'';
+      const guideeLink=`<button type="button" class="linklike" data-filter-guidee="${g.id}">${esc(g.nom||'Sans titre')}</button>`;
+      const verb=ev.type==='start'?'Démarrage':'Fin';
+      descHtml=`<div class="timeline-desc">${verb} de la guidée ${guideeLink}${themeText?` <span class="sub">(${esc(themeText)})</span>`:''}</div>`;
+    }
+    item.innerHTML=`<div class="timeline-marker">${esc(ev.icon)}</div><div class="timeline-body"><div class="timeline-date">${formatTimelineDate(ev.date)}</div><div class="timeline-title">${titleHtml} ${subtitleHtml}</div>${descHtml}</div>`;
+    const marker=item.querySelector('.timeline-marker');
+    if(marker){
+      const base=ev.color||'#6366f1';
+      if(ev.status==='current'){ marker.style.backgroundColor=base; marker.style.color='#fff'; marker.style.borderColor=base; }
+      else if(ev.status==='future'){ marker.style.backgroundColor='#fff'; marker.style.color=base; marker.style.borderColor=base; }
+      else{ marker.style.backgroundColor='#e5e7eb'; marker.style.color='#6b7280'; marker.style.borderColor='#d1d5db'; }
+    }
+    if(ev.type==='activity' && ev.activity){
+      on(item,'click',evt=>{
+        if(evt.target.closest('[data-filter-guidee],[data-filter-consultant]')) return;
+        openActivityModal(ev.activity.id);
+      });
+      item.classList.add('clickable');
+    }
+    timelineEl.appendChild(item);
+  });
+  timelineEl.querySelectorAll('[data-filter-guidee]').forEach(btn=>on(btn,'click',e=>{
+    const id=e.currentTarget.dataset.filterGuidee;
+    const g=store.guidees.find(x=>x.id===id);
+    if(g){
+      state.guidees.guidee_id=id;
+      state.guidees.consultant_id=g.consultant_id||'';
+      state.guidees.thematique_id=g.thematique_id||'';
+      renderGuideeFilters();
+      renderGuideeTimeline();
+    }
+  }));
+  timelineEl.querySelectorAll('[data-filter-consultant]').forEach(btn=>on(btn,'click',e=>{
+    state.guidees.consultant_id=e.currentTarget.dataset.filterConsultant||'';
+    state.guidees.guidee_id='';
+    renderGuideeFilters();
+    renderGuideeTimeline();
+  }));
 }
-const card=document.createElement('div'); card.className='card';
-const consList = rows.map(row=>{
-const isSel = row.c?.id===onlyCid && Boolean(onlyCid);
-const widthPct = Math.max(0, Math.min(100, barMax>0 ? (row.t/barMax)*100 : 0));
-const fillClass = pctColorClass(row.pct);
-return `
-<div class="rowline" title="${row.t}h / ${barMax}h">
-<div class="fill ${fillClass}" style="width:${widthPct}%;"></div>
-<div class="row space content">
-<div><span class="nowrap" title="${row.pct}%">${progBadge(row.pct)}</span>
-<span class="linklike ${isSel?'bold':''}" data-goto-c="${row.c?.id||''}" data-goto-o="${o.id}" style="margin-left:6px">${esc(row.c?.nom||'—')}</span>
-<span class="sub">(${row.pct}%)</span></div>
-<div class="nowrap"><b>${row.t}h</b>${row.r>0 ? ` <span class="green">(+${row.r}h)</span>` : ``}</div>
-</div>
-</div>`;
-}).join('');
-card.innerHTML=`
-<div class="row space">
-<div class="title linklike" data-goto-oid="${o.id}" title="Voir les activités liées">${esc(o.titre)} <span class="sub">(${stbIds.length})</span></div>
-<button class="btn small" data-edit="${o.id}">✏️</button>
-</div>
-<div class="sub" style="margin:4px 0 8px">${esc(o.description||'—')}</div>
-<div class="sub" style="margin-bottom:6px">Total objectif : <b>${total}h</b> ${recent>0 ? `<span class="green">(+${recent}h)</span>`:''}</div>
-<div class="cons-list cons-mini">${consList || '<span class="muted">Aucun consultant avec 🐕‍🦺 Action STB pour cet objectif</span>'}</div>`;
-on(card.querySelector('[data-goto-oid]'),'click',e=>{
-const oid=e.currentTarget.dataset.gotoOid;
-openTab('activite',true);
-state.filters.objectif_id=oid;
-const sel=$('filter-objectif');
-if(sel) sel.value=oid;
-renderActivities();
+on(selectGuideeConsult,'change',e=>{
+  state.guidees.consultant_id=e.target.value;
+  state.guidees.guidee_id='';
+  renderGuideeFilters();
+  renderGuideeTimeline();
 });
-card.querySelectorAll('[data-goto-c]').forEach(a=>on(a,'click',()=>{
-const cid=a.dataset.gotoC, oid=a.dataset.gotoO;
-openTab('activite',true);
-state.filters.consultant_id=cid;
-state.filters.objectif_id=oid;
-const sel=$('filter-objectif');
-if(sel){ sel.value=oid; }
-renderActivities();
-}));
-card.querySelector('[data-edit]').onclick=()=>openObjectifModal(o.id);
-grid.appendChild(card);
+on(selectGuideeTheme,'change',e=>{
+  state.guidees.thematique_id=e.target.value;
+  state.guidees.guidee_id='';
+  renderGuideeFilters();
+  renderGuideeTimeline();
 });
-}
+on(selectGuidee,'change',e=>{
+  const id=e.target.value;
+  state.guidees.guidee_id=id;
+  if(id){
+    const g=store.guidees.find(x=>x.id===id);
+    if(g){
+      state.guidees.consultant_id=g.consultant_id||'';
+      state.guidees.thematique_id=g.thematique_id||'';
+      if(selectGuideeConsult) selectGuideeConsult.value=state.guidees.consultant_id;
+      if(selectGuideeTheme) selectGuideeTheme.value=state.guidees.thematique_id;
+    }
+  }
+  renderGuideeFilters();
+  renderGuideeTimeline();
+});
 /* PARAMS */
 function renderParams(){
 const p=store.params||DEFAULT_PARAMS;
@@ -465,6 +700,7 @@ $('p-objectif_recent').value=p.objectif_recent_jours;
 $('p-activites_recent').value=p.activites_recent_jours ?? 30;
 $('p-activites_avenir').value=p.activites_a_venir_jours ?? 30;
 $('p-objectif_bar_max').value=p.objectif_bar_max_heures ?? 10;
+renderThematiquesEditor();
 }
 $('btn-save-params').onclick=()=>{
 const p=store.params||(store.params={...DEFAULT_PARAMS});
@@ -478,23 +714,100 @@ p.activites_a_venir_jours=Math.max(1, Number($('p-activites_avenir').value||30))
 p.objectif_bar_max_heures=Math.max(1, Number($('p-objectif_bar_max').value||10));
 save(); alert('Paramètres enregistrés.');
 };
+const thematiquesList=$('thematiques-list');
+const btnAddThematique=$('btn-add-thematique');
+const btnSaveThematique=$('btn-save-thematiques');
+function drawThematiquesList(){
+  if(!thematiquesList) return;
+  thematiquesList.innerHTML=thematiqueDraft.map(t=>{
+    const safeColor=/^#[0-9a-fA-F]{6}$/.test(t.color||'')?t.color:'#6366f1';
+    const disabled=t.id==='autre'?'disabled':'';
+    return `<div class="thematique-row" data-id="${esc(t.id)}">
+      <input type="text" class="them-emoji" value="${esc(t.emoji||'')}" maxlength="4"/>
+      <input type="text" class="them-name" value="${esc(t.nom||'')}" ${t.id==='autre'? 'placeholder="Autre"':''}/>
+      <input type="color" class="them-color" value="${esc(safeColor)}"/>
+      <button type="button" class="btn small danger them-delete" data-del="${esc(t.id)}" ${disabled}>Supprimer</button>
+    </div>`;
+  }).join('');
+}
+function renderThematiquesEditor(){
+  if(!thematiquesList) return;
+  thematiqueDraft=store.thematiques.map(t=>({...t}));
+  drawThematiquesList();
+}
+function normalizeColor(v){ return /^#[0-9a-fA-F]{6}$/.test(v)?v:'#6366f1'; }
+btnAddThematique?.addEventListener('click',()=>{
+  const baseColor='#6366f1';
+  thematiqueDraft.push({id:uid(),nom:'',emoji:'',color:baseColor});
+  drawThematiquesList();
+});
+on(thematiquesList,'click',e=>{
+  const btn=e.target.closest('[data-del]');
+  if(!btn) return;
+  const id=btn.dataset.del;
+  if(id==='autre') return;
+  thematiqueDraft=thematiqueDraft.filter(t=>t.id!==id);
+  drawThematiquesList();
+});
+btnSaveThematique?.addEventListener('click',()=>{
+  if(!thematiquesList) return;
+  const rows=[...thematiquesList.querySelectorAll('.thematique-row')];
+  const next=rows.map(row=>{
+    const id=row.dataset.id || uid();
+    const name=row.querySelector('.them-name')?.value.trim()||'';
+    const emoji=row.querySelector('.them-emoji')?.value.trim()||'';
+    const color=normalizeColor(row.querySelector('.them-color')?.value||'#6366f1');
+    return {id,nom:name,emoji,color};
+  }).filter(item=>item.id);
+  const ensureAutre=()=>{
+    if(!next.some(t=>t.id==='autre')){
+      const base=DEFAULT_THEMATIQUES.find(t=>t.id==='autre')||{id:'autre',nom:'Autre',emoji:'🧭',color:'#6b7280'};
+      next.push({...base});
+    }
+  };
+  ensureAutre();
+  const sanitized=next.map(t=>({
+    id:t.id||uid(),
+    nom:(t.nom|| (t.id==='autre'?'Autre':'Sans nom')).trim()||'Sans nom',
+    emoji:t.emoji|| (t.id==='autre'?'🧭':'📚'),
+    color:normalizeColor(t.color||'#6366f1')
+  }));
+  store.thematiques=ensureThematiqueIds(sanitized);
+  thematiqueDraft=store.thematiques.map(t=>({...t}));
+  save();
+  renderGuideeFilters();
+  renderGuideeTimeline();
+  alert('Thématiques enregistrées ✅');
+});
 /* MODALS (ACTIVITÉ) */
 const dlgA=$('dlg-activity');
 const faType=$('fa-type');
 const faHeuresWrap=$('fa-heures-wrap');
 const faHeures=$('fa-heures');
 const faConsult=$('fa-consultant');
-const faObj=$('fa-objectif');
+const faGuidee=$('fa-guidee');
 const faDesc=$('fa-desc');
 const btnFaGoto=$('fa-goto-consultant');
 const btnFaDelete=$$('#dlg-activity .actions [data-action="delete"]');
-faType.onchange=()=>{const isSTB=faType.value==='ACTION_ST_BERNARD'; faHeuresWrap.classList.toggle('hidden',!isSTB); if(isSTB && faHeures.value==='') faHeures.value=0; updateFaObjOptions();};
-faConsult.onchange=updateFaObjOptions;
+faType.onchange=()=>{const isSTB=faType.value==='ACTION_ST_BERNARD'; faHeuresWrap.classList.toggle('hidden',!isSTB); faGuidee.required=isSTB; if(isSTB && faHeures.value==='') faHeures.value=0; updateFaGuideeOptions();};
+faConsult.onchange=updateFaGuideeOptions;
 btnFaGoto.onclick=()=>{ const cid=faConsult.value; if(cid){ dlgA.close(); openConsultantModal(cid); } };
-function updateFaObjOptions(){
-const selected=faObj.value;
-faObj.innerHTML='<option value="">(aucun)</option>'+store.objectifs.map(o=>`<option value="${o.id}">${esc(o.titre)}</option>`).join('');
-if([...faObj.options].some(o=>o.value===selected)) faObj.value=selected;
+function updateFaGuideeOptions(){
+  if(!faGuidee) return;
+  const selected=faGuidee.value;
+  const cid=faConsult.value;
+  const list=store.guidees
+    .filter(g=>!cid || g.consultant_id===cid)
+    .sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
+  const opts=['<option value="">(Aucune)</option>',
+    ...list.map(g=>{
+      const theme=getThematique(g.thematique_id);
+      return `<option value="${g.id}">${esc(theme?.emoji||'🧭')} ${esc(g.nom||'Sans titre')}</option>`;
+    })
+  ];
+  faGuidee.innerHTML=opts.join('');
+  if([...faGuidee.options].some(o=>o.value===selected)) faGuidee.value=selected;
+  else faGuidee.value='';
 }
 $('btn-new-activity').onclick=()=>openActivityModal();
 let currentActivityId=null;
@@ -504,11 +817,11 @@ faConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.no
 $('fa-date').value=todayStr();
 faDesc.value='';
 faType.value='ACTION_ST_BERNARD'; faHeuresWrap.classList.remove('hidden'); faHeures.value=0;
-faObj.innerHTML='<option value="">(aucun)</option>';
+faGuidee.innerHTML='<option value="">(Aucune)</option>';
 if(id){
 const a=store.activities.find(x=>x.id===id); if(!a) return;
-faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; faHeures.value=(a.heures??0); updateFaObjOptions(); faObj.value=a.objectif_id||''; faType.onchange();
-}else{ updateFaObjOptions(); }
+faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; faHeures.value=(a.heures??0); updateFaGuideeOptions(); faGuidee.value=a.guidee_id||''; faType.onchange();
+}else{ updateFaGuideeOptions(); faType.onchange(); }
 autoSizeKeepMax(faDesc, ACT_DESC_MAX);
 on(faDesc,'input',()=>autoSizeKeepMax(faDesc, ACT_DESC_MAX),{once:false});
 dlgA.showModal();
@@ -517,9 +830,9 @@ $('form-activity').onsubmit=(e)=>{
 e.preventDefault();
 const isSTB=faType.value==='ACTION_ST_BERNARD';
 const heuresValue=isSTB ? Number(faHeures.value??0) : undefined;
-const data={ consultant_id:faConsult.value, type:faType.value, date_publication:$('fa-date').value, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, objectif_id: faObj.value || undefined };
+const data={ consultant_id:faConsult.value, type:faType.value, date_publication:$('fa-date').value, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined };
 const heuresInvalid=isSTB && (!Number.isFinite(heuresValue) || heuresValue<0);
-const missing = !data.consultant_id || !data.type || !data.date_publication || !data.description || heuresInvalid;
+const missing = !data.consultant_id || !data.type || !data.date_publication || !data.description || heuresInvalid || (isSTB && !data.guidee_id);
 if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
 if(currentActivityId){ Object.assign(store.activities.find(x=>x.id===currentActivityId),data,{updated_at:nowISO()}); }else{ store.activities.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
@@ -535,67 +848,82 @@ btnFaDelete?.addEventListener('click',e=>{
   save();
  }
 });
-/* MODALS (OBJECTIF) */
-const dlgO=$('dlg-objectif'); let currentObjectifId=null;
-const foDesc=$('fo-desc');
-function openObjectifModal(id=null){
-currentObjectifId=id;
-const o=id? store.objectifs.find(x=>x.id===id) : {id:uid(),titre:'',description:'',consultants:[],created_at:nowISO(),updated_at:nowISO()};
-$('fo-titre').value=o.titre||'';
-foDesc.value=o.description||'';
-autoSizeKeepMax(foDesc, {value:foDesc.scrollHeight});
-on(foDesc,'input',()=>autoSizeKeepMax(foDesc,{value:foDesc.scrollHeight}),{once:false});
-const pane=$('fo-consultants');
-pane.innerHTML='';
-const stbIds = consultantsWithSTBForObjective(o.id);
-if(stbIds.length===0){
-pane.innerHTML = `<div class="sub">Aucun consultant n'a encore de 🐕‍🦺 Action STB liée à cet objectif.</div>`;
-}else{
-const rows = stbIds.map(cid=>{
-const c=store.consultants.find(x=>x.id===cid);
-const link=(o.consultants||[]).find(x=>x.consultant_id===cid);
-const pct=clamp01(link?.progression_pct ?? 0);
-return {c,pct};
-}).sort((a,b)=> b.pct - a.pct || a.c.nom.localeCompare(b.c.nom));
-rows.forEach(({c,pct})=>{
-const color = pct<30?'var(--red)':(pct<70?'var(--yellow)':'var(--green)');
-const row=document.createElement('div');
-row.className='row space';
-row.style.margin='6px 0';
-row.innerHTML=`
-<div>${esc(c.nom)}</div>
-<label class="row" style="gap:6px">Progression
-<input type="number" min="0" max="100" step="1" value="${pct}" data-pct="${c.id}" style="width:80px;color:${color};font-weight:700"/>
-<span class="sub">%</span>
-</label>`;
-pane.appendChild(row);
-});
-on(pane,'input',(e)=>{
-const el=e.target.closest('input[type="number"][data-pct]'); if(!el) return;
-const v=clamp01(el.value); el.value=v; el.style.color = v<30?'var(--red)':(v<70?'var(--yellow)':'var(--green)'); el.style.fontWeight='700';
-}, {once:false});
+/* MODALS (GUIDÉE) */
+const dlgG=$('dlg-guidee');
+let currentGuideeId=null;
+const fgConsult=$('fg-consultant');
+const fgNom=$('fg-nom');
+const fgTheme=$('fg-thematique');
+const fgDebut=$('fg-debut');
+const fgFin=$('fg-fin');
+const fgDesc=$('fg-desc');
+function populateGuideeFormConsultants(){
+  if(!fgConsult) return;
+  fgConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
 }
-dlgO.showModal();
+function populateGuideeFormThematics(selected){
+  if(!fgTheme) return;
+  fgTheme.innerHTML=store.thematiques.map(t=>`<option value="${esc(t.id)}">${esc(t.emoji||'📚')} ${esc(t.nom)}</option>`).join('');
+  if(selected && [...fgTheme.options].some(o=>o.value===selected)){
+    fgTheme.value=selected;
+  }else{
+    const fallback=getThematique('autre');
+    fgTheme.value=fallback?.id||store.thematiques[0]?.id||'';
+  }
 }
-$('btn-new-objectif').onclick=()=>openObjectifModal();
-$('form-objectif').onsubmit=(e)=>{
-e.preventDefault();
-const titre=$('fo-titre').value.trim();
-if(!currentObjectifId && !titre){ dlgO.close('cancel'); return; }
-if(!titre){ alert('Titre requis.'); return; }
-const description=foDesc.value.trim()||undefined;
-const entries=[...$$all('#fo-consultants input[data-pct]')].map(el=>({consultant_id:el.dataset.pct, progression_pct:clamp01(el.value)}));
-const payload={titre,description,consultants:entries,updated_at:nowISO()};
-if(currentObjectifId){ Object.assign(store.objectifs.find(x=>x.id===currentObjectifId),payload); }
-else{ store.objectifs.push({id:uid(),...payload,created_at:nowISO()}); }
-dlgO.close('ok'); save();
+function openGuideeModal(id=null){
+  currentGuideeId=id;
+  populateGuideeFormConsultants();
+  const baseConsult=fgConsult.options[0]?.value||'';
+  const g=id? store.guidees.find(x=>x.id===id) : {id:uid(),nom:'',description:'',consultant_id:baseConsult,date_debut:todayStr(),date_fin:'' ,thematique_id:(getThematique('autre')?.id||store.thematiques[0]?.id||'autre')};
+  populateGuideeFormThematics(g?.thematique_id);
+  fgConsult.value=g?.consultant_id||baseConsult||'';
+  fgNom.value=g?.nom||'';
+  fgDesc.value=g?.description||'';
+  const start=g?.date_debut || todayStr();
+  fgDebut.value=start;
+  const consultant=store.consultants.find(c=>c.id===(g?.consultant_id||fgConsult.value));
+  const defaultEnd=consultant?.date_fin||start;
+  fgFin.value=g?.date_fin||defaultEnd;
+  autoSizeKeepMax(fgDesc,{value:fgDesc.scrollHeight});
+  on(fgDesc,'input',()=>autoSizeKeepMax(fgDesc,{value:fgDesc.scrollHeight}),{once:false});
+  dlgG.showModal();
+}
+$('btn-new-guidee').onclick=()=>openGuideeModal();
+$('form-guidee').onsubmit=(e)=>{
+  e.preventDefault();
+  const consultant_id=fgConsult.value;
+  const nom=fgNom.value.trim();
+  const thematique_id=fgTheme.value||'autre';
+  const date_debut=fgDebut.value||todayStr();
+  const date_fin=fgFin.value||date_debut;
+  const description=fgDesc.value.trim()||undefined;
+  if(!consultant_id || !nom){ dlgG.close('cancel'); return; }
+  const payload={consultant_id,nom,description,date_debut,date_fin,thematique_id:thematique_id||'autre',updated_at:nowISO()};
+  if(currentGuideeId){ Object.assign(store.guidees.find(x=>x.id===currentGuideeId),payload); }
+  else{ store.guidees.push({id:uid(),...payload,created_at:nowISO()}); }
+  dlgG.close('ok');
+  save();
+  renderGuideeFilters();
+  renderGuideeTimeline();
 };
-$$('#dlg-objectif .actions [value="del"]').onclick=(e)=>{ e.preventDefault(); if(!currentObjectifId){ dlgO.close(); return; } if(confirm('Supprimer cet objectif ?')){ store.objectifs=store.objectifs.filter(o=>o.id!==currentObjectifId); dlgO.close('del'); save(); } };
+$$('#dlg-guidee .actions [value="del"]').onclick=(e)=>{
+  e.preventDefault();
+  if(!currentGuideeId){ dlgG.close(); return; }
+  if(confirm('Supprimer cette guidée ?')){
+    store.guidees=store.guidees.filter(g=>g.id!==currentGuideeId);
+    store.activities=store.activities.map(a=>a.guidee_id===currentGuideeId?{...a,guidee_id:undefined}:a);
+    dlgG.close('del');
+    save();
+    renderGuideeFilters();
+    renderGuideeTimeline();
+  }
+};
 /* MODALS (CONSULTANT) */
 const dlgC=$('dlg-consultant');
 let currentConsultantId=null;
 const fcDesc=$('fc-desc');
-const btnFcGoto=$('fc-goto-objectifs');
+const btnFcGoto=$('fc-goto-guidees');
 function openConsultantModal(id=null){
 currentConsultantId=id;
 const c=id? store.consultants.find(x=>x.id===id) : {nom:'',titre_mission:'',date_fin:'',url:'',description:''};
@@ -604,7 +932,7 @@ autoSizeKeepMax(fcDesc, CONS_DESC_MAX);
 on(fcDesc,'input',()=>autoSizeKeepMax(fcDesc, CONS_DESC_MAX),{once:false});
 dlgC.showModal();
 }
-btnFcGoto.onclick=()=>{ if(currentConsultantId){ dlgC.close(); gotoConsultantObjectives(currentConsultantId); } };
+btnFcGoto.onclick=()=>{ if(currentConsultantId){ dlgC.close(); gotoConsultantGuidees(currentConsultantId); } };
 $('btn-new-consultant').onclick=()=>openConsultantModal();
 $('form-consultant').onsubmit=(e)=>{
 e.preventDefault();
@@ -642,25 +970,21 @@ catch(err){ console.error('Import JSON invalide:', err); alert('Fichier JSON inv
 });
 function applyIncomingStore(incoming, sourceLabel){
 if(!incoming || typeof incoming!=='object') throw new Error('Format vide');
-const required=['consultants','activities','objectifs','params'];
-for(const k of required){ if(!(k in incoming)) throw new Error('Champ manquant: '+k); }
-incoming.params = Object.assign({...DEFAULT_PARAMS}, incoming.params||{});
-incoming.meta = Object.assign({version:store?.meta?.version??5.01}, incoming.meta||{});
-incoming.meta.updated_at = nowISO();
-localStorage.setItem(LS_KEY, JSON.stringify(incoming)); store = incoming; refreshAll();
+const migrated=migrateStore(incoming);
+localStorage.setItem(LS_KEY, JSON.stringify(migrated));
+store = migrated;
+refreshAll();
 alert(`LocalStorage réinitialisé depuis « ${sourceLabel} » ✅`);
 }
 /* INIT & RENDER */
 function renderActivityFiltersOptions(){
-const curr = selectObjectif.value;
-selectObjectif.innerHTML = '<option value="">🎯Tous</option>' + store.objectifs.map(o=>`<option value="${o.id}">${esc(o.titre)}</option>`).join('');
-if([...selectObjectif.options].some(o=>o.value===curr)) selectObjectif.value=curr;
-updateFilterHighlights();
+  refreshThematiqueOptions();
+  updateFilterHighlights();
 }
-function refreshAll(){ renderConsultantOptions(); renderActivityFiltersOptions(); renderActivities(); renderObjectifs(); renderParams(); dashboard(); updateSyncPreview(); }
+function refreshAll(){ renderConsultantOptions(); renderActivityFiltersOptions(); renderActivities(); renderGuideeFilters(); renderGuideeTimeline(); renderParams(); dashboard(); updateSyncPreview(); }
 /* Auto-bootstrap si vide */
 (function autoBootstrapIfEmpty(){
-const hadData = (()=>{ try{ const obj=JSON.parse(localStorage.getItem(LS_KEY)||'null'); return obj && (obj.consultants||[]).length + (obj.activities||[]).length + (obj.objectifs||[]).length > 0; }catch{return false;} })();
+const hadData = (()=>{ try{ const obj=JSON.parse(localStorage.getItem(LS_KEY)||'null'); return obj && ((obj.consultants||[]).length + (obj.activities||[]).length + (obj.guidees||[]).length) > 0; }catch{return false;} })();
 if(!hadData){ resetFromDataJson(); }
 })();
 /* Premier rendu */
