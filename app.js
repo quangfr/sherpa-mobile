@@ -463,7 +463,7 @@ const list= store.activities
   const diff=date!=null?daysDiff(date,today):null;
   if(monthFilter==='ALL') return true;
   if(monthFilter==='RECENT') return diff!=null && diff<=0 && diff>=-recentDays;
-  if(monthFilter==='UPCOMING') return diff!=null && diff>0 && diff<=upcomingDays;
+  if(monthFilter==='UPCOMING') return diff!=null && diff>=0 && diff<=upcomingDays;
   if(monthFilter==='PLANNED') return diff!=null && diff>upcomingDays;
   return monthFilter ? key===monthFilter : true;
 })
@@ -471,6 +471,33 @@ const list= store.activities
 badgeCount.textContent=list.length;
 if(state.activities.selectedId && !list.some(item=>item.id===state.activities.selectedId)){
   state.activities.selectedId='';
+}
+if(!state.activities.selectedId && list.length){
+  let closest=null;
+  let minDiff=Infinity;
+  let closestIsFuture=false;
+  list.forEach(item=>{
+    const date=parseDate(item.date_publication||'');
+    if(!date) return;
+    const diff=daysDiff(date,today);
+    const abs=Math.abs(diff);
+    const isFuture=diff>=0;
+    if(
+      abs<minDiff ||
+      (abs===minDiff && isFuture && !closestIsFuture)
+    ){
+      minDiff=abs;
+      closest=item;
+      closestIsFuture=isFuture;
+    }
+  });
+  if(!closest){
+    closest=list[0];
+  }
+  if(closest){
+    state.activities.selectedId=closest.id;
+    state.activities.shouldCenter=true;
+  }
 }
 actTBody.innerHTML='';
 const mobile = isMobile();
@@ -508,8 +535,10 @@ tr.style.setProperty('--selection-color',typeColor);
 tr.style.setProperty('--type-border-color',typeBorderColor);
 const dateObj=parseDate(a.date_publication||'');
 const isPastDate=dateObj && dateObj<todayStart;
+const isFutureOrToday=dateObj && dateObj>=todayStart;
 if(isSelected) tr.classList.add('selected');
 if(isPastDate) tr.classList.add('past');
+if(isFutureOrToday) tr.classList.add('future');
 tr.innerHTML = mobile
 ? `
 <td class="mobile-only">
@@ -676,20 +705,56 @@ function renderGuideeTimeline(){
   guidees.forEach(g=>{
     const consultant=store.consultants.find(c=>c.id===g.consultant_id);
     const theme=getThematique(g.thematique_id);
-    const icon=theme?.emoji||'🧭';
-    const color=theme?.color||'#6366f1';
+    const defaultColor=theme?.color||'#6366f1';
     const startDate=g.date_debut||todayStr();
     const endDate=g.date_fin||startDate;
     if(startDate){
-      events.push({id:`start-${g.id}`,type:'start',date:startDate,icon:icon,color:color,guidee:g,consultant:consultant,theme:theme,status:'future'});
+      events.push({
+        id:`start-${g.id}`,
+        type:'start',
+        date:startDate,
+        icon:'🧭',
+        color:defaultColor,
+        borderColor:defaultColor,
+        guidee:g,
+        consultant:consultant,
+        theme:theme,
+        status:'future'
+      });
     }
     if(!hideActions){
       store.activities.filter(a=>a.guidee_id===g.id).forEach(a=>{
-        events.push({id:`act-${a.id}`,type:'activity',date:a.date_publication||startDate,icon:icon,color:color,guidee:g,consultant:consultant,theme:theme,activity:a,status:'future'});
+        const meta=TYPE_META[a.type]||{};
+        const color=TYPE_COLORS[a.type]||defaultColor;
+        const borderColor=TYPE_BORDER_COLORS[a.type]||color;
+        events.push({
+          id:`act-${a.id}`,
+          type:'activity',
+          date:a.date_publication||startDate,
+          icon:meta.emoji||'🗂️',
+          color:color,
+          borderColor:borderColor,
+          guidee:g,
+          consultant:consultant,
+          theme:theme,
+          activity:a,
+          status:'future'
+        });
       });
     }
     if(endDate){
-      events.push({id:`end-${g.id}`,type:'end',date:endDate,icon:icon,color:color,guidee:g,consultant:consultant,theme:theme,status:'future'});
+      events.push({
+        id:`end-${g.id}`,
+        type:'end',
+        date:endDate,
+        icon:'🧭',
+        color:defaultColor,
+        borderColor:defaultColor,
+        guidee:g,
+        consultant:consultant,
+        theme:theme,
+        status:'future'
+      });
     }
   });
   const dated=events.filter(ev=>parseDate(ev.date));
@@ -763,28 +828,23 @@ function renderGuideeTimeline(){
   updateGuideeProgress(selectedEvent);
   updateGuideeEditButton(state.guidees.guidee_id||'');
   timelineEl.innerHTML='';
-  let lastGuideeId=null;
-  let markerOnLeft=true;
   dated.forEach(ev=>{
     const g=ev.guidee;
     const consultant=ev.consultant;
-    if(lastGuideeId!==null && g?.id!==lastGuideeId){
-      markerOnLeft=!markerOnLeft;
-    }
-    if(lastGuideeId===null){ markerOnLeft=true; }
-    lastGuideeId=g?.id||null;
     const item=document.createElement('div');
     const classes=['timeline-item', ev.status];
-    if(!markerOnLeft) classes.push('timeline-item-alt');
+    const alignRight=ev.type==='activity' && ev.activity?.type==='ACTION_ST_BERNARD';
+    if(alignRight) classes.push('timeline-item-alt');
     const isSelected=ev.id===state.guidees.selectedEventId;
     if(isSelected) classes.push('selected');
     item.className=classes.join(' ');
     item.dataset.eventId=ev.id;
     const color=ev.color||'#6366f1';
+    const borderColor=ev.borderColor||color;
     item.style.setProperty('--timeline-color',color);
     item.style.setProperty('--selection-color',color);
-    item.style.setProperty('--timeline-border',color);
-    item.style.setProperty('--timeline-marker-border',color);
+    item.style.setProperty('--timeline-border',borderColor);
+    item.style.setProperty('--timeline-marker-border',borderColor);
     const consultantHtml=consultant
       ? `<span class="click-span bold" data-filter-consultant="${consultant.id}">${esc(consultant.nom)}</span>`
       : `<span class="bold">${esc(consultant?.nom||'—')}</span>`;
@@ -813,7 +873,7 @@ function renderGuideeTimeline(){
       bodyHtml=`<div class="timeline-text clamp-3">${parts||'—'}</div>`;
     }else{
       const verb=ev.type==='start'?'Démarrage':'Fin';
-      const flagIcon=ev.type==='start'?'▶️':'✅';
+      const flagIcon='🧭';
       const parts=[`${flagIcon} ${verb} de la guidée ${guideeSpan}`].filter(Boolean).join(' ');
       bodyHtml=`<div class="timeline-text clamp-3">${parts||'—'}</div>`;
     }

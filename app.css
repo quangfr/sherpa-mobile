@@ -228,6 +228,7 @@ main{height:calc(100vh - var(--headH));min-height:calc(100vh - var(--headH));ove
 .table tbody tr.past .sub{color:var(--muted2)}
 .table tbody tr.past .pill{opacity:.75}
 .table tbody tr.past button{opacity:.75}
+.table tbody tr.future{background:#fff}
 
 @media (max-width:700px){
 dialog{border-radius:0;width:100vw;height:100vh;max-height:none;margin:0}
