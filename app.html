@@ -30,6 +30,7 @@
         <div class="title">🗂️ Activités</div>
         <div class="pill" id="activities-count">0</div>
         <button class="btn small primary" id="btn-new-activity">Ajouter</button>
+        <button class="btn small" id="btn-edit-activity">Éditer</button>
         <button class="btn small" id="btn-reset-filters">Réinitialiser</button>
       </div>
       <div class="row filters-line">
@@ -68,19 +69,20 @@
           <div class="title">🧭 Guidées</div>
           <button class="btn small primary" id="btn-new-guidee">Créer</button>
           <button class="btn small" id="btn-edit-guidee">Éditer</button>
+          <button class="btn small" id="btn-reset-guidee-filters">Réinitialiser</button>
         </div>
         <div class="row guidee-filters">
           <select id="filter-guidee-consultant" title="Filtrer par consultant">
             <option value="">👤 Tous</option>
           </select>
-          <select id="filter-guidee-thematique" title="Filtrer par thématique">
-            <option value="">📚 Toutes</option>
-          </select>
           <select id="filter-guidee" title="Filtrer par guidée">
             <option value="">🧭 Toutes</option>
           </select>
-          <button class="btn small" id="btn-reset-guidee-filters">Réinitialiser</button>
         </div>
+      </div>
+      <div id="guidee-progress" class="guidee-progress hidden">
+        <div class="guidee-progress-bar"><span></span></div>
+        <div class="guidee-progress-label">0%</div>
       </div>
     </div>
     <div class="pane-body hover-scroll">
@@ -91,14 +93,6 @@
 <!-- RÉGLAGES -->
 <section class="view" id="view-reglages">
 <div class="reglages-grid">
-<div class="card" id="thematiques-card">
-  <div class="row space">
-    <div class="title">📚 Thématiques</div>
-    <div class="row actions-bar"><button class="btn small" id="btn-add-thematique">Ajouter</button><button class="btn small primary" id="btn-save-thematiques">Enregistrer</button></div>
-  </div>
-  <div class="sub" style="margin-top:6px">Modifiez l’emoji, le nom et la couleur. La thématique « Autre » est requise.</div>
-  <div id="thematiques-list" class="thematiques-list"></div>
-</div>
 <div class="card">
 <div class="row space">
 <div class="title">🔃 Sync GitHub</div>
@@ -147,7 +141,7 @@
 </select></label>
 <label>Date <input type="date" name="date_publication" required id="fa-date"/></label>
 <label>Guidée <select name="guidee_id" id="fa-guidee"></select></label>
-<label id="fa-heures-wrap" class="hidden">Heures réalisées <input type="number" min="0" step="0.25" name="heures" id="fa-heures"/></label>
+<label id="fa-heures-wrap" class="hidden">Heures réalisées <select name="heures" id="fa-heures"></select></label>
 <label style="grid-column:1/-1">Description <textarea name="description" required id="fa-desc" placeholder="Description…"></textarea></label>
 </div>
     <div class="actions"><button type="button" class="btn danger" data-action="delete">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
