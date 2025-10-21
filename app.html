@@ -135,6 +135,12 @@
 <label style="grid-column:1/-1">Prompt OpenAI pour la description d’activité
   <textarea id="p-openai-prompt" rows="3"></textarea>
 </label>
+<label style="grid-column:1/-1">Prompt OpenAI pour la description consultant
+  <textarea id="p-openai-consultant" rows="3"></textarea>
+</label>
+<label style="grid-column:1/-1">Prompt OpenAI pour la description de guidée
+  <textarea id="p-openai-guidee" rows="3"></textarea>
+</label>
 <div class="row" style="margin-top:8px"><button class="btn primary small" id="btn-save-params">Enregistrer</button></div>
 <div class="sub" style="margin-top:6px">Les titres du Dashboard & l’affichage des barres se mettent à jour automatiquement.</div>
 </div>
@@ -184,7 +190,12 @@
     <label>Nom de la guidée* <input id="fg-nom" required/></label>
     <label>Date de début* <input type="date" id="fg-debut" required/></label>
     <label>Date de fin* <input type="date" id="fg-fin" required/></label>
-    <label style="grid-column:1/-1">Description <textarea id="fg-desc" placeholder="#Team #Customer #Tech #Design #Product #Data" style="min-height:200px;resize:none;overflow:hidden"></textarea></label>
+    <label style="grid-column:1/-1" class="field-with-action">Description
+      <div class="textarea-with-action">
+        <textarea id="fg-desc" placeholder="#Team #Customer #Tech #Design #Product #Data" style="min-height:200px;resize:none;overflow:hidden"></textarea>
+        <button type="button" class="btn ghost small ai-helper" id="fg-openai" title="Générer une description avec OpenAI">✨</button>
+      </div>
+    </label>
   </div>
   <div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
@@ -202,7 +213,12 @@
 <label>Titre mission <input name="titre_mission" id="fc-titre"/></label>
 <label>Date fin (dispo) <input type="date" name="date_fin" id="fc-fin"/></label>
 <label>Boond Id <input name="boond_id" id="fc-boond" placeholder="12345"/></label>
-<label style="grid-column:1/-1">Description <textarea name="description" id="fc-desc" placeholder="#Team #Customer #Tech #Design #Product #Data"></textarea></label>
+<label style="grid-column:1/-1" class="field-with-action">Description
+  <div class="textarea-with-action">
+    <textarea name="description" id="fc-desc" placeholder="#Team #Customer #Tech #Design #Product #Data"></textarea>
+    <button type="button" class="btn ghost small ai-helper" id="fc-openai" title="Générer une description avec OpenAI">✨</button>
+  </div>
+</label>
 </div>
 <div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
