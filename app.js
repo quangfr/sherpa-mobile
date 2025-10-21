@@ -162,10 +162,10 @@ function getGithubRepo(){
 function save(){ store.meta=store.meta||{}; store.meta.updated_at=nowISO(); localStorage.setItem(LS_KEY,JSON.stringify(store)); refreshAll(); }
 /* NAV TABS */
 const TABS=[
-{id:'dashboard',labelFull:'👥 Sherpa',labelShort:'👥 Sherpa'},
-{id:'activite',labelFull:'🗂️ Activités',labelShort:'🗂️ Activités'},
-{id:'guidee',labelFull:'🧭 Guidées',labelShort:'🧭 Guidées'},
-{id:'reglages',labelFull:'⚙️ Paramètres',labelShort:'⚙️'}
+{id:'dashboard',labelFull:'Sherpa',labelShort:'Sherpa'},
+{id:'activite',labelFull:'🗂️Activités',labelShort:'🗂️Activités'},
+{id:'guidee',labelFull:'🧭Guidées',labelShort:'🧭Guidées'},
+{id:'reglages',labelFull:'⚙️Paramètres',labelShort:'⚙️'}
 ];
 const tabsEl=$('tabs');
 const btnDashboardNewConsultant=$('btn-dashboard-new-consultant');
