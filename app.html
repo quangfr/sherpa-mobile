@@ -39,13 +39,14 @@
         <select class="filter-select" data-filter="type" id="filter-type" title="Filtrer par type" aria-label="Filtrer par type">
           <option value="">🗂️ Tous</option>
           <option value="ACTION_ST_BERNARD">🐕‍🦺 Action STB</option>
+          <option value="CORDEE">🪢 Cordée</option>
           <option value="NOTE">📝 Note</option>
           <option value="VERBATIM">💬 Verbatim</option>
           <option value="AVIS">🗣️ Avis</option>
           <option value="ALERTE">🚨 Alerte</option>
         </select>
-        <select class="filter-select" data-filter="thematique" id="filter-thematique" title="Filtrer par thématique" aria-label="Filtrer par thématique">
-          <option value="">📚Toutes</option>
+        <select class="filter-select" data-filter="hashtag" id="filter-hashtag" title="Filtrer par hashtag" aria-label="Filtrer par hashtag">
+          <option value="">#️⃣ Tous</option>
         </select>
         <select class="filter-select" data-filter="month" id="filter-month" title="Filtrer par date" aria-label="Filtrer par date"></select>
       </div>
@@ -128,6 +129,12 @@
 <label>objectif_bar_max_heures <input type="number" id="p-objectif_bar_max" min="1" step="1"/></label>
 <label style="grid-column:1/-1">Repo GitHub <input type="text" id="p-github-repo" placeholder="owner/repo"/></label>
 </div>
+<label style="grid-column:1/-1">Liste des hashtags disponibles (séparés par un espace)
+  <textarea id="p-hashtags" rows="4" placeholder="#ProductBacklogPrioritization #ProductUserStories …"></textarea>
+</label>
+<label style="grid-column:1/-1">Prompt OpenAI pour la description d’activité
+  <textarea id="p-openai-prompt" rows="3"></textarea>
+</label>
 <div class="row" style="margin-top:8px"><button class="btn primary small" id="btn-save-params">Enregistrer</button></div>
 <div class="sub" style="margin-top:6px">Les titres du Dashboard & l’affichage des barres se mettent à jour automatiquement.</div>
 </div>
@@ -146,13 +153,21 @@
 <div class="grid2">
 <label>Consultant <select name="consultant_id" required id="fa-consultant"></select></label>
 <label>Type <select name="type" required id="fa-type">
-<option value="ACTION_ST_BERNARD">🐕‍🦺 Action STB</option><option value="NOTE">📝 Note</option>
+<option value="ACTION_ST_BERNARD">🐕‍🦺 Action STB</option><option value="CORDEE">🪢 Cordée</option><option value="NOTE">📝 Note</option>
 <option value="VERBATIM">💬 Verbatim</option><option value="AVIS">🗣️ Avis</option><option value="ALERTE">🚨 Alerte</option>
 </select></label>
 <label>Date <input type="date" name="date_publication" required id="fa-date"/></label>
 <label>Guidée <select name="guidee_id" id="fa-guidee"></select></label>
 <label id="fa-heures-wrap" class="hidden">Heures réalisées <select name="heures" id="fa-heures"></select></label>
-<label style="grid-column:1/-1">Description <textarea name="description" required id="fa-desc" placeholder="Description…"></textarea></label>
+<label style="grid-column:1/-1" class="field-with-action">Description
+  <div class="textarea-with-action">
+    <textarea name="description" required id="fa-desc" placeholder="#Team #Customer #Tech #Design #Product #Data"></textarea>
+    <button type="button" class="btn ghost small ai-helper" id="fa-openai" title="Générer un résumé avec OpenAI">✨</button>
+  </div>
+</label>
+<label id="fa-beneficiaires-wrap" class="hidden" style="grid-column:1/-1">Bénéficiaires
+  <select id="fa-beneficiaires" multiple></select>
+</label>
 </div>
     <div class="actions"><button type="button" class="btn danger" data-action="delete">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
@@ -167,10 +182,9 @@
   <div class="grid2">
     <label>Consultant* <select id="fg-consultant" required></select></label>
     <label>Nom de la guidée* <input id="fg-nom" required/></label>
-    <label>Thématique* <select id="fg-thematique" required></select></label>
     <label>Date de début* <input type="date" id="fg-debut" required/></label>
     <label>Date de fin* <input type="date" id="fg-fin" required/></label>
-    <label style="grid-column:1/-1">Description <textarea id="fg-desc" placeholder="Description…" style="min-height:200px;resize:none;overflow:hidden"></textarea></label>
+    <label style="grid-column:1/-1">Description <textarea id="fg-desc" placeholder="#Team #Customer #Tech #Design #Product #Data" style="min-height:200px;resize:none;overflow:hidden"></textarea></label>
   </div>
   <div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
@@ -188,9 +202,10 @@
 <label>Titre mission <input name="titre_mission" id="fc-titre"/></label>
 <label>Date fin (dispo) <input type="date" name="date_fin" id="fc-fin"/></label>
 <label>Boond Id <input name="boond_id" id="fc-boond" placeholder="12345"/></label>
-<label style="grid-column:1/-1">Description <textarea name="description" id="fc-desc" placeholder="Notes libres…"></textarea></label>
+<label style="grid-column:1/-1">Description <textarea name="description" id="fc-desc" placeholder="#Team #Customer #Tech #Design #Product #Data"></textarea></label>
 </div>
 <div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
+<script src="config.js" defer></script>
 <script src="app.js" defer></script>
 </body></html>

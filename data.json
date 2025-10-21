@@ -12,7 +12,9 @@
     "activites_recent_jours": 30,
     "activites_a_venir_jours": 30,
     "objectif_recent_jours": 15,
-    "objectif_bar_max_heures": 10
+    "objectif_bar_max_heures": 10,
+    "hashtags_catalog": "#ProductBacklogPrioritization #ProductUserStories #ProductRoadmap #ProductKPIs #ProductVision #DataExploration #DataVisualization #DataModeling #DataStorytelling #DataGovernance #DesignUX #DesignPrototyping #DesignUserTesting #DesignThinking #DesignSystem #TeamLeadership #TeamCommunication #TeamFacilitation #TeamCollaboration #TeamAlignment #TechSQL #TechPowerBI #TechAutomation #TechDocumentation #TechIntegration #CustomerInsight #CustomerRelationship #CustomerValue #CustomerFeedback #CustomerExperience",
+    "openai_activity_prompt": "Faire un résumé synthétique structuré en 3 lignes de ce qui est écrit, en qualifiant avec 1-3 hashtags suivants (liste des hashtags ci-dessus) : {{activity_type}} {{activity_description}}"
   },
   "consultants": [
     {
