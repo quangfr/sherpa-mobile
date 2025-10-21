@@ -45,8 +45,8 @@ input,select,textarea{border:1px solid var(--border);background:#fff;border-radi
 textarea{width:100%;resize:vertical}
 .field-with-action{display:flex;flex-direction:column;gap:4px}
 .textarea-with-action{position:relative;display:block}
-.textarea-with-action textarea{width:100%;padding-right:40px}
-.textarea-with-action .ai-helper{position:absolute;right:6px;bottom:6px}
+.textarea-with-action textarea{width:100%;padding-top:36px;padding-right:40px}
+.textarea-with-action .ai-helper{position:absolute;right:6px;top:6px}
 .hashtag-suggestions{display:none;gap:6px;flex-wrap:wrap;margin-top:4px}
 .hashtag-suggestions.active{display:flex}
 .hashtag-suggestions button{border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:2px 8px;font-size:12px;cursor:pointer}

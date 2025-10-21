@@ -30,8 +30,16 @@ const DEFAULT_HASHTAG_CATALOG=[
   '#CustomerInsight','#CustomerRelationship','#CustomerValue','#CustomerFeedback','#CustomerExperience'
 ].join(' ');
 const DEFAULT_OPENAI_PROMPT='Faire un résumé synthétique structuré en 3 lignes de ce qui est écrit, en qualifiant avec 1-3 hashtags suivants (liste des hashtags ci-dessus) : {{activity_type}} {{activity_description}}';
-const OPENAI_MODEL='gpt-5.0-nano';
-const OPENAI_ENDPOINT='https://api.openai.com/v1/chat/completions';
+const DEFAULT_OPENAI_CONSULTANT_PROMPT='Reformule en français la description suivante pour une fiche consultant Sherpa. Résume en 3 phrases maximum, souligne le titre de mission "{{consultant_mission}}" s\'il est fourni et ajoute 1 à 2 hashtags pertinents parmi {{hashtags_catalog}}. Consultant : {{consultant_name}}. Description source : {{consultant_description}}';
+const DEFAULT_OPENAI_GUIDEE_PROMPT='Synthétise en 3 phrases claires la description de guidée ci-dessous en mettant en avant l\'intention, les livrables attendus et 1 à 2 hashtags (parmi {{hashtags_catalog}}). Consultant : {{consultant_name}}. Guidée : {{guidee_name}}. Description source : {{guidee_description}}';
+const OPENAI_MODEL='gpt-4o-mini';
+const OPENAI_ENDPOINT='https://tranxq.workers.dev';
+function fillPromptTemplate(template, values={}){
+  return String(template||'').replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g,(match,key)=>{
+    const value=values?.[key];
+    return value!==undefined && value!==null ? String(value) : '';
+  });
+}
 function normalizeHashtag(raw){
   if(!raw) return '';
   const trimmed=String(raw).trim();
@@ -169,38 +177,69 @@ function attachHashtagAutocomplete(textarea){
   });
   textarea.addEventListener('blur',()=>{ setTimeout(hide,150); });
 }
-function getOpenAIKey(){
-  const global=typeof globalThis!=='undefined'?globalThis:window;
-  if(!global) return '';
-  return String(global.SHERPA_OPENAI_KEY||global.OPENAI_API_KEY||global.__SHERPA_OPENAI_KEY||global?.__SHERPA_CONFIG?.OPENAI_API_KEY||'').trim();
-}
 async function requestOpenAISummary(prompt){
-  const key=getOpenAIKey();
-  if(!key) throw new Error('missing-openai-key');
   const response=await fetch(OPENAI_ENDPOINT,{
     method:'POST',
     headers:{
-      'Content-Type':'application/json',
-      'Authorization':`Bearer ${key}`
+      'Content-Type':'application/json'
     },
     body:JSON.stringify({
       model:OPENAI_MODEL,
-      messages:[
-        {role:'system',content:'Tu es un assistant qui synthétise des notes d’activité en français.'},
-        {role:'user',content:prompt}
-      ],
-      temperature:0.4,
-      max_tokens:220
+      messages:[{role:'user',content:prompt}]
     })
   });
-  if(!response.ok){
-    const text=await response.text().catch(()=>response.statusText);
-    throw new Error(`openai-error:${response.status} ${text}`);
+  const rawText=await response.text();
+  let data=null;
+  try{
+    data=rawText?JSON.parse(rawText):null;
+  }catch{
+    data=null;
   }
-  const data=await response.json();
+  if(!response.ok){
+    const detail=data?.error?.message || data?.message || rawText || `HTTP ${response.status}`;
+    throw new Error(`openai-error:${detail}`);
+  }
+  if(!data){
+    throw new Error('openai-empty');
+  }
   const content=data?.choices?.[0]?.message?.content;
-  if(!content) throw new Error('openai-empty');
+  if(!content){
+    throw new Error('openai-empty');
+  }
   return String(content).trim();
+}
+function formatAIError(err){
+  if(!err) return "Erreur assistant : réponse inattendue.";
+  const message=String(err.message||err||'').trim();
+  if(message.startsWith('openai-error:')){
+    const detail=message.slice('openai-error:'.length).trim()||'Erreur inconnue.';
+    return `Erreur assistant : ${detail}`;
+  }
+  if(message.startsWith('openai-empty')){
+    return "Erreur assistant : réponse vide.";
+  }
+  return `Erreur assistant : ${message||'erreur inconnue.'}`;
+}
+async function invokeAIHelper(button, textarea, prompt, bucket){
+  if(!button || !textarea || !prompt) return;
+  if(button.disabled) return;
+  button.disabled=true;
+  const originalLabel=button.textContent;
+  button.textContent='…';
+  try{
+    const summary=await requestOpenAISummary(prompt);
+    if(summary){
+      textarea.value=summary;
+      textarea.dispatchEvent(new Event('input',{bubbles:true}));
+      if(bucket) autoSizeKeepMax(textarea,bucket);
+    }
+  }catch(err){
+    console.error('AI helper error',err);
+    alert(formatAIError(err));
+  }finally{
+    button.disabled=false;
+    button.textContent=originalLabel||'✨';
+  }
 }
 const $=id=>document.getElementById(id);
 const $$=sel=>document.querySelector(sel);
@@ -231,9 +270,22 @@ function formatActivityDate(dateStr){
 }
 $$all('[data-close]').forEach(btn=>on(btn,'click',()=>{ const target=btn.dataset.close ? $(btn.dataset.close) : btn.closest('dialog'); target?.close('cancel'); }));
 function autoSizeKeepMax(el, bucket){ if(!el) return; el.style.height='auto'; const h=el.scrollHeight; bucket.value=Math.max(bucket.value||0,h); el.style.height=bucket.value+'px'; }
-let ACT_DESC_MAX={value:120}, CONS_DESC_MAX={value:120};
+let ACT_DESC_MAX={value:120}, CONS_DESC_MAX={value:120}, GUIDEE_DESC_MAX={value:120};
 /* DEFAULT STORE */
-const DEFAULT_PARAMS={delai_alerte_jours:7,fin_mission_sous_jours:60,stb_recent_jours:30,avis_manquant_depuis_jours:60,activites_recent_jours:30,activites_a_venir_jours:30,objectif_recent_jours:15,objectif_bar_max_heures:10,hashtags_catalog:DEFAULT_HASHTAG_CATALOG,openai_activity_prompt:DEFAULT_OPENAI_PROMPT};
+const DEFAULT_PARAMS={
+  delai_alerte_jours:7,
+  fin_mission_sous_jours:60,
+  stb_recent_jours:30,
+  avis_manquant_depuis_jours:60,
+  activites_recent_jours:30,
+  activites_a_venir_jours:30,
+  objectif_recent_jours:15,
+  objectif_bar_max_heures:10,
+  hashtags_catalog:DEFAULT_HASHTAG_CATALOG,
+  openai_activity_prompt:DEFAULT_OPENAI_PROMPT,
+  openai_consultant_prompt:DEFAULT_OPENAI_CONSULTANT_PROMPT,
+  openai_guidee_prompt:DEFAULT_OPENAI_GUIDEE_PROMPT
+};
 const DEFAULT_GITHUB_REPO='quangfr/sherpa-mobile';
 const DEFAULT_THEMATIQUES=[
   {id:'le-cardinal',nom:'Le Cardinal',emoji:'🧊',color:'#3b82f6'},
@@ -1020,9 +1072,7 @@ function renderGuideeTimeline(){
     item.style.setProperty('--selection-color',color);
     item.style.setProperty('--timeline-border','var(--border)');
     item.style.setProperty('--timeline-marker-border','var(--border)');
-    const consultantHtml=consultant
-      ? `<span class="click-span bold" data-filter-consultant="${consultant.id}">${esc(consultant.nom)}</span>`
-      : `<span class="bold">${esc(consultant?.nom||'—')}</span>`;
+    const consultantHtml=`<span class="bold">${esc(consultant?.nom||'—')}</span>`;
     const friendlyDate=formatActivityDate(ev.date);
     const friendlyDateHtml=esc(friendlyDate);
     const rawDate=esc(ev.date||'');
@@ -1064,7 +1114,7 @@ function renderGuideeTimeline(){
       item.classList.add('clickable');
     }
     on(item,'click',evt=>{
-      if(evt.target.closest('button,[data-filter-guidee],[data-filter-consultant]')) return;
+      if(evt.target.closest('button,[data-filter-guidee]')) return;
       if(state.guidees.selectedEventId!==ev.id){
         state.guidees.selectedEventId=ev.id;
         renderGuideeTimeline();
@@ -1083,13 +1133,6 @@ function renderGuideeTimeline(){
   timelineEl.querySelectorAll('[data-filter-guidee]').forEach(btn=>on(btn,'click',e=>{
     const id=e.currentTarget.dataset.filterGuidee;
     if(id){ gotoGuideeTimeline(id); }
-  }));
-  timelineEl.querySelectorAll('[data-filter-consultant]').forEach(btn=>on(btn,'click',e=>{
-    state.guidees.consultant_id=e.currentTarget.dataset.filterConsultant||'';
-    state.guidees.guidee_id='';
-    state.guidees.selectedEventId='';
-    renderGuideeFilters();
-    renderGuideeTimeline();
   }));
   if(shouldScroll){
     const rawId=state.guidees.selectedEventId||'';
@@ -1151,6 +1194,14 @@ const promptInput=$('p-openai-prompt');
 if(promptInput){
   promptInput.value=p.openai_activity_prompt ?? DEFAULT_OPENAI_PROMPT;
 }
+const consultantPromptInput=$('p-openai-consultant');
+if(consultantPromptInput){
+  consultantPromptInput.value=p.openai_consultant_prompt ?? DEFAULT_OPENAI_CONSULTANT_PROMPT;
+}
+const guideePromptInput=$('p-openai-guidee');
+if(guideePromptInput){
+  guideePromptInput.value=p.openai_guidee_prompt ?? DEFAULT_OPENAI_GUIDEE_PROMPT;
+}
 const repoInput=$('p-github-repo');
 if(repoInput){
 const storedRepo=normalizeRepo(store?.meta?.github_repo);
@@ -1172,6 +1223,10 @@ const hashtagsInput=$('p-hashtags');
 p.hashtags_catalog=hashtagsInput?.value.trim()||DEFAULT_HASHTAG_CATALOG;
 const promptInput=$('p-openai-prompt');
 p.openai_activity_prompt=promptInput?.value.trim()||DEFAULT_OPENAI_PROMPT;
+const consultantPromptInput=$('p-openai-consultant');
+p.openai_consultant_prompt=consultantPromptInput?.value.trim()||DEFAULT_OPENAI_CONSULTANT_PROMPT;
+const guideePromptInput=$('p-openai-guidee');
+p.openai_guidee_prompt=guideePromptInput?.value.trim()||DEFAULT_OPENAI_GUIDEE_PROMPT;
 store.meta=store.meta||{};
 const repoInput=$('p-github-repo');
 const repoValue=normalizeRepo(repoInput?.value);
@@ -1228,36 +1283,22 @@ faType.onchange=()=>{
 faConsult.onchange=()=>{ updateFaGuideeOptions(); updateBeneficiairesOptions(); };
 btnFaGoto.onclick=()=>{ const cid=faConsult.value; if(cid){ dlgA.close(); openConsultantModal(cid); } };
 faOpenAI?.addEventListener('click',async()=>{
-  if(faOpenAI.disabled) return;
   const currentText=faDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
   const params=store?.params||DEFAULT_PARAMS;
   const template=params.openai_activity_prompt||DEFAULT_OPENAI_PROMPT;
   const typeMeta=TYPE_META[faType.value]||{label:faType.value};
-  const prompt=template
-    .replace(/{{activity_type}}/g,typeMeta.label||faType.value)
-    .replace(/{{activity_description}}/g,currentText);
-  faOpenAI.disabled=true;
-  const originalLabel=faOpenAI.textContent;
-  faOpenAI.textContent='…';
-  try{
-    const summary=await requestOpenAISummary(prompt);
-    if(summary){
-      faDesc.value=summary;
-      faDesc.dispatchEvent(new Event('input',{bubbles:true}));
-      autoSizeKeepMax(faDesc, ACT_DESC_MAX);
-    }
-  }catch(err){
-    console.error('OpenAI summary error',err);
-    if(err?.message==='missing-openai-key'){
-      alert('Clé OpenAI manquante. Voir la documentation pour la config.');
-    }else{
-      alert("Impossible d'appeler OpenAI pour le moment.");
-    }
-  }finally{
-    faOpenAI.disabled=false;
-    faOpenAI.textContent=originalLabel||'✨';
-  }
+  const consultantName=store.consultants.find(c=>c.id===faConsult.value)?.nom||'';
+  const guideeName=faGuidee?.value ? (store.guidees.find(g=>g.id===faGuidee.value)?.nom||'') : '';
+  const prompt=fillPromptTemplate(template,{
+    activity_type:typeMeta.label||faType.value,
+    activity_description:currentText,
+    consultant_name:consultantName,
+    guidee_name:guideeName,
+    hashtags_catalog:getConfiguredHashtags().join(' ')
+  }).trim();
+  if(!prompt){ alert('Prompt invalide.'); return; }
+  await invokeAIHelper(faOpenAI,faDesc,prompt,ACT_DESC_MAX);
 });
 function updateFaGuideeOptions(preferredId){
   if(!faGuidee) return;
@@ -1348,8 +1389,26 @@ const fgNom=$('fg-nom');
 const fgDebut=$('fg-debut');
 const fgFin=$('fg-fin');
 const fgDesc=$('fg-desc');
+const fgOpenAI=$('fg-openai');
 const btnFgEditConsultant=$('fg-edit-consultant');
 attachHashtagAutocomplete(fgDesc);
+fgOpenAI?.addEventListener('click',async()=>{
+  const currentText=fgDesc.value.trim();
+  if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
+  const params=store?.params||DEFAULT_PARAMS;
+  const template=params.openai_guidee_prompt||DEFAULT_OPENAI_GUIDEE_PROMPT;
+  const consultantId=fgConsult?.value||'';
+  const consultantName=consultantId? (store.consultants.find(c=>c.id===consultantId)?.nom||'') : '';
+  const guideeName=fgNom?.value.trim()||'';
+  const prompt=fillPromptTemplate(template,{
+    guidee_description:currentText,
+    consultant_name:consultantName,
+    guidee_name:guideeName,
+    hashtags_catalog:getConfiguredHashtags().join(' ')
+  }).trim();
+  if(!prompt){ alert('Prompt invalide.'); return; }
+  await invokeAIHelper(fgOpenAI,fgDesc,prompt,GUIDEE_DESC_MAX);
+});
 let guideeInitialSnapshot=null;
 function snapshotGuideeForm(){
   return {
@@ -1424,8 +1483,8 @@ function openGuideeModal(id=null){
   const consultant=store.consultants.find(c=>c.id===(g?.consultant_id||fgConsult.value));
   const defaultEnd=consultant?.date_fin||start;
   fgFin.value=g?.date_fin||defaultEnd;
-  autoSizeKeepMax(fgDesc,{value:fgDesc.scrollHeight});
-  on(fgDesc,'input',()=>autoSizeKeepMax(fgDesc,{value:fgDesc.scrollHeight}),{once:false});
+  autoSizeKeepMax(fgDesc,GUIDEE_DESC_MAX);
+  on(fgDesc,'input',()=>autoSizeKeepMax(fgDesc,GUIDEE_DESC_MAX),{once:false});
   guideeInitialSnapshot=normalizeGuideeSnapshot(snapshotGuideeForm());
   dlgG.showModal();
 }
@@ -1478,11 +1537,31 @@ $$('#dlg-guidee .actions [value="del"]').onclick=(e)=>{
 /* MODALS (CONSULTANT) */
 const dlgC=$('dlg-consultant');
 let currentConsultantId=null;
+const fcNom=$('fc-nom');
+const fcTitre=$('fc-titre');
 const fcDesc=$('fc-desc');
 const fcBoond=$('fc-boond');
+const fcFin=$('fc-fin');
+const fcOpenAI=$('fc-openai');
 const btnFcGoto=$('fc-goto-guidees');
 const btnFcBoondLink=$('fc-boond-link');
 attachHashtagAutocomplete(fcDesc);
+fcOpenAI?.addEventListener('click',async()=>{
+  const currentText=fcDesc.value.trim();
+  if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
+  const params=store?.params||DEFAULT_PARAMS;
+  const template=params.openai_consultant_prompt||DEFAULT_OPENAI_CONSULTANT_PROMPT;
+  const consultantName=fcNom?.value.trim()||'';
+  const missionTitle=fcTitre?.value.trim()||'';
+  const prompt=fillPromptTemplate(template,{
+    consultant_name:consultantName,
+    consultant_mission:missionTitle,
+    consultant_description:currentText,
+    hashtags_catalog:getConfiguredHashtags().join(' ')
+  }).trim();
+  if(!prompt){ alert('Prompt invalide.'); return; }
+  await invokeAIHelper(fcOpenAI,fcDesc,prompt,CONS_DESC_MAX);
+});
 
 function updateBoondLink(idValue){
   if(!btnFcBoondLink) return;
@@ -1499,7 +1578,11 @@ function updateBoondLink(idValue){
 function openConsultantModal(id=null){
 currentConsultantId=id;
 const c=id? store.consultants.find(x=>x.id===id) : {nom:'',titre_mission:'',date_fin:'',boond_id:'',description:''};
-$('fc-nom').value=c?.nom||''; $('fc-titre').value=c?.titre_mission||''; $('fc-fin').value=c?.date_fin||''; if(fcBoond) fcBoond.value=c?.boond_id||''; fcDesc.value=c?.description||'';
+if(fcNom) fcNom.value=c?.nom||'';
+if(fcTitre) fcTitre.value=c?.titre_mission||'';
+if(fcFin) fcFin.value=c?.date_fin||'';
+if(fcBoond) fcBoond.value=c?.boond_id||'';
+if(fcDesc) fcDesc.value=c?.description||'';
 updateBoondLink(c?.boond_id||'');
 autoSizeKeepMax(fcDesc, CONS_DESC_MAX);
 on(fcDesc,'input',()=>autoSizeKeepMax(fcDesc, CONS_DESC_MAX),{once:false});
@@ -1512,9 +1595,11 @@ btnFcGoto.onclick=()=>{ if(currentConsultantId){ dlgC.close(); gotoConsultantGui
 btnDashboardNewConsultant?.addEventListener('click',e=>{ e.preventDefault(); openConsultantModal(); });
 $('form-consultant').onsubmit=(e)=>{
 e.preventDefault();
-const data={ nom:$('fc-nom').value.trim(), titre_mission:$('fc-titre').value.trim()||undefined, date_fin:$('fc-fin').value||undefined, boond_id:fcBoond?.value.trim()||undefined, description:fcDesc.value.trim()||undefined };
-if(!currentConsultantId && !data.nom){ dlgC.close('cancel'); return; }
-if(!data.nom){ alert('Nom requis.'); return; }
+const nomValue=(fcNom?.value||'').trim();
+const titreValue=(fcTitre?.value||'').trim();
+const data={ nom:nomValue, titre_mission:titreValue||undefined, date_fin:fcFin?.value||undefined, boond_id:fcBoond?.value.trim()||undefined, description:fcDesc.value.trim()||undefined };
+if(!currentConsultantId && !nomValue){ dlgC.close('cancel'); return; }
+if(!nomValue){ alert('Nom requis.'); return; }
 if(currentConsultantId){ Object.assign(store.consultants.find(x=>x.id===currentConsultantId),data,{updated_at:nowISO()}); }
 else{ store.consultants.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
 dlgC.close('ok'); save();
