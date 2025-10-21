@@ -292,6 +292,125 @@ const $=id=>document.getElementById(id);
 const $$=sel=>document.querySelector(sel);
 const $$all=sel=>document.querySelectorAll(sel);
 const on=(el,ev,fn,opt)=>el?.addEventListener(ev,fn,opt);
+const authScreen=$('auth-screen');
+const authForm=$('auth-form');
+const authEmailInput=$('auth-email');
+const authPasswordInput=$('auth-password');
+const authErrorBox=$('auth-error');
+const authSubmitBtn=$('auth-submit');
+const authUserInfo=$('auth-user-info');
+const authUserEmail=$('auth-user-email');
+const logoutBtn=$('btn-logout');
+let firebaseApp=null;
+let firebaseAuth=null;
+function toggleAuthScreen(locked){
+  if(locked){
+    document.body.classList.add('auth-locked');
+    authScreen?.classList.remove('hidden');
+  }else{
+    document.body.classList.remove('auth-locked');
+    authScreen?.classList.add('hidden');
+  }
+}
+function setAuthError(message){
+  if(!authErrorBox) return;
+  authErrorBox.textContent=message||'';
+}
+function setAuthLoading(loading){
+  if(authSubmitBtn){
+    authSubmitBtn.disabled=loading;
+    authSubmitBtn.textContent=loading?'Connexion…':'Se connecter';
+  }
+  if(authEmailInput) authEmailInput.disabled=loading;
+  if(authPasswordInput) authPasswordInput.disabled=loading;
+}
+function handleAuthState(user){
+  if(user){
+    if(authUserEmail) authUserEmail.textContent=user.email||'';
+    authUserInfo?.classList.remove('hidden');
+    setAuthError('');
+    setAuthLoading(false);
+    if(authPasswordInput) authPasswordInput.value='';
+    toggleAuthScreen(false);
+  }else{
+    if(authUserEmail) authUserEmail.textContent='';
+    authUserInfo?.classList.add('hidden');
+    setAuthLoading(false);
+    if(authPasswordInput) authPasswordInput.value='';
+    toggleAuthScreen(true);
+  }
+}
+function formatFirebaseError(err){
+  const code=err?.code||'';
+  if(code.includes('user-not-found')||code.includes('wrong-password')) return 'Identifiants invalides.';
+  if(code.includes('too-many-requests')) return 'Trop de tentatives. Réessayez plus tard.';
+  if(code.includes('network-request-failed')) return 'Connexion réseau impossible.';
+  return err?.message?'Connexion impossible : '+err.message:'Connexion impossible.';
+}
+function initializeFirebaseAuth(){
+  if(typeof firebase==='undefined' || !firebase?.auth){
+    console.error('Firebase SDK introuvable.');
+    setAuthError('Configuration Firebase manquante ou SDK indisponible.');
+    toggleAuthScreen(true);
+    return;
+  }
+  if(!window.FIREBASE_CONFIG){
+    console.error('FIREBASE_CONFIG manquant.');
+    setAuthError('Configuration Firebase absente.');
+    toggleAuthScreen(true);
+    return;
+  }
+  try{
+    if(firebase.apps?.length){
+      firebaseApp=firebase.app();
+    }else{
+      firebaseApp=firebase.initializeApp(window.FIREBASE_CONFIG);
+    }
+    firebaseAuth=firebase.auth();
+    firebaseAuth.onAuthStateChanged(handleAuthState,err=>{
+      console.error('Firebase auth state error',err);
+      setAuthError('Impossible de vérifier la session.');
+      toggleAuthScreen(true);
+    });
+  }catch(err){
+    console.error('Firebase init error',err);
+    setAuthError('Initialisation Firebase impossible.');
+    toggleAuthScreen(true);
+  }
+}
+on(authForm,'submit',async(evt)=>{
+  evt.preventDefault();
+  if(!firebaseAuth){
+    setAuthError('Firebase non initialisé.');
+    return;
+  }
+  const email=(authEmailInput?.value||'').trim();
+  const password=authPasswordInput?.value||'';
+  if(!email||!password){
+    setAuthError('Renseignez votre e-mail et mot de passe.');
+    return;
+  }
+  setAuthError('');
+  setAuthLoading(true);
+  try{
+    await firebaseAuth.signInWithEmailAndPassword(email,password);
+  }catch(err){
+    console.error('Firebase login error',err);
+    setAuthError(formatFirebaseError(err));
+    setAuthLoading(false);
+  }
+});
+on(logoutBtn,'click',async()=>{
+  if(!firebaseAuth) return;
+  try{
+    await firebaseAuth.signOut();
+  }catch(err){
+    console.error('Firebase logout error',err);
+    alert('Impossible de se déconnecter.');
+  }
+});
+toggleAuthScreen(true);
+initializeFirebaseAuth();
 const formatHours=(value)=>{ const num=Number(value); if(!Number.isFinite(num)) return '0'; return num.toString().replace('.',','); };
 const deepClone=(obj)=>JSON.parse(JSON.stringify(obj));
 function formatActivityDate(dateStr){

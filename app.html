@@ -1,5 +1,15 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>SHERPA — MVP v5.0.1</title><link rel="stylesheet" href="app.css"/></head><body>
-<header><div class="wrap"><nav class="tabs" id="tabs"></nav></div></header>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>SHERPA — MVP v5.0.1</title><link rel="stylesheet" href="app.css"/></head><body class="auth-locked">
+<div id="auth-screen" class="auth-screen">
+  <form id="auth-form" class="auth-card">
+    <h1>Connexion</h1>
+    <p class="auth-intro">Identifiez-vous pour accéder à Sherpa.</p>
+    <label class="auth-field">Adresse e-mail<input type="email" id="auth-email" autocomplete="email" required/></label>
+    <label class="auth-field">Mot de passe<input type="password" id="auth-password" autocomplete="current-password" required/></label>
+    <div id="auth-error" class="auth-error" role="alert" aria-live="assertive"></div>
+    <button type="submit" id="auth-submit" class="btn primary auth-submit">Se connecter</button>
+  </form>
+</div>
+<header><div class="wrap header-bar"><nav class="tabs" id="tabs"></nav><div id="auth-user-info" class="auth-user-info hidden"><span id="auth-user-email" class="auth-user-email"></span><button class="btn small" id="btn-logout" type="button">Se déconnecter</button></div></div></header>
 <main class="wrap">
 <!-- DASHBOARD -->
 <section class="view" id="view-dashboard">
@@ -231,6 +241,8 @@
 </div>
 <div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="config.js" defer></script>
 <script src="app.js" defer></script>
 </body></html>
