@@ -1,0 +1,112 @@
+name: Sync issue JSON to data.json
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write   # 👈 nécessaire pour fermer/commenter
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Create merge script
+        run: |
+          cat > merge.mjs <<'EOF'
+          import fs from 'fs';
+
+          // ---- Helpers
+          function extractJson(text) {
+            if (!text) throw new Error('Issue body is empty');
+            const fence = text.match(/```json\s*([\s\S]*?)```/i);
+            if (fence) return JSON.parse(fence[1]);
+            const i = text.indexOf('{');
+            if (i >= 0) {
+              const slice = text.slice(i);
+              try { return JSON.parse(slice); } catch {}
+            }
+            throw new Error('No JSON found in issue body (raw or ```json fenced).');
+          }
+
+          const newer = (a, b) => {
+            const da = Date.parse(a || ''), db = Date.parse(b || '');
+            if (isNaN(da) && isNaN(db)) return true;
+            if (isNaN(db)) return true;
+            if (isNaN(da)) return false;
+            return da > db;
+          };
+          const asMap = (arr=[]) => new Map(arr.filter(x=>x && x.id).map(x=>[x.id,x]));
+
+          function mergeCollection(baseArr=[], diffArr=[]) {
+            const map = asMap(baseArr);
+            for (const change of diffArr) {
+              if (!change?.id) continue;
+              const status = (change._status||'').toLowerCase();
+              if (status === 'deleted') { map.delete(change.id); continue; }
+              const cur = map.get(change.id);
+              if (!cur) { map.set(change.id, change); continue; }
+              const cUpd = cur.updated_at || cur.updatedAt || cur.modified_at;
+              const nUpd = change.updated_at || change.updatedAt || change.modified_at;
+              if (newer(nUpd, cUpd)) map.set(change.id, change);
+            }
+            return [...map.values()];
+          }
+
+          const ISSUE_BODY = process.env.ISSUE_BODY || '';
+          const DATA_PATH = process.env.DATA_PATH || 'data.json';
+
+          const diff = extractJson(ISSUE_BODY);
+
+          let base = { consultants: [], activities: [], guidees: [], params: {} };
+          if (fs.existsSync(DATA_PATH)) {
+            const raw = fs.readFileSync(DATA_PATH, 'utf8').trim();
+            if (raw) base = JSON.parse(raw);
+          }
+
+          base.consultants = mergeCollection(base.consultants, diff.consultants || []);
+          base.activities  = mergeCollection(base.activities,  diff.activities  || []);
+          base.guidees     = mergeCollection(base.guidees,     diff.guidees     || []);
+          base.params      = { ...(base.params||{}), ...(diff.params||{}) };
+
+          fs.writeFileSync(DATA_PATH, JSON.stringify(base, null, 2) + '\n', 'utf8');
+          EOF
+
+      - name: Merge from issue body into data.json
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          DATA_PATH: data.json
+        run: node merge.mjs
+
+      - name: Commit & push if changed
+        id: commit
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changes to commit."
+          else
+            git add data.json
+            git commit -m "chore(data): merge diff from issue #${{ github.event.issue.number }}"
+            git push
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment and close issue
+        if: always()
+        uses: peter-evans/close-issue@v3
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          comment: |
+            ✅ Données fusionnées dans **data.json**
+            - Fichier mis à jour : ${{ steps.commit.outputs.changed }}
+            - Action automatique effectuée par 🤖 *GitHub Actions*
