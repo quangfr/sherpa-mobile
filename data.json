@@ -10384,7 +10384,7 @@
       "nom": "Backlog Refinement",
       "description": "Compétence Product Owner : Backlog Refinement",
       "date_debut": "2024-07-10",
-      "date_fin": "2024-11-15",
+      "date_fin": "2026-04-05",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10395,7 +10395,7 @@
       "nom": "Backlog Refinement",
       "description": "Compétence Product Owner : Backlog Refinement",
       "date_debut": "2024-07-02",
-      "date_fin": "2024-11-14",
+      "date_fin": "2025-01-15",
       "thematique_id": "experience-client",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10406,7 +10406,7 @@
       "nom": "Backlog Refinement",
       "description": "Compétence Product Owner : Backlog Refinement",
       "date_debut": "2024-10-20",
-      "date_fin": "2024-12-30",
+      "date_fin": "2026-01-04",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10417,7 +10417,7 @@
       "nom": "User Story Mapping",
       "description": "Compétence Product Owner : User Story Mapping",
       "date_debut": "2024-05-10",
-      "date_fin": "2024-09-14",
+      "date_fin": "2026-04-04",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10439,7 +10439,7 @@
       "nom": "User Story Mapping",
       "description": "Compétence Product Owner : User Story Mapping",
       "date_debut": "2024-05-10",
-      "date_fin": "2024-10-26",
+      "date_fin": "2025-07-17",
       "thematique_id": "experience-client",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10450,7 +10450,7 @@
       "nom": "User Story Mapping",
       "description": "Compétence Product Owner : User Story Mapping",
       "date_debut": "2024-03-08",
-      "date_fin": "2024-08-11",
+      "date_fin": "2026-02-09",
       "thematique_id": "vision-produit",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10461,7 +10461,7 @@
       "nom": "User Story Mapping",
       "description": "Compétence Product Owner : User Story Mapping",
       "date_debut": "2024-08-07",
-      "date_fin": "2024-09-15",
+      "date_fin": "2024-10-03",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10483,7 +10483,7 @@
       "nom": "Roadmap Ownership",
       "description": "Compétence Product Owner : Roadmap Ownership",
       "date_debut": "2024-07-01",
-      "date_fin": "2024-11-30",
+      "date_fin": "2026-04-07",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10494,7 +10494,7 @@
       "nom": "Roadmap Ownership",
       "description": "Compétence Product Owner : Roadmap Ownership",
       "date_debut": "2024-01-23",
-      "date_fin": "2024-04-11",
+      "date_fin": "2026-04-06",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10505,7 +10505,7 @@
       "nom": "Roadmap Ownership",
       "description": "Compétence Product Owner : Roadmap Ownership",
       "date_debut": "2024-02-09",
-      "date_fin": "2024-08-03",
+      "date_fin": "2026-04-06",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10516,7 +10516,7 @@
       "nom": "Sprint Planning",
       "description": "Compétence Product Owner : Sprint Planning",
       "date_debut": "2024-01-25",
-      "date_fin": "2024-08-12",
+      "date_fin": "2026-04-04",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10527,7 +10527,7 @@
       "nom": "Sprint Planning",
       "description": "Compétence Product Owner : Sprint Planning",
       "date_debut": "2024-12-08",
-      "date_fin": "2025-06-23",
+      "date_fin": "2026-02-08",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10538,7 +10538,7 @@
       "nom": "Sprint Planning",
       "description": "Compétence Product Owner : Sprint Planning",
       "date_debut": "2024-02-19",
-      "date_fin": "2024-07-30",
+      "date_fin": "2025-11-12",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10549,7 +10549,7 @@
       "nom": "Sprint Planning",
       "description": "Compétence Product Owner : Sprint Planning",
       "date_debut": "2024-07-07",
-      "date_fin": "2024-10-08",
+      "date_fin": "2025-09-12",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10560,7 +10560,7 @@
       "nom": "Sprint Planning",
       "description": "Compétence Product Owner : Sprint Planning",
       "date_debut": "2024-09-08",
-      "date_fin": "2025-01-16",
+      "date_fin": "2025-12-17",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10571,7 +10571,7 @@
       "nom": "Sprint Planning",
       "description": "Compétence Product Owner : Sprint Planning",
       "date_debut": "2024-02-20",
-      "date_fin": "2024-08-20",
+      "date_fin": "2024-11-16",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10582,7 +10582,7 @@
       "nom": "Stakeholder Management",
       "description": "Compétence Product Owner : Stakeholder Management",
       "date_debut": "2024-08-20",
-      "date_fin": "2025-01-22",
+      "date_fin": "2026-04-06",
       "thematique_id": "vision-produit",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10604,7 +10604,7 @@
       "nom": "Stakeholder Management",
       "description": "Compétence Product Owner : Stakeholder Management",
       "date_debut": "2024-06-21",
-      "date_fin": "2024-09-21",
+      "date_fin": "2025-09-15",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10615,7 +10615,7 @@
       "nom": "Stakeholder Management",
       "description": "Compétence Product Owner : Stakeholder Management",
       "date_debut": "2024-05-17",
-      "date_fin": "2024-09-09",
+      "date_fin": "2026-01-24",
       "thematique_id": "experience-client",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10626,7 +10626,7 @@
       "nom": "Release Management",
       "description": "Compétence Product Owner : Release Management",
       "date_debut": "2024-08-03",
-      "date_fin": "2024-12-19",
+      "date_fin": "2026-04-04",
       "thematique_id": "vision-produit",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10637,7 +10637,7 @@
       "nom": "Release Management",
       "description": "Compétence Product Owner : Release Management",
       "date_debut": "2024-01-24",
-      "date_fin": "2024-06-13",
+      "date_fin": "2026-04-05",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10648,7 +10648,7 @@
       "nom": "Release Management",
       "description": "Compétence Product Owner : Release Management",
       "date_debut": "2024-02-07",
-      "date_fin": "2024-08-07",
+      "date_fin": "2026-04-05",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10659,7 +10659,7 @@
       "nom": "Definition of Done/Ready",
       "description": "Compétence Product Owner : Definition of Done/Ready",
       "date_debut": "2024-02-06",
-      "date_fin": "2024-05-09",
+      "date_fin": "2026-03-16",
       "thematique_id": "accompagnement",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10670,7 +10670,7 @@
       "nom": "Definition of Done/Ready",
       "description": "Compétence Product Owner : Definition of Done/Ready",
       "date_debut": "2024-03-05",
-      "date_fin": "2024-09-29",
+      "date_fin": "2026-02-09",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10681,7 +10681,7 @@
       "nom": "Definition of Done/Ready",
       "description": "Compétence Product Owner : Definition of Done/Ready",
       "date_debut": "2024-02-22",
-      "date_fin": "2024-04-25",
+      "date_fin": "2025-12-15",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10692,7 +10692,7 @@
       "nom": "Prioritization (WSJF)",
       "description": "Compétence Product Owner : Prioritization (WSJF)",
       "date_debut": "2024-01-16",
-      "date_fin": "2024-03-22",
+      "date_fin": "2026-03-20",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10703,7 +10703,7 @@
       "nom": "Prioritization (WSJF)",
       "description": "Compétence Product Owner : Prioritization (WSJF)",
       "date_debut": "2024-07-12",
-      "date_fin": "2024-11-20",
+      "date_fin": "2024-12-19",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10714,7 +10714,7 @@
       "nom": "Prioritization (WSJF)",
       "description": "Compétence Product Owner : Prioritization (WSJF)",
       "date_debut": "2024-02-27",
-      "date_fin": "2024-06-23",
+      "date_fin": "2026-04-02",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10725,7 +10725,7 @@
       "nom": "Prioritization (WSJF)",
       "description": "Compétence Product Owner : Prioritization (WSJF)",
       "date_debut": "2024-10-13",
-      "date_fin": "2025-03-16",
+      "date_fin": "2025-09-01",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10747,7 +10747,7 @@
       "nom": "Prioritization (WSJF)",
       "description": "Compétence Product Owner : Prioritization (WSJF)",
       "date_debut": "2024-05-22",
-      "date_fin": "2024-09-24",
+      "date_fin": "2025-05-15",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10758,7 +10758,7 @@
       "nom": "KPI & Metrics",
       "description": "Compétence Product Owner : KPI & Metrics",
       "date_debut": "2024-05-01",
-      "date_fin": "2024-11-13",
+      "date_fin": "2026-03-19",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10791,7 +10791,7 @@
       "nom": "Risk Management",
       "description": "Compétence Product Owner : Risk Management",
       "date_debut": "2024-11-14",
-      "date_fin": "2025-04-16",
+      "date_fin": "2026-03-20",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10802,7 +10802,7 @@
       "nom": "Risk Management",
       "description": "Compétence Product Owner : Risk Management",
       "date_debut": "2024-02-15",
-      "date_fin": "2024-08-08",
+      "date_fin": "2026-02-10",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10813,7 +10813,7 @@
       "nom": "Risk Management",
       "description": "Compétence Product Owner : Risk Management",
       "date_debut": "2024-03-23",
-      "date_fin": "2024-07-04",
+      "date_fin": "2025-09-22",
       "thematique_id": "vision-produit",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10824,7 +10824,7 @@
       "nom": "Risk Management",
       "description": "Compétence Product Owner : Risk Management",
       "date_debut": "2024-04-30",
-      "date_fin": "2024-11-15",
+      "date_fin": "2025-06-23",
       "thematique_id": "experience-client",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10835,7 +10835,7 @@
       "nom": "Risk Management",
       "description": "Compétence Product Owner : Risk Management",
       "date_debut": "2024-06-27",
-      "date_fin": "2024-09-12",
+      "date_fin": "2025-08-14",
       "thematique_id": "vision-produit",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10846,7 +10846,7 @@
       "nom": "Discovery & Interviews",
       "description": "Compétence Product Owner : Discovery & Interviews",
       "date_debut": "2024-12-20",
-      "date_fin": "2025-06-02",
+      "date_fin": "2026-03-19",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10868,7 +10868,7 @@
       "nom": "Discovery & Interviews",
       "description": "Compétence Product Owner : Discovery & Interviews",
       "date_debut": "2024-04-14",
-      "date_fin": "2024-06-21",
+      "date_fin": "2026-03-15",
       "thematique_id": "accompagnement",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10879,7 +10879,7 @@
       "nom": "Discovery & Interviews",
       "description": "Compétence Product Owner : Discovery & Interviews",
       "date_debut": "2024-10-20",
-      "date_fin": "2025-04-20",
+      "date_fin": "2025-04-28",
       "thematique_id": "excellence-technique",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10890,7 +10890,7 @@
       "nom": "Discovery & Interviews",
       "description": "Compétence Product Owner : Discovery & Interviews",
       "date_debut": "2024-05-29",
-      "date_fin": "2024-08-25",
+      "date_fin": "2025-08-20",
       "thematique_id": "experience-client",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10901,7 +10901,7 @@
       "nom": "Discovery & Interviews",
       "description": "Compétence Product Owner : Discovery & Interviews",
       "date_debut": "2024-12-24",
-      "date_fin": "2025-02-27",
+      "date_fin": "2026-01-02",
       "thematique_id": "excellence-technique",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10912,7 +10912,7 @@
       "nom": "Value Proposition",
       "description": "Compétence Product Owner : Value Proposition",
       "date_debut": "2024-05-10",
-      "date_fin": "2024-11-06",
+      "date_fin": "2026-04-04",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10923,7 +10923,7 @@
       "nom": "Value Proposition",
       "description": "Compétence Product Owner : Value Proposition",
       "date_debut": "2024-03-08",
-      "date_fin": "2024-06-09",
+      "date_fin": "2025-07-02",
       "thematique_id": "vision-produit",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10934,7 +10934,7 @@
       "nom": "Value Proposition",
       "description": "Compétence Product Owner : Value Proposition",
       "date_debut": "2024-11-16",
-      "date_fin": "2025-03-10",
+      "date_fin": "2025-07-17",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10945,7 +10945,7 @@
       "nom": "Value Proposition",
       "description": "Compétence Product Owner : Value Proposition",
       "date_debut": "2024-11-29",
-      "date_fin": "2025-04-17",
+      "date_fin": "2026-02-08",
       "thematique_id": "experience-client",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10956,7 +10956,7 @@
       "nom": "Value Proposition",
       "description": "Compétence Product Owner : Value Proposition",
       "date_debut": "2024-01-22",
-      "date_fin": "2024-04-27",
+      "date_fin": "2024-12-25",
       "thematique_id": "accompagnement",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10967,7 +10967,7 @@
       "nom": "Acceptance Criteria",
       "description": "Compétence Product Owner : Acceptance Criteria",
       "date_debut": "2024-10-15",
-      "date_fin": "2025-03-15",
+      "date_fin": "2026-04-07",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10978,7 +10978,7 @@
       "nom": "Acceptance Criteria",
       "description": "Compétence Product Owner : Acceptance Criteria",
       "date_debut": "2024-11-18",
-      "date_fin": "2025-04-08",
+      "date_fin": "2025-06-03",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -10989,7 +10989,7 @@
       "nom": "Acceptance Criteria",
       "description": "Compétence Product Owner : Acceptance Criteria",
       "date_debut": "2024-08-02",
-      "date_fin": "2024-09-13",
+      "date_fin": "2025-11-29",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11000,7 +11000,7 @@
       "nom": "Acceptance Criteria",
       "description": "Compétence Product Owner : Acceptance Criteria",
       "date_debut": "2024-04-13",
-      "date_fin": "2024-10-28",
+      "date_fin": "2026-04-02",
       "thematique_id": "vision-produit",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11011,7 +11011,7 @@
       "nom": "Acceptance Criteria",
       "description": "Compétence Product Owner : Acceptance Criteria",
       "date_debut": "2024-05-27",
-      "date_fin": "2024-07-22",
+      "date_fin": "2025-10-26",
       "thematique_id": "experience-client",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11022,7 +11022,7 @@
       "nom": "Acceptance Criteria",
       "description": "Compétence Product Owner : Acceptance Criteria",
       "date_debut": "2024-04-16",
-      "date_fin": "2024-08-12",
+      "date_fin": "2026-01-23",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11033,7 +11033,7 @@
       "nom": "Workflow & Processes",
       "description": "Compétence Product Owner : Workflow & Processes",
       "date_debut": "2024-12-15",
-      "date_fin": "2025-04-09",
+      "date_fin": "2026-04-06",
       "thematique_id": "accompagnement",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11044,7 +11044,7 @@
       "nom": "Workflow & Processes",
       "description": "Compétence Product Owner : Workflow & Processes",
       "date_debut": "2024-09-07",
-      "date_fin": "2025-02-26",
+      "date_fin": "2025-11-27",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11055,7 +11055,7 @@
       "nom": "Workflow & Processes",
       "description": "Compétence Product Owner : Workflow & Processes",
       "date_debut": "2024-05-08",
-      "date_fin": "2024-09-12",
+      "date_fin": "2025-03-10",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11066,7 +11066,7 @@
       "nom": "Technical Debt Triage",
       "description": "Compétence Product Owner : Technical Debt Triage",
       "date_debut": "2024-01-03",
-      "date_fin": "2024-07-02",
+      "date_fin": "2026-04-08",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11077,7 +11077,7 @@
       "nom": "Technical Debt Triage",
       "description": "Compétence Product Owner : Technical Debt Triage",
       "date_debut": "2024-03-30",
-      "date_fin": "2024-06-09",
+      "date_fin": "2026-01-23",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11088,7 +11088,7 @@
       "nom": "Technical Debt Triage",
       "description": "Compétence Product Owner : Technical Debt Triage",
       "date_debut": "2024-06-24",
-      "date_fin": "2024-12-03",
+      "date_fin": "2025-10-26",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11099,7 +11099,7 @@
       "nom": "Change Management",
       "description": "Compétence Product Owner : Change Management",
       "date_debut": "2024-12-11",
-      "date_fin": "2025-02-20",
+      "date_fin": "2026-04-07",
       "thematique_id": "experience-client",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11121,7 +11121,7 @@
       "nom": "Change Management",
       "description": "Compétence Product Owner : Change Management",
       "date_debut": "2024-06-02",
-      "date_fin": "2024-10-15",
+      "date_fin": "2026-01-04",
       "thematique_id": "vision-produit",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11132,7 +11132,7 @@
       "nom": "Change Management",
       "description": "Compétence Product Owner : Change Management",
       "date_debut": "2024-06-27",
-      "date_fin": "2025-01-16",
+      "date_fin": "2025-11-28",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11143,7 +11143,7 @@
       "nom": "PO Communication",
       "description": "Compétence Product Owner : PO Communication",
       "date_debut": "2024-08-08",
-      "date_fin": "2024-09-14",
+      "date_fin": "2026-03-20",
       "thematique_id": "experience-client",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11154,7 +11154,7 @@
       "nom": "PO Communication",
       "description": "Compétence Product Owner : PO Communication",
       "date_debut": "2024-09-30",
-      "date_fin": "2024-12-18",
+      "date_fin": "2026-02-07",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11165,7 +11165,7 @@
       "nom": "PO Communication",
       "description": "Compétence Product Owner : PO Communication",
       "date_debut": "2024-07-29",
-      "date_fin": "2024-09-15",
+      "date_fin": "2025-12-16",
       "thematique_id": "excellence-technique",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11176,7 +11176,7 @@
       "nom": "PO Communication",
       "description": "Compétence Product Owner : PO Communication",
       "date_debut": "2024-09-11",
-      "date_fin": "2025-02-15",
+      "date_fin": "2026-01-07",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11187,7 +11187,7 @@
       "nom": "Incident Triage",
       "description": "Compétence Product Owner : Incident Triage",
       "date_debut": "2024-11-13",
-      "date_fin": "2025-04-24",
+      "date_fin": "2026-02-25",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11198,7 +11198,7 @@
       "nom": "Incident Triage",
       "description": "Compétence Product Owner : Incident Triage",
       "date_debut": "2024-03-08",
-      "date_fin": "2024-08-21",
+      "date_fin": "2024-08-25",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11220,7 +11220,7 @@
       "nom": "Incident Triage",
       "description": "Compétence Product Owner : Incident Triage",
       "date_debut": "2024-08-21",
-      "date_fin": "2024-09-22",
+      "date_fin": "2025-01-22",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11231,7 +11231,7 @@
       "nom": "Incident Triage",
       "description": "Compétence Product Owner : Incident Triage",
       "date_debut": "2024-03-04",
-      "date_fin": "2024-07-31",
+      "date_fin": "2025-12-20",
       "thematique_id": "pilotage",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11242,7 +11242,7 @@
       "nom": "Incident Triage",
       "description": "Compétence Product Owner : Incident Triage",
       "date_debut": "2024-01-08",
-      "date_fin": "2024-03-26",
+      "date_fin": "2026-02-27",
       "thematique_id": "vision-produit",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11253,7 +11253,7 @@
       "nom": "Data-driven Decisions",
       "description": "Compétence Product Owner : Data-driven Decisions",
       "date_debut": "2024-08-30",
-      "date_fin": "2025-02-27",
+      "date_fin": "2026-04-04",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11264,7 +11264,7 @@
       "nom": "Data-driven Decisions",
       "description": "Compétence Product Owner : Data-driven Decisions",
       "date_debut": "2024-01-15",
-      "date_fin": "2024-05-01",
+      "date_fin": "2025-06-19",
       "thematique_id": "excellence-technique",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11275,7 +11275,7 @@
       "nom": "Data-driven Decisions",
       "description": "Compétence Product Owner : Data-driven Decisions",
       "date_debut": "2024-09-08",
-      "date_fin": "2025-03-06",
+      "date_fin": "2025-12-18",
       "thematique_id": "accompagnement",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11286,7 +11286,7 @@
       "nom": "Data-driven Decisions",
       "description": "Compétence Product Owner : Data-driven Decisions",
       "date_debut": "2024-01-15",
-      "date_fin": "2024-06-11",
+      "date_fin": "2026-03-15",
       "thematique_id": "autre",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11308,7 +11308,7 @@
       "nom": "Data-driven Decisions",
       "description": "Compétence Product Owner : Data-driven Decisions",
       "date_debut": "2024-01-02",
-      "date_fin": "2024-07-23",
+      "date_fin": "2026-03-01",
       "thematique_id": "accompagnement",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11319,7 +11319,7 @@
       "nom": "UX Collaboration",
       "description": "Compétence Product Owner : UX Collaboration",
       "date_debut": "2024-04-29",
-      "date_fin": "2024-09-18",
+      "date_fin": "2026-01-25",
       "thematique_id": "vision-produit",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11330,7 +11330,7 @@
       "nom": "UX Collaboration",
       "description": "Compétence Product Owner : UX Collaboration",
       "date_debut": "2024-04-13",
-      "date_fin": "2024-06-09",
+      "date_fin": "2024-07-03",
       "thematique_id": "experience-client",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11341,7 +11341,7 @@
       "nom": "UX Collaboration",
       "description": "Compétence Product Owner : UX Collaboration",
       "date_debut": "2024-05-15",
-      "date_fin": "2024-11-08",
+      "date_fin": "2025-07-08",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11352,7 +11352,7 @@
       "nom": "UX Collaboration",
       "description": "Compétence Product Owner : UX Collaboration",
       "date_debut": "2024-04-17",
-      "date_fin": "2024-05-25",
+      "date_fin": "2025-06-09",
       "thematique_id": "delivery",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11363,7 +11363,7 @@
       "nom": "UX Collaboration",
       "description": "Compétence Product Owner : UX Collaboration",
       "date_debut": "2024-07-18",
-      "date_fin": "2024-09-16",
+      "date_fin": "2026-02-27",
       "thematique_id": "innovation",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"
@@ -11374,7 +11374,7 @@
       "nom": "UX Collaboration",
       "description": "Compétence Product Owner : UX Collaboration",
       "date_debut": "2024-11-05",
-      "date_fin": "2025-04-30",
+      "date_fin": "2026-04-03",
       "thematique_id": "accompagnement",
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:10:00Z"

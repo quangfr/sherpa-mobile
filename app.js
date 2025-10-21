@@ -382,6 +382,13 @@ VERBATIM:{emoji:'💬', pill:'verb', label:'Verbatim'},
 AVIS:{emoji:'🗣️', pill:'avis', label:'Avis'},
 ALERTE:{emoji:'🚨', pill:'alerte', label:'Alerte'}
 };
+const TYPE_COLORS={
+  ACTION_ST_BERNARD:'var(--stb-f)',
+  NOTE:'var(--note-f)',
+  VERBATIM:'var(--verb-f)',
+  AVIS:'var(--avis-f)',
+  ALERTE:'var(--alerte-f)'
+};
 function renderActivities(){
 refreshMonthOptions();
 refreshThematiqueOptions();
@@ -421,6 +428,7 @@ const c=store.consultants.find(x=>x.id===a.consultant_id);
 const g=a.guidee_id ? store.guidees.find(x=>x.id===a.guidee_id):null;
 const theme=g? getThematique(g.thematique_id):null;
 const meta=TYPE_META[a.type]||{emoji:'❓',pill:'',label:a.type};
+const typeColor=TYPE_COLORS[a.type]||'var(--accent)';
 const heuresBadge = a.type==='ACTION_ST_BERNARD' ? `<span class="hours-badge"><b>${esc(formatHours(a.heures??0))}h</b></span>`:'';
 const descText=a.description||'';
 const descHtml=esc(descText);
@@ -439,49 +447,56 @@ const consultantButton=c?.id?`<span class="click-span" data-filter-consultant="$
 const consultantDesktop=c?.id?`<span class="click-span" data-filter-consultant="${c.id}"><b>${esc(c.nom)}</b></span>`:`<span><b>${esc(c?.nom||'—')}</b></span>`;
 const headerTitle=g?`${themeEmoji} ${guideeName}`:'';
 const headerLine=`<div class="clamp-1 objective-line"${headerTitle?` title="${esc(headerTitle)}"`:''}>${headerSegment || '—'}</div>`;
-const descLine=descText?`<div class="activity-desc${isSelected?'':' clamp-3'}" title="${descHtml}">${headerSegment? '— ' : ''}${descHtml}</div>`:'';
+const descLine=descText?`<div class="activity-desc${isSelected?'':' clamp-5'}" title="${descHtml}">${headerSegment? '— ' : ''}${descHtml}</div>`:'';
+const inlineEditButton=()=>`<button class="btn ghost small row-edit" data-inline-edit="${a.id}" title="Éditer l'activité">✏️</button>`;
+const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
+const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
 const tr=document.createElement('tr'); tr.classList.add('clickable');
+tr.style.setProperty('--selection-color',typeColor);
 if(isSelected) tr.classList.add('selected');
 tr.innerHTML = mobile
 ? `
 <td class="mobile-only">
-<div class="row" style="gap:8px">
-<span class="pill ${meta.pill}">${meta.emoji} ${meta.label}</span>
-${consultantButton}
-<span class="sub">· ${friendlyDateHtml}</span>
-</div>
-<div class="mobile-desc${isSelected?' expanded':''}" data-act="${a.id}">
-<div class="text${isSelected?'':' clamp-8'}">${mobileContent}</div>
-</div>
+  <div class="row" style="gap:8px;justify-content:space-between;align-items:flex-start">
+    <div class="row" style="gap:8px">
+      <span class="pill ${meta.pill}">${meta.emoji} ${meta.label}</span>
+      ${consultantButton}
+    </div>
+    ${dateLineMobile}
+  </div>
+  <div class="mobile-desc${isSelected?' expanded':''}" data-act="${a.id}">
+    <div class="text${isSelected?'':' clamp-5'}">${mobileContent}</div>
+  </div>
 </td>`
 : `
 <td class="desktop-only">
-<div><span class="pill ${meta.pill} type-pill">${meta.emoji} ${meta.label}</span></div>
-<div class="sub" title="${rawDateTitle}">${friendlyDateHtml}</div>
+  <div><span class="pill ${meta.pill} type-pill">${meta.emoji} ${meta.label}</span></div>
+  ${dateLineDesktop}
 </td>
 <td class="desktop-only">
-${consultantDesktop}
-<div class="sub">${esc(c?.titre_mission||'—')}</div>
+  ${consultantDesktop}
+  <div class="sub">${esc(c?.titre_mission||'—')}</div>
 </td>
 <td class="main desktop-only">
-${headerLine}
-${descLine}
+  ${headerLine}
+  ${descLine}
 </td>
 <td class="desktop-only nowrap actions-cell"><button class="btn small" data-edit="${a.id}" title="Éditer">✏️</button><button class="btn small danger" data-del="${a.id}" title="Supprimer">🗑️</button></td>`;
 on(tr,'click',(e)=>{
   if(e.target.closest('button,[data-filter-consultant],[data-goto-guidee]')) return;
-  if(state.activities.selectedId===a.id){
-    openActivityModal(a.id);
-  }else{
+  if(state.activities.selectedId!==a.id){
     state.activities.selectedId=a.id;
     renderActivities();
   }
 });
 tr.querySelectorAll('[data-filter-consultant]').forEach(el=>on(el,'click',(e)=>{ e.stopPropagation(); const cid=e.currentTarget.dataset.filterConsultant; if(cid) setConsultantFilter(cid); }));
 tr.querySelectorAll('[data-goto-guidee]').forEach(el=>on(el,'click',(e)=>{ e.stopPropagation(); const gid=e.currentTarget.dataset.gotoGuidee; if(gid) gotoGuideeTimeline(gid); }));
+tr.querySelectorAll('[data-inline-edit]').forEach(btn=>on(btn,'click',(e)=>{ e.stopPropagation(); openActivityModal(a.id); }));
 if(!mobile){
-on(tr.querySelector('[data-edit]'),'click',(e)=>{ e.stopPropagation(); openActivityModal(a.id); });
-on(tr.querySelector('[data-del]'),'click',(e)=>{ e.stopPropagation(); if(confirm('Supprimer cette activité ?')){ store.activities=store.activities.filter(x=>x.id!==a.id); save(); } });
+  const editBtn=tr.querySelector('[data-edit]');
+  const delBtn=tr.querySelector('[data-del]');
+  on(editBtn,'click',(e)=>{ e.stopPropagation(); openActivityModal(a.id); });
+  on(delBtn,'click',(e)=>{ e.stopPropagation(); if(confirm('Supprimer cette activité ?')){ store.activities=store.activities.filter(x=>x.id!==a.id); save(); } });
 }
 actTBody.appendChild(tr);
 });
@@ -519,7 +534,7 @@ function updateGuideeProgress(event){
   const elapsed=Math.max(0,Math.min(totalDays,rawElapsed));
   const pct=totalDays===0?100:Math.round((elapsed/totalDays)*100);
   if(guideeProgressFill) guideeProgressFill.style.width=`${pct}%`;
-  if(guideeProgressLabel) guideeProgressLabel.textContent=`${pct}% · ${elapsed}/${totalDays} j`;
+  if(guideeProgressLabel) guideeProgressLabel.textContent=`${pct}%`;
   guideeProgress.classList.remove('hidden');
   guideeProgress.style.setProperty('--progress-color',event.color||'#2563eb');
 }
@@ -567,7 +582,7 @@ function renderGuideeTimeline(){
   const today=new Date();
   const consultantId=state.guidees.consultant_id;
   const guideeId=state.guidees.guidee_id;
-  const hideActions=!!consultantId && !guideeId;
+  const hideActions=!guideeId;
   const guidees=store.guidees
     .filter(g=>!guideeId || g.id===guideeId)
     .filter(g=>!consultantId || g.consultant_id===consultantId);
@@ -668,16 +683,23 @@ function renderGuideeTimeline(){
     const item=document.createElement('div');
     const classes=['timeline-item', ev.status];
     if(!markerOnLeft) classes.push('timeline-item-alt');
-    if(ev.id===state.guidees.selectedEventId) classes.push('selected');
+    const isSelected=ev.id===state.guidees.selectedEventId;
+    if(isSelected) classes.push('selected');
     item.className=classes.join(' ');
     item.dataset.eventId=ev.id;
-    item.style.setProperty('--timeline-color',ev.color||'#6366f1');
+    const color=ev.color||'#6366f1';
+    item.style.setProperty('--timeline-color',color);
+    item.style.setProperty('--selection-color',color);
     const consultantHtml=consultant
       ? `<span class="click-span bold" data-filter-consultant="${consultant.id}">${esc(consultant.nom)}</span>`
       : `<span class="bold">${esc(consultant?.nom||'—')}</span>`;
-    const friendlyDate=esc(formatActivityDate(ev.date));
+    const friendlyDate=formatActivityDate(ev.date);
+    const friendlyDateHtml=esc(friendlyDate);
     const rawDate=esc(ev.date||'');
-    const metaHtml=`<div class="timeline-meta">${consultantHtml}<span class="bold" title="${rawDate}">— ${friendlyDate}</span></div>`;
+    const timelineEdit=ev.type==='activity' && ev.activity
+      ? `<button class="btn ghost small timeline-edit" data-inline-edit-activity="${ev.activity.id}" title="Éditer l'activité">✏️</button>`
+      : '';
+    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-primary">${consultantHtml}</div><div class="timeline-meta-date"><span class="bold" title="${rawDate}">${friendlyDateHtml}</span>${timelineEdit}</div></div>`;
     const hoursBadge=ev.activity && ev.activity.type==='ACTION_ST_BERNARD'
       ? `<span class="hours-badge"><b>${esc(formatHours(ev.activity.heures??0))}h</b></span>`
       : '';
@@ -692,23 +714,25 @@ function renderGuideeTimeline(){
       bodyHtml=`<div class="timeline-text clamp-3">${parts||'—'}</div>`;
     }else{
       const verb=ev.type==='start'?'Démarrage':'Fin';
-      const themeText=ev.theme && ev.theme.id!=='autre'?`<span class="sub">(${esc(ev.theme.emoji||'🧭')} ${esc(ev.theme.nom)})</span>`:'';
-      const parts=[hoursBadge, `${verb} de la guidée ${guideeSpan}${themeText?` ${themeText}`:''}`].filter(Boolean).join(' ');
+      const parts=[hoursBadge, `${verb} de la guidée ${guideeSpan}`].filter(Boolean).join(' ');
       bodyHtml=`<div class="timeline-text clamp-3">${parts||'—'}</div>`;
     }
-    item.innerHTML=`<div class="timeline-marker">${esc(ev.icon)}</div><div class="timeline-body">${metaHtml}${bodyHtml}</div>`;
+    const markerIcon=isSelected?'✔️':esc(ev.icon);
+    item.innerHTML=`<div class="timeline-marker">${markerIcon}</div><div class="timeline-body">${metaHtml}${bodyHtml}</div>`;
     if(ev.type==='activity' && ev.activity){
       item.classList.add('clickable');
     }
     on(item,'click',evt=>{
-      if(evt.target.closest('[data-filter-guidee],[data-filter-consultant]')) return;
-      if(state.guidees.selectedEventId===ev.id){
-        if(ev.type==='activity' && ev.activity){ openActivityModal(ev.activity.id); }
-      }else{
+      if(evt.target.closest('button,[data-filter-guidee],[data-filter-consultant]')) return;
+      if(state.guidees.selectedEventId!==ev.id){
         state.guidees.selectedEventId=ev.id;
         renderGuideeTimeline();
       }
     });
+    const inlineEdit=item.querySelector('[data-inline-edit-activity]');
+    if(inlineEdit){
+      on(inlineEdit,'click',e=>{ e.stopPropagation(); openActivityModal(ev.activity.id); });
+    }
     timelineEl.appendChild(item);
   });
   timelineEl.querySelectorAll('[data-filter-guidee]').forEach(btn=>on(btn,'click',e=>{
