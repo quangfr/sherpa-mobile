@@ -20,16 +20,17 @@
 ### 2.1 Modèle de stockage (localStorage JSON)
 - **Clé** : `SHERPA_STORE_V6` ; **métadonnées** dans `meta` (version, `updated_at`, `github_repo`). :contentReference[oaicite:5]{index=5} :contentReference[oaicite:6]{index=6}
 - **params** (seuils & UI) — valeurs par défaut :
-  - `delai_alerte_jours`, `fin_mission_sous_jours`, `stb_recent_jours`, `avis_manquant_depuis_jours`,  
-    `activites_recent_jours`, `activites_a_venir_jours`, `objectif_recent_jours`, `objectif_bar_max_heures`. :contentReference[oaicite:7]{index=7} :contentReference[oaicite:8]{index=8}
+  - `delai_alerte_jours`, `fin_mission_sous_jours`, `stb_recent_jours`, `avis_manquant_depuis_jours`,
+    `activites_recent_jours`, `activites_a_venir_jours`, `objectif_recent_jours`, `objectif_bar_max_heures`,
+    `hashtags_catalog`, `openai_activity_prompt`. :contentReference[oaicite:7]{index=7} :contentReference[oaicite:8]{index=8}
 - **thematiques** : `{ id, nom, emoji, color }`, ids garantis/normalisés au chargement. :contentReference[oaicite:9]{index=9}
 - **consultants** :
   - Champs : `{ id, nom, titre_mission, date_fin?, boond_id?, description?, created_at, updated_at }`. :contentReference[oaicite:10]{index=10}
 - **guidees** (ex-objectifs par consultant) :
   - Champs : `{ id, consultant_id, nom, description, date_debut, date_fin?, thematique_id, created_at, updated_at }`. :contentReference[oaicite:11]{index=11}
 - **activities** :
-  - Champs : `{ id, consultant_id, type, date_publication, description, heures?, guidee_id?, created_at, updated_at }`.  
-  - Types supportés : `ACTION_ST_BERNARD`, `NOTE`, `VERBATIM`, `AVIS`, `ALERTE`. :contentReference[oaicite:12]{index=12}
+  - Champs : `{ id, consultant_id, type, date_publication, description, heures?, guidee_id?, beneficiaires?, created_at, updated_at }`.
+  - Types supportés : `ACTION_ST_BERNARD`, `CORDEE`, `NOTE`, `VERBATIM`, `AVIS`, `ALERTE`. :contentReference[oaicite:12]{index=12}
 
 ### 2.2 Règles de migration / cohérence
 - **Migration** au chargement : merge des `params` par défaut, normalisation des thématiques (id unique), nettoyage de champs obsolètes, génération de `guidees` si anciennes structures, rattachement des `activities` à `guidee_id`, `meta.github_repo` par défaut (`quangfr/sherpa-mobile`). :contentReference[oaicite:13]{index=13}
@@ -53,10 +54,12 @@
 
 ### 3.3 Activités (🗂️)
 - **Barre d’outils** : Compteur, `Ajouter`, `Éditer`, `Réinitialiser`. :contentReference[oaicite:20]{index=20}
-- **Filtres** (sélecteurs) : `consultant`, `type`, `thématique`, `month`. Réinitialisation en 1 clic. :contentReference[oaicite:21]{index=21}
-- **Table** (colonnes) :  
+- **Filtres** (sélecteurs) : `consultant`, `type`, `#️⃣ hashtag`, `month`. Réinitialisation en 1 clic. :contentReference[oaicite:21]{index=21}
+- **Table** (colonnes) :
   `Type` (type + date fusionnée), `Actions` (boutons contextuels), `Consultant`, `Description + Guidée`. Largeurs et collants définis. Lignes cliquables/hover. :contentReference[oaicite:22]{index=22} :contentReference[oaicite:23]{index=23}
 - **Format des dates** : “Aujourd’hui / Hier / Avant-hier / Il y a X j / Dans X j / dd/mm/yyyy”. :contentReference[oaicite:24]{index=24}
+- **Types** : ajout `🪢 Cordée` (sans heures) avec champ multi-sélection “Bénéficiaires”. :contentReference[oaicite:12]{index=12}
+- **Descriptions** : placeholders `#Team #Customer #Tech #Design #Product #Data`, auto-complétion des hashtags configurés, bouton `✨` pour générer un résumé (OpenAI). :contentReference[oaicite:39]{index=39}
 
 ### 3.4 Guidées (🧭)
 - **Barre d’outils** : `Créer`, `Éditer`, `Réinitialiser` + filtres (`consultant`, `guidée`). :contentReference[oaicite:25]{index=25}
@@ -64,7 +67,7 @@
 
 ### 3.5 Paramètres (⚙️)
 - **Sync GitHub** : `🐈‍⬛ Réinitialiser` (purge + bootstrap), `🐈‍⬛ Mettre à jour` (lien issue), `📋 Copier diff`, `📋 Copier tout`, `📂 Charger` (import local). Aperçu JSON (lecture seule). :contentReference[oaicite:27]{index=27}
-- **Formulaire de paramètres** : champs numériques liés aux clés `params` + champ `Repo GitHub`. :contentReference[oaicite:28]{index=28}
+- **Formulaire de paramètres** : champs numériques liés aux clés `params`, champ `Repo GitHub`, zone de configuration des hashtags et template du prompt OpenAI. :contentReference[oaicite:28]{index=28}
 
 ### 3.6 Styles & tokens
 - **Tokens** : couleurs, états, fonds cartes, bordures, pills (`.stb`, `.note`, `.verb`, `.avis`, `.alerte`), ombres, tailles. :contentReference[oaicite:29]{index=29}
@@ -82,7 +85,7 @@
 - **Actions en cours / à venir** : activités `ACTION_ST_BERNARD` avec `heures ≤ 0`, classées par **dernier** ou **prochain** jalon par **guidée** (dé-duplication par guidée). :contentReference[oaicite:36]{index=36}
 
 ### 4.2 Filtres & tri Activités
-- **Filtres cumulables** : par consultant, type, thématique (via `guidee_id`→`thematique_id`), mois (`YYYY-MM`). Reset ramène à l’état neutre. :contentReference[oaicite:37]{index=37}
+- **Filtres cumulables** : par consultant, type, hashtag (analyse de la description), mois (`YYYY-MM`). Reset ramène à l’état neutre. :contentReference[oaicite:37]{index=37}
 - **Affichage** :
   - Colonne **Type** = badge + date formatée (règle “Aujourd’hui…/Dans X j”). :contentReference[oaicite:38]{index=38}
   - Colonne **Description + Guidée** = texte tronqué (clamp), lien guidée/consultant. :contentReference[oaicite:39]{index=39}
@@ -118,6 +121,20 @@
 
 ### 5.5 Sync & intégrations
 - **Aperçu JSON** lecture seule; **Import** via input file; **Réinit** : purge LS + bootstrap; **Diff/All** : copie presse-papiers; **Lien GitHub** : `meta.github_repo`. :contentReference[oaicite:60]{index=60} :contentReference[oaicite:61]{index=61}
+- **OpenAI ✨** : dans la modale Activité, un bouton envoie la description au modèle `gpt-5.0-nano` (résumé 3 lignes + hashtags). Clé lue via `window.SHERPA_OPENAI_KEY`. :contentReference[oaicite:60]{index=60}
+
+### 5.6 Configuration OpenAI
+1. Créer un **secret de dépôt** GitHub nommé `OPENAI_API_KEY` (`Settings` → `Secrets and variables` → `Actions`).
+2. Lors du déploiement (GitHub Pages / Action), générer un fichier non versionné `config.js` à la racine contenant :
+   ```html
+   <script>
+     window.SHERPA_OPENAI_KEY = "${OPENAI_API_KEY}";
+   </script>
+   ```
+   (le fichier est référencé avant `app.js`, le script peut être injecté par l’Action).
+3. En local, créer manuellement `config.js` (non commité) avec la même instruction pour tester.
+
+Sans ce fichier ou sans secret, le bouton `✨` avertit simplement que la clé est manquante.
 
 ---
 
