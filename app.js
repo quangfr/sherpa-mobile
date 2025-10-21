@@ -52,6 +52,7 @@ function autoSizeKeepMax(el, bucket){ if(!el) return; el.style.height='auto'; co
 let ACT_DESC_MAX={value:120}, CONS_DESC_MAX={value:120};
 /* DEFAULT STORE */
 const DEFAULT_PARAMS={delai_alerte_jours:7,fin_mission_sous_jours:60,stb_recent_jours:30,avis_manquant_depuis_jours:60,activites_recent_jours:30,activites_a_venir_jours:30,objectif_recent_jours:15,objectif_bar_max_heures:10};
+const DEFAULT_GITHUB_REPO='quangfr/sherpa-mobile';
 const DEFAULT_THEMATIQUES=[
   {id:'le-cardinal',nom:'Le Cardinal',emoji:'🧊',color:'#3b82f6'},
   {id:'robert-jr',nom:'Robert Jr',emoji:'🗣️',color:'#ec4899'},
@@ -132,15 +133,23 @@ function migrateStore(data){
     });
   }
   delete migrated.objectifs;
-  migrated.meta={...(data.meta||{}),version:6.0,updated_at:nowISO()};
+  const incomingMeta=data.meta||{};
+  const incomingRepo=typeof incomingMeta.github_repo==='string'?incomingMeta.github_repo.trim():'';
+  const githubRepo=incomingRepo||DEFAULT_GITHUB_REPO;
+  migrated.meta={...incomingMeta,github_repo:githubRepo,version:6.0,updated_at:nowISO()};
   return migrated;
 }
 function load(){
 const raw=localStorage.getItem(LS_KEY);
 if(raw){ try{ const parsed=JSON.parse(raw); return migrateStore(parsed);}catch{ console.warn('LocalStorage invalide, on repart vide.'); } }
-const empty={consultants:[],activities:[],guidees:[],thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})),params:{...DEFAULT_PARAMS},meta:{version:6.0,updated_at:nowISO()}};
+const empty={consultants:[],activities:[],guidees:[],thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})),params:{...DEFAULT_PARAMS},meta:{version:6.0,updated_at:nowISO(),github_repo:DEFAULT_GITHUB_REPO}};
 localStorage.setItem(LS_KEY, JSON.stringify(empty));
 return empty;
+}
+function getGithubRepo(){
+  const meta=store?.meta||{};
+  const repo=typeof meta.github_repo==='string'?meta.github_repo.trim():'';
+  return repo || DEFAULT_GITHUB_REPO;
 }
 function save(){ store.meta=store.meta||{}; store.meta.updated_at=nowISO(); localStorage.setItem(LS_KEY,JSON.stringify(store)); refreshAll(); }
 /* NAV TABS */
@@ -546,6 +555,13 @@ const btnEditGuidee=$('btn-edit-guidee');
 const guideeProgress=$('guidee-progress');
 const guideeProgressFill=guideeProgress?.querySelector('.guidee-progress-bar span');
 const guideeProgressLabel=guideeProgress?.querySelector('.guidee-progress-label');
+function updateGuideeEditButton(targetId=''){
+  if(!btnEditGuidee) return;
+  const hasTarget=!!targetId;
+  btnEditGuidee.disabled=!hasTarget;
+  btnEditGuidee.dataset.guideeId=hasTarget?targetId:'';
+}
+updateGuideeEditButton('');
 function updateGuideeProgress(event){
   if(!guideeProgress) return;
   if(!event || !event.guidee){
@@ -612,7 +628,10 @@ function formatTimelineDate(dateStr){
   return date.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
 }
 function renderGuideeTimeline(){
-  if(!timelineEl) return;
+  if(!timelineEl){
+    updateGuideeEditButton(state.guidees.guidee_id||'');
+    return;
+  }
   const today=new Date();
   const consultantId=state.guidees.consultant_id;
   const guideeId=state.guidees.guidee_id;
@@ -644,6 +663,7 @@ function renderGuideeTimeline(){
   if(!dated.length){
     timelineEl.innerHTML='<div class="empty">Aucun événement pour les filtres sélectionnés.</div>';
     updateGuideeProgress(null);
+    updateGuideeEditButton(state.guidees.guidee_id||'');
     return;
   }
   guidees.forEach(g=>{
@@ -708,6 +728,7 @@ function renderGuideeTimeline(){
   }
   const selectedEvent=dated.find(ev=>ev.id===state.guidees.selectedEventId)||null;
   updateGuideeProgress(selectedEvent);
+  updateGuideeEditButton(state.guidees.guidee_id||'');
   timelineEl.innerHTML='';
   let lastGuideeId=null;
   let markerOnLeft=true;
@@ -830,7 +851,7 @@ btnResetGuidee?.addEventListener('click',()=>{
   renderGuideeTimeline();
 });
 btnEditGuidee?.addEventListener('click',()=>{
-  const currentId=state.guidees.guidee_id || selectGuidee?.value || '';
+  const currentId=btnEditGuidee?.dataset.guideeId || state.guidees.guidee_id || selectGuidee?.value || '';
   if(!currentId){ alert('Sélectionnez une guidée à éditer.'); return; }
   openGuideeModal(currentId);
 });
@@ -845,6 +866,12 @@ $('p-objectif_recent').value=p.objectif_recent_jours;
 $('p-activites_recent').value=p.activites_recent_jours ?? 30;
 $('p-activites_avenir').value=p.activites_a_venir_jours ?? 30;
 $('p-objectif_bar_max').value=p.objectif_bar_max_heures ?? 10;
+const repoInput=$('p-github-repo');
+if(repoInput){
+const storedRepo=normalizeRepo(store?.meta?.github_repo);
+repoInput.value=storedRepo || getGithubRepo();
+}
+updateIssueLink(repoInput?.value);
 }
 $('btn-save-params').onclick=()=>{
 const p=store.params||(store.params={...DEFAULT_PARAMS});
@@ -856,6 +883,10 @@ p.objectif_recent_jours=Number($('p-objectif_recent').value||15);
 p.activites_recent_jours=Math.max(1, Number($('p-activites_recent').value||30));
 p.activites_a_venir_jours=Math.max(1, Number($('p-activites_avenir').value||30));
 p.objectif_bar_max_heures=Math.max(1, Number($('p-objectif_bar_max').value||10));
+store.meta=store.meta||{};
+const repoInput=$('p-github-repo');
+const repoValue=normalizeRepo(repoInput?.value);
+store.meta.github_repo=repoValue || DEFAULT_GITHUB_REPO;
 save(); alert('Paramètres enregistrés.');
 };
 
@@ -1175,18 +1206,87 @@ function computeSessionDiff(){
   if(thematiquesDiff.length) diff.thematiques=thematiquesDiff;
   return diff;
 }
+function ensureSessionDiff(){
+  lastSessionDiff=computeSessionDiff();
+  return lastSessionDiff;
+}
+const btnCopyDiff=$('btn-copy-diff');
+const btnCopyAll=$('btn-copy-all');
+const issueLink=$('link-create-issue');
+const githubRepoInput=$('p-github-repo');
+const ISSUE_TITLE='Mise à jour des données Sherpa';
+const ISSUE_HEADER='## Synchronisation Sherpa';
+function normalizeRepo(value){
+  return typeof value==='string'?value.trim():'';
+}
+function repoToPath(repo){
+  return repo.split('/').map(part=>encodeURIComponent(part.trim())).filter(Boolean).join('/');
+}
+function buildIssueBody(diffPayload){
+  return `${ISSUE_HEADER}\n\n\`\`\`json\n${diffPayload}\n\`\`\`\n`;
+}
+function updateIssueLink(repoOverride,diffOverride){
+  if(!issueLink) return;
+  const rawRepo=repoOverride!==undefined?repoOverride:githubRepoInput?.value;
+  const repoCandidate=normalizeRepo(rawRepo);
+  const repo=repoCandidate || getGithubRepo();
+  const diff=diffOverride || lastSessionDiff || {};
+  const payload=Object.keys(diff).length?JSON.stringify(diff,null,2):'{}';
+  if(!repo){
+    issueLink.href='#';
+    issueLink.setAttribute('aria-disabled','true');
+    return;
+  }
+  const repoPath=repoToPath(repo);
+  const issueBody=buildIssueBody(payload);
+  const url=`https://github.com/${repoPath}/issues/new?title=${encodeURIComponent(ISSUE_TITLE)}&body=${encodeURIComponent(issueBody)}`;
+  issueLink.href=url;
+  issueLink.removeAttribute('aria-disabled');
+}
 function updateSyncPreview(){
   const el=$('json-preview');
   if(!el) return;
-  lastSessionDiff=computeSessionDiff();
-  const output=Object.keys(lastSessionDiff).length?JSON.stringify(lastSessionDiff,null,2):'{}';
+  const diff=ensureSessionDiff();
+  const output=Object.keys(diff).length?JSON.stringify(diff,null,2):'{}';
   el.textContent=output;
+  updateIssueLink(undefined,diff);
 }
-$('btn-copy-json').onclick=async()=>{
-  const payload=Object.keys(lastSessionDiff||{}).length?JSON.stringify(lastSessionDiff,null,2):'{}';
-  await navigator.clipboard.writeText(payload);
-  alert('JSON copié ✅');
-};
+btnCopyDiff?.addEventListener('click',async()=>{
+  const diff=ensureSessionDiff();
+  const payload=Object.keys(diff).length?JSON.stringify(diff,null,2):'{}';
+  try{
+    await navigator.clipboard.writeText(payload);
+    alert('Diff JSON copié ✅');
+  }catch(err){
+    console.error('Clipboard diff error:',err);
+    alert('Impossible de copier le diff ❌');
+  }
+});
+btnCopyAll?.addEventListener('click',async()=>{
+  const payload=JSON.stringify(store,null,2);
+  try{
+    await navigator.clipboard.writeText(payload);
+    alert('Données complètes copiées ✅');
+  }catch(err){
+    console.error('Clipboard full error:',err);
+    alert('Impossible de copier les données ❌');
+  }
+});
+if(githubRepoInput){
+  on(githubRepoInput,'input',()=>{
+    updateIssueLink(githubRepoInput.value);
+  });
+}
+if(issueLink){
+  on(issueLink,'click',evt=>{
+    const diff=ensureSessionDiff();
+    updateIssueLink(githubRepoInput?.value,diff);
+    if(issueLink.getAttribute('href')==='#'){
+      evt.preventDefault();
+      alert('Définissez un dépôt GitHub valide.');
+    }
+  });
+}
 const fileInput=$('file-import');
 const btnImportJson=$('btn-import-json');
 $('btn-reset-storage').onclick=resetFromDataJson;

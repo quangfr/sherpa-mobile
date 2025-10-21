@@ -106,8 +106,10 @@
 <div class="title">🔃 Sync GitHub</div>
 <div class="row">
 <button class="btn small danger" id="btn-reset-storage">🐈‍⬛ Réinitialiser</button>
-<button class="btn small" id="btn-copy-json">📋 Copier</button>
+<button class="btn small" id="btn-copy-diff">📋 Copier diff</button>
+<button class="btn small" id="btn-copy-all">📋 Copier tout</button>
 <button class="btn small" id="btn-import-json">📂 Charger</button>
+<a class="btn small" id="link-create-issue" href="#" target="_blank" rel="noopener">📤MàJ</a>
 </div>
 </div>
 <div class="sub" style="margin:6px 0">Aperçu de vos données (lecture seule) — vous pouvez copier le JSON.</div>
@@ -125,6 +127,7 @@
 <label>activites_recent_jours <input type="number" id="p-activites_recent" min="1"/></label>
 <label>activites_a_venir_jours <input type="number" id="p-activites_avenir" min="1"/></label>
 <label>objectif_bar_max_heures <input type="number" id="p-objectif_bar_max" min="1" step="1"/></label>
+<label style="grid-column:1/-1">Repo GitHub <input type="text" id="p-github-repo" placeholder="owner/repo"/></label>
 </div>
 <div class="row" style="margin-top:8px"><button class="btn primary small" id="btn-save-params">Enregistrer</button></div>
 <div class="sub" style="margin-top:6px">Les titres du Dashboard & l’affichage des barres se mettent à jour automatiquement.</div>
