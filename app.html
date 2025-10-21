@@ -55,8 +55,8 @@
 <div class="pane-body">
   <div class="table-scroll hover-scroll">
     <table class="table" id="activities-table">
-      <colgroup><col class="col-type"/><col class="col-consultant"/><col class="col-main"/><col class="col-actions"/></colgroup>
-      <thead><tr><th>Type</th><th>Consultant</th><th>Description + Guidée</th><th>Actions</th></tr></thead>
+      <colgroup><col class="col-type"/><col class="col-actions"/><col class="col-consultant"/><col class="col-main"/></colgroup>
+      <thead><tr><th>Type</th><th>Actions</th><th>Consultant</th><th>Description + Guidée</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -84,7 +84,7 @@
       </div>
       <div id="guidee-progress" class="guidee-progress hidden">
         <div class="guidee-progress-bar"><span></span></div>
-        <div class="guidee-progress-label">0%</div>
+        <div class="guidee-progress-label">0% | 0h</div>
       </div>
     </div>
     <div class="pane-body">
@@ -94,7 +94,7 @@
     </div>
     <div id="guidee-progress" class="guidee-progress hidden">
       <div class="guidee-progress-bar"><span></span></div>
-      <div class="guidee-progress-label">0%</div>
+      <div class="guidee-progress-label">0% | 0h</div>
     </div>
   </div>
 </section>
@@ -106,10 +106,10 @@
 <div class="title">🔃 Sync GitHub</div>
 <div class="row">
 <button class="btn small danger" id="btn-reset-storage">🐈‍⬛ Réinitialiser</button>
+<a class="btn small" id="link-create-issue" href="#" target="_blank" rel="noopener">🐈‍⬛Mettre à jour</a>
 <button class="btn small" id="btn-copy-diff">📋 Copier diff</button>
 <button class="btn small" id="btn-copy-all">📋 Copier tout</button>
 <button class="btn small" id="btn-import-json">📂 Charger</button>
-<a class="btn small" id="link-create-issue" href="#" target="_blank" rel="noopener">📤MàJ</a>
 </div>
 </div>
 <div class="sub" style="margin:6px 0">Aperçu de vos données (lecture seule) — vous pouvez copier le JSON.</div>
