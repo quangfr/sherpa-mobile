@@ -461,11 +461,12 @@
       "consultant_id": "347a8e7d-f5e5-4681-96f7-77f790557d09",
       "nom": "Accompagnement 3",
       "description": "Accompagnement Accompagnement pour Noémie Forest.",
-      "date_debut": "2025-06-04",
+      "date_debut": "2025-03-01",
       "date_fin": "2026-02-19",
       "thematique_id": "accompagnement",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T12:10:16.287Z",
+      "_status": "updated"
     }
   ],
   "activities": [
@@ -1712,11 +1713,12 @@
       "consultant_id": "70cddb51-1299-48c6-86a0-0d64dc5915c3",
       "type": "ACTION_ST_BERNARD",
       "date_publication": "2025-07-09",
-      "description": "Action STB Delivery menée avec l'équipe.\nObjectif : sécuriser l'impact utilisateur à court terme.\nDécisions partagées avec le coach produit.\nSuivi des indicateurs aligné sur la guidée.",
+      "description": "MODIF Action STB Delivery menée avec l'équipe.\nObjectif : sécuriser l'impact utilisateur à court terme.\nDécisions partagées avec le coach produit.\nSuivi des indicateurs aligné sur la guidée.",
       "heures": 3,
       "guidee_id": "4c962dd1-0c44-473e-99f8-2bb25f3e7210-70cddb51-1299-48c6-86a0-0d64dc5915c3-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T12:11:20.017Z",
+      "_status": "updated"
     },
     {
       "id": "2ee5996b-7534-40af-b2bd-997f018b1a6d",
@@ -2536,6 +2538,18 @@
       "guidee_id": "59054324-735c-46e7-bc88-5d509d9b236c-347a8e7d-f5e5-4681-96f7-77f790557d09-2",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
+    },
+    {
+      "id": "6cda20a8-0ae9-4ac1-8cd2-567bd54b5682",
+      "consultant_id": "70cddb51-1299-48c6-86a0-0d64dc5915c3",
+      "type": "ACTION_ST_BERNARD",
+      "date_publication": "2025-10-22",
+      "description": "Nouvelle activité pour Léo",
+      "heures": 1,
+      "guidee_id": "8d1c5168-cbd0-4bcc-bb1c-a117b626c821-70cddb51-1299-48c6-86a0-0d64dc5915c3-0",
+      "created_at": "2025-10-21T12:10:56.983Z",
+      "updated_at": "2025-10-21T12:10:56.983Z",
+      "_status": "created"
     }
   ],
   "thematiques": [
