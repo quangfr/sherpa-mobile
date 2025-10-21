@@ -31,7 +31,7 @@
   - `nom` *(requis)*
   - `titre_mission` *(optionnel)*
   - `date_fin` *(optionnel, YYYY-MM-DD ; “disponible après”)*
-  - `url` *(optionnel, lien fiche)*
+  - `boond_id` *(optionnel, identifiant fiche Boond)*
   - `description` *(optionnel)*
   - `created_at`, `updated_at` (ISO)
 - **Activité**
@@ -97,7 +97,7 @@
        - Ligne primaire : pastille **statut** + **Nom** (gras).
        - Ligne secondaire : **Titre mission** (gris).
        - Colonne **Fin** (format texte YYYY-MM-DD ou —).
-       - Colonne actions : **🔗** (URL si existante), **✏️** (éditer), **🎯** (voir ses objectifs).
+      - Colonne actions : **🔗** (Fiche Boond si identifiant), **✏️** (éditer), **🎯** (voir ses objectifs).
        - **Clic ligne** (hors boutons) ⇒ **filtrer** les activités par ce consultant + focus onglet Activités.
   2) **Pane droite – Activités**
      - En-tête sticky avec :
@@ -150,8 +150,8 @@
     - Chaque ligne : nom + input numérique **0..100** (coloration rouge/jaune/vert selon la valeur).
   - Boutons : **Supprimer**, **Annuler**, **Enregistrer**.
 - **Consultant** :
-  - Champs : Nom (requis), Titre mission, Date fin, URL, Description (textarea auto-hauteur).
-  - Boutons : **Supprimer** (supprime le consultant **sans** supprimer ses activités), **Annuler**, **Enregistrer**.
+  - Champs : Nom (requis), Titre mission, Date fin, Boond Id, Description (textarea auto-hauteur).
+  - Boutons : **Supprimer** (supprime le consultant **sans** supprimer ses activités), **Annuler**, **Enregistrer**, **🟧Fiche Boond** (ouvre la fiche dans un nouvel onglet quand l’identifiant est renseigné).
 - Les **textareas** “Description” d’activité & consultant conservent la **plus grande hauteur** atteinte durant la session (auto-resize avec “mémoire”).
 
 ---
