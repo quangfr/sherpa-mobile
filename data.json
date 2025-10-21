@@ -5,7 +5,7 @@
     "github_repo": "quangfr/sherpa-mobile"
   },
   "params": {
-    "delai_alerte_jours": 7,
+    "delai_alerte_jours": 15,
     "fin_mission_sous_jours": 60,
     "stb_recent_jours": 30,
     "avis_manquant_depuis_jours": 60,
