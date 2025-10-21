@@ -166,10 +166,12 @@
       "id": "cb5283ef-fffa-4410-b413-afd40dbe7512",
       "consultant_id": "76ec89d1-93f5-45d7-8a9b-dbe811a57d69",
       "type": "VERBATIM",
-      "date_publication": "2025-11-01",
-      "description": "Contexte: échanges avec l'équipe et rappel des priorités.\nFeedback: retour positif sur la clarté des écrans.\nDécisions: en attente d'un arbitrage produit.\nRisques: dépendance externe et dette tech à surveiller.\nPoint d'attention: attentes fortes sur la simplicité.\nProchaines étapes: préparer un test utilisateur ciblé.\nBlocage: environnement de recette instable en fin de journée.\nHypothèses: à valider lors du prochain point hebdo.\nAlignement: partage sur le canal projet et note de synthèse.\nMesure: KPI de complétion et temps médian de traitement.\nCitation verbatim collectée lors d'un entretien structuré.\nAction: suivi des anomalies critiques et priorisation.\nContexte utilisateur détaillé pour interpréter le propos.\nContexte: échanges avec l'équipe et rappel des priorités. (v2)",
+      "date_publication": "2025-10-01",
+      "description": "MODIF",
       "created_at": "2025-10-17T22:10:00Z",
-      "updated_at": "2025-10-17T22:12:00Z"
+      "updated_at": "2025-10-21T09:51:56.711Z",
+      "guidee_id": "c166fa21-5138-4c8e-9197-a333661ba318",
+      "_status": "updated"
     },
     {
       "id": "405909e7-27d3-4a48-b742-f1bf642fe22e",
@@ -10361,6 +10363,18 @@
       "created_at": "2025-10-17T22:10:00Z",
       "updated_at": "2025-10-17T22:12:00Z",
       "guidee_id": "cccf3872-8dfa-4e38-8825-77833ae6e5ca-7ba649a6-966b-4b6f-9fdd-c3af597c482b-1"
+    },
+    {
+      "id": "c797cc09-1d23-4295-ad2e-e8643417abc3",
+      "consultant_id": "6f9d2dcc-ba00-4a56-a326-bedb21e24807",
+      "type": "ACTION_ST_BERNARD",
+      "date_publication": "2025-10-21",
+      "description": "Nouvelle activité 2",
+      "heures": 0,
+      "guidee_id": "abb9ae54-d0c3-4d17-adbd-9ce7f504f8c6",
+      "created_at": "2025-10-21T09:51:38.865Z",
+      "updated_at": "2025-10-21T09:51:38.865Z",
+      "_status": "created"
     }
   ],
   "params": {
