@@ -140,7 +140,7 @@
 <div class="row space modal-header">
 <h3>✏️ Activité</h3>
 <div class="row" style="gap:6px">
-<button type="button" class="btn small" id="fa-goto-consultant">👤Voir le consultant</button>
+<button type="button" class="btn small" id="fa-goto-consultant">👤Consultant</button>
 <button type="button" class="btn ghost modal-close" data-close="dlg-activity" aria-label="Fermer">✕</button>
 </div>
 </div>
@@ -179,7 +179,8 @@
 <div class="row space modal-header">
 <h3>✏️ Consultant</h3>
 <div class="row" style="gap:6px">
-<button type="button" class="btn small" id="fc-goto-guidees">🧭Voir ses guidées</button>
+<button type="button" class="btn small" id="fc-goto-guidees">🧭Guidées</button>
+<a class="btn small" id="fc-boond-link" href="#" target="_blank" rel="noopener" aria-disabled="true">🟧Fiche Boond</a>
 <button type="button" class="btn ghost modal-close" data-close="dlg-consultant" aria-label="Fermer">✕</button>
 </div>
 </div>
@@ -187,7 +188,7 @@
 <label>Nom* <input name="nom" required id="fc-nom"/></label>
 <label>Titre mission <input name="titre_mission" id="fc-titre"/></label>
 <label>Date fin (dispo) <input type="date" name="date_fin" id="fc-fin"/></label>
-<label>URL (fiche) <input name="url" id="fc-url" placeholder="https://…"/></label>
+<label>Boond Id <input name="boond_id" id="fc-boond" placeholder="12345"/></label>
 <label style="grid-column:1/-1">Description <textarea name="description" id="fc-desc" placeholder="Notes libres…"></textarea></label>
 </div>
 <div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>

@@ -89,7 +89,15 @@ function ensureThematiqueIds(arr){
 function migrateStore(data){
   const migrated={...data};
   migrated.params={...DEFAULT_PARAMS,...(data.params||{})};
-  migrated.thematiques=ensureThematiqueIds(data.thematiques && data.thematiques.length?data.thematiques:DEFAULT_THEMATIQUES.map(t=>({...t}))); 
+  migrated.thematiques=ensureThematiqueIds(data.thematiques && data.thematiques.length?data.thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})));
+  if(Array.isArray(migrated.consultants)){
+    migrated.consultants=migrated.consultants.map(c=>{
+      const copy={...c};
+      delete copy.url;
+      if(copy.boond_id===undefined) copy.boond_id='';
+      return copy;
+    });
+  }
   if(!Array.isArray(migrated.guidees)){
     migrated.guidees=[];
   }
@@ -1141,20 +1149,39 @@ $$('#dlg-guidee .actions [value="del"]').onclick=(e)=>{
 const dlgC=$('dlg-consultant');
 let currentConsultantId=null;
 const fcDesc=$('fc-desc');
+const fcBoond=$('fc-boond');
 const btnFcGoto=$('fc-goto-guidees');
+const btnFcBoondLink=$('fc-boond-link');
+
+function updateBoondLink(idValue){
+  if(!btnFcBoondLink) return;
+  const trimmed=String(idValue||'').trim();
+  if(trimmed){
+    const encoded=encodeURIComponent(trimmed);
+    btnFcBoondLink.href=`https://ui.boondmanager.com/resources/${encoded}/overview`;
+    btnFcBoondLink.removeAttribute('aria-disabled');
+  }else{
+    btnFcBoondLink.href='#';
+    btnFcBoondLink.setAttribute('aria-disabled','true');
+  }
+}
 function openConsultantModal(id=null){
 currentConsultantId=id;
-const c=id? store.consultants.find(x=>x.id===id) : {nom:'',titre_mission:'',date_fin:'',url:'',description:''};
-$('fc-nom').value=c?.nom||''; $('fc-titre').value=c?.titre_mission||''; $('fc-fin').value=c?.date_fin||''; $('fc-url').value=c?.url||''; fcDesc.value=c?.description||'';
+const c=id? store.consultants.find(x=>x.id===id) : {nom:'',titre_mission:'',date_fin:'',boond_id:'',description:''};
+$('fc-nom').value=c?.nom||''; $('fc-titre').value=c?.titre_mission||''; $('fc-fin').value=c?.date_fin||''; if(fcBoond) fcBoond.value=c?.boond_id||''; fcDesc.value=c?.description||'';
+updateBoondLink(c?.boond_id||'');
 autoSizeKeepMax(fcDesc, CONS_DESC_MAX);
 on(fcDesc,'input',()=>autoSizeKeepMax(fcDesc, CONS_DESC_MAX),{once:false});
 dlgC.showModal();
+}
+if(fcBoond){
+  on(fcBoond,'input',()=>updateBoondLink(fcBoond.value));
 }
 btnFcGoto.onclick=()=>{ if(currentConsultantId){ dlgC.close(); gotoConsultantGuidees(currentConsultantId); } };
 btnDashboardNewConsultant?.addEventListener('click',()=>openConsultantModal());
 $('form-consultant').onsubmit=(e)=>{
 e.preventDefault();
-const data={ nom:$('fc-nom').value.trim(), titre_mission:$('fc-titre').value.trim()||undefined, date_fin:$('fc-fin').value||undefined, url:$('fc-url').value||undefined, description:fcDesc.value.trim()||undefined };
+const data={ nom:$('fc-nom').value.trim(), titre_mission:$('fc-titre').value.trim()||undefined, date_fin:$('fc-fin').value||undefined, boond_id:fcBoond?.value.trim()||undefined, description:fcDesc.value.trim()||undefined };
 if(!currentConsultantId && !data.nom){ dlgC.close('cancel'); return; }
 if(!data.nom){ alert('Nom requis.'); return; }
 if(currentConsultantId){ Object.assign(store.consultants.find(x=>x.id===currentConsultantId),data,{updated_at:nowISO()}); }
