@@ -50,7 +50,11 @@ textarea{width:100%;resize:vertical}
 @media (max-width:720px){.filters-line{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .guidee-filters{display:grid;grid-template-columns:repeat(2,minmax(160px,1fr));gap:6px;align-items:center}
 @media (max-width:720px){.guidee-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.pane-body{min-height:0;overflow:auto}
+.pane-body{min-height:0;overflow:hidden;flex:1}
+#acts-pane .pane-body,.timeline-scroll{position:relative}
+.table-scroll,.timeline-scroll{height:100%;overflow:auto}
+.table-scroll{width:100%}
+.timeline-scroll{display:flex;justify-content:center;padding:0 8px;box-sizing:border-box}
 #guidee-pane .pane-body{margin-top:20px}
 .hover-scroll{overflow:auto;scrollbar-gutter:stable both-edges;scrollbar-width:thin;scrollbar-color:transparent transparent}
 .hover-scroll:hover{ scrollbar-color:#c5c9d2 #eef1f6; }
@@ -111,7 +115,7 @@ dialog::backdrop{background:#0006}
 .filter-select{width:100%;min-height:32px;padding:4px 8px;border-radius:8px;transition:border-color .12s ease,box-shadow .12s ease;font-size:13px}
 .filter-select.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 
-.timeline{display:flex;flex-direction:column;gap:14px;padding:8px 4px 24px}
+.timeline{display:flex;flex-direction:column;gap:14px;padding:8px 4px 24px;width:100%;max-width:1024px;margin:0 auto}
 .timeline-item{display:flex;gap:12px;align-items:flex-start;--timeline-body-bg:var(--card);--timeline-body-fg:var(--fg);--timeline-border:var(--border)}
 .timeline-item.timeline-item-alt{flex-direction:row-reverse;text-align:right}
 .timeline-item.timeline-item-alt .timeline-body{align-items:flex-end;text-align:right}
@@ -170,6 +174,7 @@ tr.selected .row-edit{display:inline-flex}
 .db-row{margin:4px 0;padding:4px 0;border-bottom:1px solid var(--border)}
 .db-row:last-child{border-bottom:none}
 .db-row> .sub{margin-top:2px}
+.db-row.clickable-row{cursor:pointer}
 .dashboard-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media (max-width:900px){.dashboard-actions{grid-template-columns:1fr}}
 /* Réglages = Paramètres + Sync en 2 colonnes */

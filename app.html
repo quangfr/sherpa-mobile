@@ -11,11 +11,11 @@
 <div class="card"><div class="row space"><div class="title">🗣️ Avis &gt; <span id="db-avis-z"></span>j</div><div class="pill" id="db-avis-title">0</div></div><div id="db-avis-list" class="db-list"></div></div>
 <div class="grid g2 dashboard-actions" style="grid-column:1/-1">
   <div class="card" id="db-actions-recent-card">
-    <div class="row space" style="margin-bottom:6px"><div class="title">⏳ Actions en cours &lt; <span id="db-actions-recent"></span>j</div><div class="pill" id="db-actions-recent-count">0</div></div>
+    <div class="row space" style="margin-bottom:6px"><div class="title">⏳ Actions en cours</div><div class="pill" id="db-actions-recent-count">0</div></div>
     <div id="db-actions-recent-list" class="db-list"></div>
   </div>
   <div class="card" id="db-actions-upcoming-card">
-    <div class="row space" style="margin-bottom:6px"><div class="title">📅 Actions à &lt; <span id="db-actions-upcoming"></span>j</div><div class="pill" id="db-actions-upcoming-count">0</div></div>
+    <div class="row space" style="margin-bottom:6px"><div class="title">📅 Actions à venir</div><div class="pill" id="db-actions-upcoming-count">0</div></div>
     <div id="db-actions-upcoming-list" class="db-list"></div>
   </div>
 </div>
@@ -52,12 +52,14 @@
       </div>
     </div>
   </div>
-<div class="pane-body hover-scroll">
-<table class="table" id="activities-table">
-<colgroup><col class="col-type"/><col class="col-consultant"/><col class="col-main"/><col class="col-actions"/></colgroup>
-<thead><tr><th>Type</th><th>Consultant</th><th>Description + Guidée</th><th>Actions</th></tr></thead>
-<tbody></tbody>
-</table>
+<div class="pane-body">
+  <div class="table-scroll hover-scroll">
+    <table class="table" id="activities-table">
+      <colgroup><col class="col-type"/><col class="col-consultant"/><col class="col-main"/><col class="col-actions"/></colgroup>
+      <thead><tr><th>Type</th><th>Consultant</th><th>Description + Guidée</th><th>Actions</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </div>
 </section>
 <!-- GUIDÉES -->
@@ -85,8 +87,10 @@
         <div class="guidee-progress-label">0%</div>
       </div>
     </div>
-    <div class="pane-body hover-scroll">
-      <div id="guidee-timeline" class="timeline"></div>
+    <div class="pane-body">
+      <div class="timeline-scroll hover-scroll">
+        <div id="guidee-timeline" class="timeline"></div>
+      </div>
     </div>
     <div id="guidee-progress" class="guidee-progress hidden">
       <div class="guidee-progress-bar"><span></span></div>
@@ -102,8 +106,8 @@
 <div class="title">🔃 Sync GitHub</div>
 <div class="row">
 <button class="btn small danger" id="btn-reset-storage">🐈‍⬛ Réinitialiser</button>
-<button class="btn small" id="btn-copy-json">📋 Copier JSON</button>
-<button class="btn small" id="btn-import-json">📂 Charger JSON</button>
+<button class="btn small" id="btn-copy-json">📋 Copier</button>
+<button class="btn small" id="btn-import-json">📂 Charger</button>
 </div>
 </div>
 <div class="sub" style="margin:6px 0">Aperçu de vos données (lecture seule) — vous pouvez copier le JSON.</div>
