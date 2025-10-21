@@ -162,10 +162,10 @@ function getGithubRepo(){
 function save(){ store.meta=store.meta||{}; store.meta.updated_at=nowISO(); localStorage.setItem(LS_KEY,JSON.stringify(store)); refreshAll(); }
 /* NAV TABS */
 const TABS=[
-{id:'dashboard',labelFull:'👥 Sherpa',labelShort:'👥 Sher.'},
-{id:'activite',labelFull:'🗂️ Activités',labelShort:'🗂️ Act.'},
-{id:'guidee',labelFull:'🧭 Guidées',labelShort:'🧭 Gui.'},
-{id:'reglages',labelFull:'⚙️ Paramètres',labelShort:'⚙️ Par.'}
+{id:'dashboard',labelFull:'👥 Sherpa',labelShort:'👥 Sherpa'},
+{id:'activite',labelFull:'🗂️ Activités',labelShort:'🗂️ Activités'},
+{id:'guidee',labelFull:'🧭 Guidées',labelShort:'🧭 Guidées'},
+{id:'reglages',labelFull:'⚙️ Paramètres',labelShort:'⚙️'}
 ];
 const tabsEl=$('tabs');
 const btnDashboardNewConsultant=$('btn-dashboard-new-consultant');
@@ -261,7 +261,8 @@ const renderGuideeEntries=(entries,listId,countId)=>{
     row.classList.add('clickable-row');
     row.tabIndex=0;
     const dateLabel=esc(formatActivityDate(action.date_publication||''));
-    row.innerHTML=`<div class="row space"><div class="row" style="gap:6px"><span class="linklike">${esc(consultant.nom||'—')}</span><span class="sub">/ ${esc(guidee.nom||'Sans titre')}</span></div><span class="sub">${dateLabel}</span></div>`;
+    const status=statusOf(consultant);
+    row.innerHTML=`<div class="row space"><div class="row" style="gap:6px"><span class="dot ${status}" title="État"></span><span class="linklike">${esc(consultant.nom||'—')}</span><span class="sub">/ ${esc(guidee.nom||'Sans titre')}</span></div><span class="sub">${dateLabel}</span></div>`;
     on(row,'click',()=>{ gotoGuideeTimeline(guidee.id, action.id); });
     on(row,'keydown',evt=>{
       if(evt.key==='Enter' || evt.key===' '){ evt.preventDefault(); gotoGuideeTimeline(guidee.id, action.id); }
@@ -432,6 +433,13 @@ const TYPE_COLORS={
   AVIS:'var(--avis-f)',
   ALERTE:'var(--alerte-f)'
 };
+const TYPE_BORDER_COLORS={
+  ACTION_ST_BERNARD:'var(--stb)',
+  NOTE:'var(--note)',
+  VERBATIM:'var(--verb)',
+  AVIS:'var(--avis)',
+  ALERTE:'var(--alerte)'
+};
 function renderActivities(){
 refreshMonthOptions();
 refreshThematiqueOptions();
@@ -466,12 +474,14 @@ if(state.activities.selectedId && !list.some(item=>item.id===state.activities.se
 }
 actTBody.innerHTML='';
 const mobile = isMobile();
+const todayStart=new Date(); todayStart.setHours(0,0,0,0);
 list.forEach(a=>{
 const c=store.consultants.find(x=>x.id===a.consultant_id);
 const g=a.guidee_id ? store.guidees.find(x=>x.id===a.guidee_id):null;
 const theme=g? getThematique(g.thematique_id):null;
 const meta=TYPE_META[a.type]||{emoji:'❓',pill:'',label:a.type};
 const typeColor=TYPE_COLORS[a.type]||'var(--accent)';
+const typeBorderColor=TYPE_BORDER_COLORS[a.type]||'var(--border)';
 const heuresBadge = a.type==='ACTION_ST_BERNARD' ? `<span class="hours-badge"><b>${esc(formatHours(a.heures??0))}h</b></span>`:'';
 const descText=a.description||'';
 const descHtml=esc(descText);
@@ -495,7 +505,11 @@ const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><
 const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
 const tr=document.createElement('tr'); tr.classList.add('clickable');
 tr.style.setProperty('--selection-color',typeColor);
+tr.style.setProperty('--type-border-color',typeBorderColor);
+const dateObj=parseDate(a.date_publication||'');
+const isPastDate=dateObj && dateObj<todayStart;
 if(isSelected) tr.classList.add('selected');
+if(isPastDate) tr.classList.add('past');
 tr.innerHTML = mobile
 ? `
 <td class="mobile-only">
@@ -515,6 +529,7 @@ tr.innerHTML = mobile
   <div><span class="pill ${meta.pill} type-pill">${meta.emoji} ${meta.label}</span></div>
   ${dateLineDesktop}
 </td>
+<td class="desktop-only nowrap actions-cell"><button class="btn small" data-edit="${a.id}" title="Éditer">✏️</button><button class="btn small danger" data-del="${a.id}" title="Supprimer">🗑️</button></td>
 <td class="desktop-only">
   ${consultantLabel}
   <div class="sub">${esc(c?.titre_mission||'—')}</div>
@@ -522,8 +537,7 @@ tr.innerHTML = mobile
 <td class="main desktop-only">
   ${headerLine}
   ${descLine}
-</td>
-<td class="desktop-only nowrap actions-cell"><button class="btn small" data-edit="${a.id}" title="Éditer">✏️</button><button class="btn small danger" data-del="${a.id}" title="Supprimer">🗑️</button></td>`;
+</td>`;
 on(tr,'click',(e)=>{
   if(e.target.closest('button,[data-goto-guidee]')) return;
   if(state.activities.selectedId!==a.id){
@@ -572,27 +586,38 @@ function updateGuideeEditButton(targetId=''){
 updateGuideeEditButton('');
 function updateGuideeProgress(event){
   if(!guideeProgress) return;
-  if(!event || !event.guidee){
+  const targetGuideeId=state?.guidees?.guidee_id||'';
+  const hide=()=>{
     guideeProgress.classList.add('hidden');
     if(guideeProgressFill) guideeProgressFill.style.width='0%';
-    if(guideeProgressLabel) guideeProgressLabel.textContent='0%';
+    if(guideeProgressLabel) guideeProgressLabel.textContent='0% | 0h';
+  };
+  if(!targetGuideeId){
+    hide();
+    return;
+  }
+  if(!event || !event.guidee || event.guidee.id!==targetGuideeId){
+    hide();
     return;
   }
   const start=parseDate(event.guidee.date_debut||'');
   const end=parseDate(event.guidee.date_fin||'');
   const eventDate=parseDate(event.date||'');
   if(!start || !end || !eventDate || end<=start){
-    guideeProgress.classList.add('hidden');
-    if(guideeProgressFill) guideeProgressFill.style.width='0%';
-    if(guideeProgressLabel) guideeProgressLabel.textContent='0%';
+    hide();
     return;
   }
   const totalDays=Math.max(0,daysDiff(end,start));
   const rawElapsed=daysDiff(eventDate,start);
   const elapsed=Math.max(0,Math.min(totalDays,rawElapsed));
   const pct=totalDays===0?100:Math.round((elapsed/totalDays)*100);
+  const totalHours=store.activities
+    .filter(a=>a.guidee_id===targetGuideeId)
+    .map(act=>({act,date:parseDate(act.date_publication||'')}))
+    .filter(item=>item.date && item.date<=eventDate)
+    .reduce((sum,item)=>sum+(Number(item.act.heures)||0),0);
   if(guideeProgressFill) guideeProgressFill.style.width=`${pct}%`;
-  if(guideeProgressLabel) guideeProgressLabel.textContent=`${pct}%`;
+  if(guideeProgressLabel) guideeProgressLabel.textContent=`${pct}% | ${formatHours(totalHours)}h`;
   guideeProgress.classList.remove('hidden');
   guideeProgress.style.setProperty('--progress-color',event.color||'#2563eb');
 }
@@ -758,6 +783,8 @@ function renderGuideeTimeline(){
     const color=ev.color||'#6366f1';
     item.style.setProperty('--timeline-color',color);
     item.style.setProperty('--selection-color',color);
+    item.style.setProperty('--timeline-border',color);
+    item.style.setProperty('--timeline-marker-border',color);
     const consultantHtml=consultant
       ? `<span class="click-span bold" data-filter-consultant="${consultant.id}">${esc(consultant.nom)}</span>`
       : `<span class="bold">${esc(consultant?.nom||'—')}</span>`;
@@ -786,7 +813,8 @@ function renderGuideeTimeline(){
       bodyHtml=`<div class="timeline-text clamp-3">${parts||'—'}</div>`;
     }else{
       const verb=ev.type==='start'?'Démarrage':'Fin';
-      const parts=[`🚩 ${verb} de la guidée ${guideeSpan}`].filter(Boolean).join(' ');
+      const flagIcon=ev.type==='start'?'▶️':'✅';
+      const parts=[`${flagIcon} ${verb} de la guidée ${guideeSpan}`].filter(Boolean).join(' ');
       bodyHtml=`<div class="timeline-text clamp-3">${parts||'—'}</div>`;
     }
     const markerIcon=isSelected?'✔️':esc(ev.icon);
@@ -1178,7 +1206,7 @@ if(fcBoond){
   on(fcBoond,'input',()=>updateBoondLink(fcBoond.value));
 }
 btnFcGoto.onclick=()=>{ if(currentConsultantId){ dlgC.close(); gotoConsultantGuidees(currentConsultantId); } };
-btnDashboardNewConsultant?.addEventListener('click',()=>openConsultantModal());
+btnDashboardNewConsultant?.addEventListener('click',e=>{ e.preventDefault(); openConsultantModal(); });
 $('form-consultant').onsubmit=(e)=>{
 e.preventDefault();
 const data={ nom:$('fc-nom').value.trim(), titre_mission:$('fc-titre').value.trim()||undefined, date_fin:$('fc-fin').value||undefined, boond_id:fcBoond?.value.trim()||undefined, description:fcDesc.value.trim()||undefined };
