@@ -33,7 +33,7 @@ const DEFAULT_OPENAI_PROMPT='Faire un résumé synthétique structuré en 3 lign
 const DEFAULT_OPENAI_CONSULTANT_PROMPT='Reformule en français la description suivante pour une fiche consultant Sherpa. Résume en 3 phrases maximum, souligne le titre de mission "{{consultant_mission}}" s\'il est fourni et ajoute 1 à 2 hashtags pertinents parmi {{hashtags_catalog}}. Consultant : {{consultant_name}}. Description source : {{consultant_description}}';
 const DEFAULT_OPENAI_GUIDEE_PROMPT='Synthétise en 3 phrases claires la description de guidée ci-dessous en mettant en avant l\'intention, les livrables attendus et 1 à 2 hashtags (parmi {{hashtags_catalog}}). Consultant : {{consultant_name}}. Guidée : {{guidee_name}}. Description source : {{guidee_description}}';
 const OPENAI_MODEL='gpt-5-nano';
-const OPENAI_ENDPOINT='https://openai.tranxq.workers.dev';
+const OPENAI_ENDPOINT='https://openai.tranxq.workers.dev/';
 function fillPromptTemplate(template, values={}){
   return String(template||'').replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g,(match,key)=>{
     const value=values?.[key];
@@ -178,16 +178,23 @@ function attachHashtagAutocomplete(textarea){
   textarea.addEventListener('blur',()=>{ setTimeout(hide,150); });
 }
 async function requestOpenAISummary(prompt){
-  const response=await fetch(OPENAI_ENDPOINT,{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json'
-    },
-    body:JSON.stringify({
-      model:OPENAI_MODEL,
-      messages:[{role:'user',content:prompt}]
-    })
-  });
+  let response;
+  try{
+    response=await fetch(OPENAI_ENDPOINT,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Accept':'application/json'
+      },
+      body:JSON.stringify({
+        model:OPENAI_MODEL,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+  }catch(err){
+    const detail=err?.message||'échec réseau';
+    throw new Error(`openai-error:Service injoignable (${detail}).`);
+  }
   const rawText=await response.text();
   let data=null;
   try{
