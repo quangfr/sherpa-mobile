@@ -163,8 +163,8 @@ function save(){ store.meta=store.meta||{}; store.meta.updated_at=nowISO(); loca
 /* NAV TABS */
 const TABS=[
 {id:'dashboard',labelFull:'Sherpa',labelShort:'Sherpa'},
-{id:'activite',labelFull:'🗂️Activités',labelShort:'🗂️Activités'},
-{id:'guidee',labelFull:'🧭Guidées',labelShort:'🧭Guidées'},
+{id:'activite',labelFull:'🗂️ Activités',labelShort:'🗂️ Activités'},
+{id:'guidee',labelFull:'🧭 Guidées',labelShort:'🧭 Guidées'},
 {id:'reglages',labelFull:'⚙️Paramètres',labelShort:'⚙️'}
 ];
 const tabsEl=$('tabs');
@@ -294,7 +294,7 @@ const selectConsultant=$('filter-consultant');
 function renderConsultantOptions(){
   if(!selectConsultant) return;
   const current=state.filters.consultant_id||'';
-  const options=['<option value="">👤Tous</option>',
+  const options=['<option value="">👤 Tous</option>',
     ...[...store.consultants]
       .sort((a,b)=>(a.nom||'').localeCompare(b.nom||''))
       .map(c=>`<option value="${esc(c.id)}">${esc(c.nom)}</option>`)
@@ -364,7 +364,7 @@ function refreshMonthOptions(){
   .filter(m=>!startMonth || m<=startMonth)
   .sort((a,b)=>b.localeCompare(a));
   const options=[
-    '<option value="ALL">Tous</option>',
+    '<option value="ALL">📅 Tous</option>',
     `<option value="RECENT">Derniers ${recentDays} jours</option>`,
     `<option value="UPCOMING">À moins de ${upcomingDays}j</option>`,
     `<option value="PLANNED">À plus de ${upcomingDays} jours</option>`,
@@ -385,7 +385,7 @@ function refreshMonthOptions(){
 }
 function refreshThematiqueOptions(){
   if(!selectThematique) return;
-  const options=['<option value="">📚Toutes</option>',
+  const options=['<option value="">📚 Toutes</option>',
     ...store.thematiques.map(t=>`<option value="${esc(t.id)}">${esc(t.emoji||'📚')} ${esc(t.nom)}</option>`)
   ];
   const html=options.join('');
