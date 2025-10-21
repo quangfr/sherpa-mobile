@@ -32,6 +32,13 @@ const DEFAULT_HASHTAG_CATALOG=[
 const DEFAULT_OPENAI_PROMPT='Faire un résumé synthétique structuré en 3 lignes de ce qui est écrit, en qualifiant avec 1-3 hashtags suivants (liste des hashtags ci-dessus) : {{activity_type}} {{activity_description}}';
 const DEFAULT_OPENAI_CONSULTANT_PROMPT='Reformule en français la description suivante pour une fiche consultant Sherpa. Résume en 3 phrases maximum, souligne le titre de mission "{{consultant_mission}}" s\'il est fourni et ajoute 1 à 2 hashtags pertinents parmi {{hashtags_catalog}}. Consultant : {{consultant_name}}. Description source : {{consultant_description}}';
 const DEFAULT_OPENAI_GUIDEE_PROMPT='Synthétise en 3 phrases claires la description de guidée ci-dessous en mettant en avant l\'intention, les livrables attendus et 1 à 2 hashtags (parmi {{hashtags_catalog}}). Consultant : {{consultant_name}}. Guidée : {{guidee_name}}. Description source : {{guidee_description}}';
+const ACTIVITY_TYPES=['ACTION_ST_BERNARD','CORDEE','NOTE','VERBATIM','AVIS','ALERTE'];
+const ACTIVITY_PROMPT_KEYS=['__DEFAULT',...ACTIVITY_TYPES];
+const DEFAULT_ACTIVITY_PROMPTS=(()=>{
+  const base={__DEFAULT:DEFAULT_OPENAI_PROMPT};
+  ACTIVITY_TYPES.forEach(type=>{ base[type]=DEFAULT_OPENAI_PROMPT; });
+  return base;
+})();
 const OPENAI_MODEL='gpt-5-nano';
 const OPENAI_ENDPOINT='https://openai.tranxq.workers.dev/';
 function fillPromptTemplate(template, values={}){
@@ -67,33 +74,67 @@ function getConfiguredHashtags(){
   const combined=[...CORE_HASHTAG_HINTS,...configured];
   return Array.from(new Set(combined));
 }
+function normalizeSearchText(text=''){
+  return String(text||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+}
 function getHashtagSuggestions(prefix=''){
   const all=getConfiguredHashtags();
-  if(!prefix) return all;
+  if(!prefix) return all.slice(0,20);
   const lower=prefix.toLowerCase();
-  return all.filter(tag=>tag.toLowerCase().startsWith(lower));
+  return all.filter(tag=>tag.toLowerCase().startsWith(lower)).slice(0,20);
 }
-function getHashtagContext(textarea){
+function getAutocompleteContext(textarea){
   if(!textarea) return null;
   const value=textarea.value;
   const pos=textarea.selectionStart||0;
   let idx=pos-1;
   while(idx>=0){
     const ch=value[idx];
-    if(ch==='#') break;
+    if(ch==='#' || ch==='@') break;
     if(ch==='\n' || /\s/.test(ch)) return null;
     idx--;
   }
-  if(idx<0 || value[idx]!=='#') return null;
+  if(idx<0) return null;
+  const trigger=value[idx];
+  if(trigger!=='#' && trigger!=='@') return null;
   if(idx>0){
     const prev=value[idx-1];
     if(prev && prev!=='\n' && !/\s/.test(prev)) return null;
   }
   const token=value.slice(idx,pos);
-  if(!/^#[\p{L}\p{N}_-]*$/u.test(token)) return null;
-  return {start:idx,end:pos,token};
+  const pattern=trigger==='#'?/^#[\p{L}\p{N}_-]*$/u:/^@[\p{L}\p{N}_-]*$/u;
+  if(!pattern.test(token)) return null;
+  return {start:idx,end:pos,token,trigger};
 }
-function replaceHashtagInTextarea(textarea, context, replacement){
+function getConsultantMentionSuggestions(prefix=''){
+  const list=Array.isArray(store?.consultants)?store.consultants:[];
+  const search=normalizeSearchText(String(prefix||'').slice(1));
+  const seen=new Set();
+  const results=[];
+  const add=(token)=>{
+    const clean=String(token||'').trim();
+    if(!clean || seen.has(clean)) return;
+    if(search && !normalizeSearchText(clean.slice(1)).includes(search)) return;
+    seen.add(clean);
+    results.push(clean);
+  };
+  list.forEach(c=>{
+    const full=String(c?.nom||'').trim();
+    if(!full) return;
+    const normalized=full.replace(/\s+/g,' ').trim();
+    const joined=normalized.replace(/[\s-]+/g,'');
+    add(`@${joined}`);
+    normalized.split(/[\s-]+/).filter(Boolean).forEach(part=>add(`@${part}`));
+  });
+  return results.slice(0,20);
+}
+function getAutocompleteSuggestions(context){
+  if(!context) return [];
+  if(context.trigger==='#') return getHashtagSuggestions(context.token);
+  if(context.trigger==='@') return getConsultantMentionSuggestions(context.token);
+  return [];
+}
+function replaceTokenInTextarea(textarea, context, replacement){
   if(!textarea || !context) return;
   const before=textarea.value.slice(0,context.start);
   const after=textarea.value.slice(context.end);
@@ -131,7 +172,7 @@ function attachHashtagAutocomplete(textarea){
       btn.addEventListener('mousedown',e=>e.preventDefault());
       btn.addEventListener('click',()=>{
         if(currentContext){
-          replaceHashtagInTextarea(textarea,currentContext,tag);
+          replaceTokenInTextarea(textarea,currentContext,tag);
           hide();
           textarea.focus();
         }
@@ -143,10 +184,10 @@ function attachHashtagAutocomplete(textarea){
     container.classList.add('active');
   }
   function refresh(){
-    const ctx=getHashtagContext(textarea);
+    const ctx=getAutocompleteContext(textarea);
     currentContext=ctx;
     if(!ctx){ hide(); return; }
-    const suggestions=getHashtagSuggestions(ctx.token);
+    const suggestions=getAutocompleteSuggestions(ctx);
     showSuggestions(suggestions);
   }
   textarea.addEventListener('input',refresh);
@@ -167,7 +208,7 @@ function attachHashtagAutocomplete(textarea){
         e.preventDefault();
         const tag=buttons[activeIndex].textContent||'';
         if(tag && currentContext){
-          replaceHashtagInTextarea(textarea,currentContext,tag);
+          replaceTokenInTextarea(textarea,currentContext,tag);
           hide();
         }
       }
@@ -227,7 +268,7 @@ function formatAIError(err){
   }
   return `Erreur assistant : ${message||'erreur inconnue.'}`;
 }
-async function invokeAIHelper(button, textarea, prompt, bucket){
+async function invokeAIHelper(button, textarea, prompt){
   if(!button || !textarea || !prompt) return;
   if(button.disabled) return;
   button.disabled=true;
@@ -238,7 +279,6 @@ async function invokeAIHelper(button, textarea, prompt, bucket){
     if(summary){
       textarea.value=summary;
       textarea.dispatchEvent(new Event('input',{bubbles:true}));
-      if(bucket) autoSizeKeepMax(textarea,bucket);
     }
   }catch(err){
     console.error('AI helper error',err);
@@ -276,8 +316,6 @@ function formatActivityDate(dateStr){
   return date.toLocaleDateString('fr-FR');
 }
 $$all('[data-close]').forEach(btn=>on(btn,'click',()=>{ const target=btn.dataset.close ? $(btn.dataset.close) : btn.closest('dialog'); target?.close('cancel'); }));
-function autoSizeKeepMax(el, bucket){ if(!el) return; el.style.height='auto'; const h=el.scrollHeight; bucket.value=Math.max(bucket.value||0,h); el.style.height=bucket.value+'px'; }
-let ACT_DESC_MAX={value:120}, CONS_DESC_MAX={value:120}, GUIDEE_DESC_MAX={value:120};
 /* DEFAULT STORE */
 const DEFAULT_PARAMS={
   delai_alerte_jours:7,
@@ -289,11 +327,38 @@ const DEFAULT_PARAMS={
   objectif_recent_jours:15,
   objectif_bar_max_heures:10,
   hashtags_catalog:DEFAULT_HASHTAG_CATALOG,
+  openai_activity_prompts:{...DEFAULT_ACTIVITY_PROMPTS},
   openai_activity_prompt:DEFAULT_OPENAI_PROMPT,
   openai_consultant_prompt:DEFAULT_OPENAI_CONSULTANT_PROMPT,
   openai_guidee_prompt:DEFAULT_OPENAI_GUIDEE_PROMPT
 };
 const DEFAULT_GITHUB_REPO='quangfr/sherpa-mobile';
+function normalizeActivityPromptType(type){
+  return ACTIVITY_PROMPT_KEYS.includes(type)?type:'__DEFAULT';
+}
+function getActivityPrompts(params){
+  const base={...DEFAULT_ACTIVITY_PROMPTS};
+  const raw=params?.openai_activity_prompts;
+  if(raw && typeof raw==='object'){
+    Object.entries(raw).forEach(([key,value])=>{
+      if(typeof value==='string') base[key]=value;
+    });
+  }
+  const legacy=typeof params?.openai_activity_prompt==='string'?params.openai_activity_prompt.trim():'';
+  if(legacy){
+    if(!base.__DEFAULT || base.__DEFAULT===DEFAULT_OPENAI_PROMPT) base.__DEFAULT=legacy;
+    ACTIVITY_TYPES.forEach(type=>{
+      if(base[type]===DEFAULT_OPENAI_PROMPT) base[type]=legacy;
+    });
+  }
+  if(!base.__DEFAULT) base.__DEFAULT=DEFAULT_OPENAI_PROMPT;
+  return base;
+}
+function getActivityPrompt(params,type){
+  const prompts=getActivityPrompts(params);
+  const key=normalizeActivityPromptType(type);
+  return prompts[key] ?? prompts.__DEFAULT ?? DEFAULT_OPENAI_PROMPT;
+}
 const DEFAULT_THEMATIQUES=[
   {id:'le-cardinal',nom:'Le Cardinal',emoji:'🧊',color:'#3b82f6'},
   {id:'robert-jr',nom:'Robert Jr',emoji:'🗣️',color:'#ec4899'},
@@ -314,6 +379,7 @@ const getThematique=(id)=>{
 let store=load();
 let initialStoreSnapshot=JSON.parse(JSON.stringify(store));
 let lastSessionDiff={};
+let activityPromptDrafts={...DEFAULT_ACTIVITY_PROMPTS};
 /* LOAD / SAVE */
 function ensureThematiqueIds(arr){
   const taken=new Set();
@@ -330,6 +396,8 @@ function ensureThematiqueIds(arr){
 function migrateStore(data){
   const migrated={...data};
   migrated.params={...DEFAULT_PARAMS,...(data.params||{})};
+  migrated.params.openai_activity_prompts=getActivityPrompts(migrated.params);
+  migrated.params.openai_activity_prompt=migrated.params.openai_activity_prompts.__DEFAULT||DEFAULT_OPENAI_PROMPT;
   migrated.thematiques=ensureThematiqueIds(data.thematiques && data.thematiques.length?data.thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})));
   if(Array.isArray(migrated.consultants)){
     migrated.consultants=migrated.consultants.map(c=>{
@@ -406,7 +474,7 @@ const TABS=[
 {id:'dashboard',labelFull:'Sherpa',labelShort:'Sherpa'},
 {id:'activite',labelFull:'🗂️ Activités',labelShort:'🗂️ Activités'},
 {id:'guidee',labelFull:'🧭 Guidées',labelShort:'🧭 Guidées'},
-{id:'reglages',labelFull:'⚙️Paramètres',labelShort:'⚙️'}
+{id:'reglages',labelFull:'⏱️Délais',labelShort:'⏱️'}
 ];
 const tabsEl=$('tabs');
 const btnDashboardNewConsultant=$('btn-dashboard-new-consultant');
@@ -1197,9 +1265,26 @@ const hashtagsInput=$('p-hashtags');
 if(hashtagsInput){
   hashtagsInput.value=p.hashtags_catalog ?? DEFAULT_HASHTAG_CATALOG;
 }
-const promptInput=$('p-openai-prompt');
-if(promptInput){
-  promptInput.value=p.openai_activity_prompt ?? DEFAULT_OPENAI_PROMPT;
+activityPromptDrafts={...getActivityPrompts(p)};
+const activityPromptSelect=$('p-openai-activity-type');
+const activityPromptTextarea=$('p-openai-activity');
+if(activityPromptSelect && activityPromptTextarea){
+  const initialType=normalizeActivityPromptType(activityPromptSelect.value);
+  activityPromptSelect.value=initialType;
+  activityPromptTextarea.dataset.currentType=initialType;
+  activityPromptTextarea.value=activityPromptDrafts[initialType] ?? DEFAULT_OPENAI_PROMPT;
+  activityPromptTextarea.oninput=()=>{
+    const currentType=normalizeActivityPromptType(activityPromptTextarea.dataset.currentType);
+    activityPromptDrafts[currentType]=activityPromptTextarea.value;
+  };
+  activityPromptSelect.onchange=()=>{
+    const previousType=normalizeActivityPromptType(activityPromptTextarea.dataset.currentType);
+    activityPromptDrafts[previousType]=activityPromptTextarea.value;
+    const nextType=normalizeActivityPromptType(activityPromptSelect.value);
+    activityPromptSelect.value=nextType;
+    activityPromptTextarea.dataset.currentType=nextType;
+    activityPromptTextarea.value=activityPromptDrafts[nextType] ?? DEFAULT_OPENAI_PROMPT;
+  };
 }
 const consultantPromptInput=$('p-openai-consultant');
 if(consultantPromptInput){
@@ -1228,8 +1313,20 @@ p.activites_a_venir_jours=Math.max(1, Number($('p-activites_avenir').value||30))
 p.objectif_bar_max_heures=Math.max(1, Number($('p-objectif_bar_max').value||10));
 const hashtagsInput=$('p-hashtags');
 p.hashtags_catalog=hashtagsInput?.value.trim()||DEFAULT_HASHTAG_CATALOG;
-const promptInput=$('p-openai-prompt');
-p.openai_activity_prompt=promptInput?.value.trim()||DEFAULT_OPENAI_PROMPT;
+const activityPromptTextarea=$('p-openai-activity');
+if(activityPromptTextarea){
+  const type=normalizeActivityPromptType(activityPromptTextarea.dataset.currentType);
+  activityPromptDrafts[type]=activityPromptTextarea.value;
+}
+const promptsToStore={...DEFAULT_ACTIVITY_PROMPTS};
+Object.entries(activityPromptDrafts).forEach(([key,value])=>{
+  if(typeof value==='string'){
+    const trimmed=value.trim();
+    promptsToStore[key]=trimmed || DEFAULT_OPENAI_PROMPT;
+  }
+});
+p.openai_activity_prompts=promptsToStore;
+p.openai_activity_prompt=promptsToStore.__DEFAULT||DEFAULT_OPENAI_PROMPT;
 const consultantPromptInput=$('p-openai-consultant');
 p.openai_consultant_prompt=consultantPromptInput?.value.trim()||DEFAULT_OPENAI_CONSULTANT_PROMPT;
 const guideePromptInput=$('p-openai-guidee');
@@ -1249,8 +1346,6 @@ const faHeures=$('fa-heures');
 const faConsult=$('fa-consultant');
 const faGuidee=$('fa-guidee');
 const faDesc=$('fa-desc');
-const faBenefWrap=$('fa-beneficiaires-wrap');
-const faBenef=$('fa-beneficiaires');
 const btnFaGoto=$('fa-goto-consultant');
 const btnFaDelete=$$('#dlg-activity .actions [data-action="delete"]');
 const faOpenAI=$('fa-openai');
@@ -1269,10 +1364,8 @@ if(faHeures && !faHeures.options.length){
 faType.onchange=()=>{
   const value=faType.value;
   const isSTB=value==='ACTION_ST_BERNARD';
-  const isCordee=value==='CORDEE';
   faHeuresWrap.classList.toggle('hidden',!isSTB);
   faGuidee.required=isSTB;
-  faBenefWrap?.classList.toggle('hidden',!isCordee);
   if(isSTB){
     if(!faGuidee.value){
       updateFaGuideeOptions();
@@ -1281,19 +1374,14 @@ faType.onchange=()=>{
   }else{
     faHeures.value='0';
   }
-  if(isCordee){
-    updateBeneficiairesOptions();
-  }else if(faBenef){
-    Array.from(faBenef.options||[]).forEach(opt=>{ opt.selected=false; });
-  }
 };
-faConsult.onchange=()=>{ updateFaGuideeOptions(); updateBeneficiairesOptions(); };
+faConsult.onchange=()=>{ updateFaGuideeOptions(); };
 btnFaGoto.onclick=()=>{ const cid=faConsult.value; if(cid){ dlgA.close(); openConsultantModal(cid); } };
 faOpenAI?.addEventListener('click',async()=>{
   const currentText=faDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
   const params=store?.params||DEFAULT_PARAMS;
-  const template=params.openai_activity_prompt||DEFAULT_OPENAI_PROMPT;
+  const template=getActivityPrompt(params,faType.value);
   const typeMeta=TYPE_META[faType.value]||{label:faType.value};
   const consultantName=store.consultants.find(c=>c.id===faConsult.value)?.nom||'';
   const guideeName=faGuidee?.value ? (store.guidees.find(g=>g.id===faGuidee.value)?.nom||'') : '';
@@ -1305,7 +1393,7 @@ faOpenAI?.addEventListener('click',async()=>{
     hashtags_catalog:getConfiguredHashtags().join(' ')
   }).trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
-  await invokeAIHelper(faOpenAI,faDesc,prompt,ACT_DESC_MAX);
+  await invokeAIHelper(faOpenAI,faDesc,prompt);
 });
 function updateFaGuideeOptions(preferredId){
   if(!faGuidee) return;
@@ -1324,16 +1412,6 @@ function updateFaGuideeOptions(preferredId){
   const hasDesired=desired && list.some(g=>g.id===desired);
   faGuidee.value=hasDesired ? desired : (list[0]?.id||'');
 }
-function updateBeneficiairesOptions(selected){
-  if(!faBenef) return;
-  const cid=faConsult.value;
-  const currentSelected=new Set(Array.isArray(selected)?selected:Array.from(faBenef.selectedOptions||[]).map(opt=>opt.value));
-  const options=store.consultants
-    .filter(c=>c.id && c.id!==cid)
-    .sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
-  faBenef.innerHTML=options.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
-  Array.from(faBenef.options||[]).forEach(opt=>{ opt.selected=currentSelected.has(opt.value); });
-}
 $('btn-new-activity').onclick=()=>openActivityModal();
 let currentActivityId=null;
 function openActivityModal(id=null){
@@ -1345,36 +1423,27 @@ if(id && state.activities.selectedId!==id){
 faConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
 $('fa-date').value=todayStr();
 faDesc.value='';
-if(faBenef){ faBenef.innerHTML=''; }
 faType.value='ACTION_ST_BERNARD'; faHeuresWrap.classList.remove('hidden'); faHeures.value='0';
-faBenefWrap?.classList.add('hidden');
 if(id){
 const a=store.activities.find(x=>x.id===id); if(!a) return;
 faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; faHeures.value=String(a.heures??0);
 updateFaGuideeOptions(a.guidee_id||'');
-updateBeneficiairesOptions(Array.isArray(a.beneficiaires)?a.beneficiaires:[]);
 faType.onchange();
 }else{
   updateFaGuideeOptions();
-  updateBeneficiairesOptions();
   faType.onchange();
 }
-autoSizeKeepMax(faDesc, ACT_DESC_MAX);
-on(faDesc,'input',()=>autoSizeKeepMax(faDesc, ACT_DESC_MAX),{once:false});
 dlgA.showModal();
 }
 $('form-activity').onsubmit=(e)=>{
 e.preventDefault();
 const isSTB=faType.value==='ACTION_ST_BERNARD';
-const isCordee=faType.value==='CORDEE';
 const heuresValue=isSTB ? Number(faHeures.value??0) : undefined;
-const beneficiairesValues=isCordee && faBenef ? Array.from(faBenef.selectedOptions||[]).map(opt=>opt.value).filter(Boolean) : [];
-const data={ consultant_id:faConsult.value, type:faType.value, date_publication:$('fa-date').value, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined, beneficiaires: isCordee ? beneficiairesValues : undefined };
+const data={ consultant_id:faConsult.value, type:faType.value, date_publication:$('fa-date').value, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined };
 const heuresInvalid=isSTB && (!Number.isFinite(heuresValue) || heuresValue<0);
 const missing = !data.consultant_id || !data.type || !data.date_publication || !data.description || heuresInvalid || (isSTB && !data.guidee_id);
 if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
-if(!isCordee){ delete data.beneficiaires; }
 if(currentActivityId){ Object.assign(store.activities.find(x=>x.id===currentActivityId),data,{updated_at:nowISO()}); }else{ store.activities.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
 dlgA.close('ok'); save();
 };
@@ -1414,7 +1483,7 @@ fgOpenAI?.addEventListener('click',async()=>{
     hashtags_catalog:getConfiguredHashtags().join(' ')
   }).trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
-  await invokeAIHelper(fgOpenAI,fgDesc,prompt,GUIDEE_DESC_MAX);
+  await invokeAIHelper(fgOpenAI,fgDesc,prompt);
 });
 let guideeInitialSnapshot=null;
 function snapshotGuideeForm(){
@@ -1490,8 +1559,6 @@ function openGuideeModal(id=null){
   const consultant=store.consultants.find(c=>c.id===(g?.consultant_id||fgConsult.value));
   const defaultEnd=consultant?.date_fin||start;
   fgFin.value=g?.date_fin||defaultEnd;
-  autoSizeKeepMax(fgDesc,GUIDEE_DESC_MAX);
-  on(fgDesc,'input',()=>autoSizeKeepMax(fgDesc,GUIDEE_DESC_MAX),{once:false});
   guideeInitialSnapshot=normalizeGuideeSnapshot(snapshotGuideeForm());
   dlgG.showModal();
 }
@@ -1567,7 +1634,7 @@ fcOpenAI?.addEventListener('click',async()=>{
     hashtags_catalog:getConfiguredHashtags().join(' ')
   }).trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
-  await invokeAIHelper(fcOpenAI,fcDesc,prompt,CONS_DESC_MAX);
+  await invokeAIHelper(fcOpenAI,fcDesc,prompt);
 });
 
 function updateBoondLink(idValue){
@@ -1591,8 +1658,6 @@ if(fcFin) fcFin.value=c?.date_fin||'';
 if(fcBoond) fcBoond.value=c?.boond_id||'';
 if(fcDesc) fcDesc.value=c?.description||'';
 updateBoondLink(c?.boond_id||'');
-autoSizeKeepMax(fcDesc, CONS_DESC_MAX);
-on(fcDesc,'input',()=>autoSizeKeepMax(fcDesc, CONS_DESC_MAX),{once:false});
 dlgC.showModal();
 }
 if(fcBoond){

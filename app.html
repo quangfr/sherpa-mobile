@@ -101,49 +101,61 @@
 <!-- RÉGLAGES -->
 <section class="view" id="view-reglages">
 <div class="reglages-grid">
-<div class="card">
-<div class="row space">
-<div class="title">🔃 Sync GitHub</div>
-<div class="row">
-<button class="btn small danger" id="btn-reset-storage">🐈‍⬛ Réinitialiser</button>
-<a class="btn small" id="link-create-issue" href="#" target="_blank" rel="noopener">🐈‍⬛Mettre à jour</a>
-<button class="btn small" id="btn-copy-diff">📋 Copier diff</button>
-<button class="btn small" id="btn-copy-all">📋 Copier tout</button>
-<button class="btn small" id="btn-import-json">📂 Charger</button>
-</div>
-</div>
-<div class="sub" style="margin:6px 0">Aperçu de vos données (lecture seule) — vous pouvez copier le JSON.</div>
-<pre id="json-preview" class="mono hover-scroll" style="max-height:400px;overflow:auto;border:1px solid var(--border);padding:10px;border-radius:10px"></pre>
-<input id="file-import" type="file" accept="application/json,.json" class="hidden"/>
-</div>
-<div class="card">
-<div class="title">⚙️ Paramètres</div>
-<div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px">
-<label>delai_alerte_jours <input type="number" id="p-delai_alerte" min="1"/></label>
-<label>fin_mission_sous_jours <input type="number" id="p-fin_mission_sous" min="1"/></label>
-<label>stb_recent_jours <input type="number" id="p-stb_recent" min="1"/></label>
-<label>avis_manquant_depuis_jours <input type="number" id="p-avis_manquant" min="1"/></label>
-<label>objectif_recent_jours <input type="number" id="p-objectif_recent" min="1"/></label>
-<label>activites_recent_jours <input type="number" id="p-activites_recent" min="1"/></label>
-<label>activites_a_venir_jours <input type="number" id="p-activites_avenir" min="1"/></label>
-<label>objectif_bar_max_heures <input type="number" id="p-objectif_bar_max" min="1" step="1"/></label>
-<label style="grid-column:1/-1">Repo GitHub <input type="text" id="p-github-repo" placeholder="owner/repo"/></label>
-</div>
-<label style="grid-column:1/-1">Liste des hashtags disponibles (séparés par un espace)
-  <textarea id="p-hashtags" rows="4" placeholder="#ProductBacklogPrioritization #ProductUserStories …"></textarea>
-</label>
-<label style="grid-column:1/-1">Prompt OpenAI pour la description d’activité
-  <textarea id="p-openai-prompt" rows="3"></textarea>
-</label>
-<label style="grid-column:1/-1">Prompt OpenAI pour la description consultant
-  <textarea id="p-openai-consultant" rows="3"></textarea>
-</label>
-<label style="grid-column:1/-1">Prompt OpenAI pour la description de guidée
-  <textarea id="p-openai-guidee" rows="3"></textarea>
-</label>
-<div class="row" style="margin-top:8px"><button class="btn primary small" id="btn-save-params">Enregistrer</button></div>
-<div class="sub" style="margin-top:6px">Les titres du Dashboard & l’affichage des barres se mettent à jour automatiquement.</div>
-</div>
+  <div class="card">
+    <div class="row space">
+      <div class="title">🔃 Sync</div>
+      <div class="row">
+        <button class="btn small danger" id="btn-reset-storage">🐈‍⬛ Réinitialiser</button>
+        <a class="btn small" id="link-create-issue" href="#" target="_blank" rel="noopener">🐈‍⬛Mettre à jour</a>
+        <button class="btn small" id="btn-copy-diff">📋 Copier diff</button>
+        <button class="btn small" id="btn-copy-all">📋 Copier tout</button>
+        <button class="btn small" id="btn-import-json">📂 Charger</button>
+      </div>
+    </div>
+    <div class="sub" style="margin:6px 0">Aperçu de vos données (lecture seule) — vous pouvez copier le JSON.</div>
+    <pre id="json-preview" class="mono hover-scroll" style="max-height:400px;overflow:auto;border:1px solid var(--border);padding:10px;border-radius:10px"></pre>
+    <input id="file-import" type="file" accept="application/json,.json" class="hidden"/>
+  </div>
+  <div class="card">
+    <div class="title">⏱️ Délais</div>
+    <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px">
+      <label>delai_alerte_jours <input type="number" id="p-delai_alerte" min="1"/></label>
+      <label>fin_mission_sous_jours <input type="number" id="p-fin_mission_sous" min="1"/></label>
+      <label>stb_recent_jours <input type="number" id="p-stb_recent" min="1"/></label>
+      <label>avis_manquant_depuis_jours <input type="number" id="p-avis_manquant" min="1"/></label>
+      <label>objectif_recent_jours <input type="number" id="p-objectif_recent" min="1"/></label>
+      <label>activites_recent_jours <input type="number" id="p-activites_recent" min="1"/></label>
+      <label>activites_a_venir_jours <input type="number" id="p-activites_avenir" min="1"/></label>
+      <label>objectif_bar_max_heures <input type="number" id="p-objectif_bar_max" min="1" step="1"/></label>
+      <label style="grid-column:1/-1">Repo GitHub <input type="text" id="p-github-repo" placeholder="owner/repo"/></label>
+    </div>
+    <label style="grid-column:1/-1">Liste des hashtags disponibles (séparés par un espace)
+      <textarea id="p-hashtags" rows="4" placeholder="#ProductBacklogPrioritization #ProductUserStories …"></textarea>
+    </label>
+    <div class="row" style="margin-top:8px"><button class="btn primary small" id="btn-save-params">Enregistrer</button></div>
+    <div class="sub" style="margin-top:6px">Les titres du Dashboard & l’affichage des barres se mettent à jour automatiquement.</div>
+  </div>
+  <div class="card">
+    <div class="title">🤖 Prompts IA</div>
+    <label>Prompt description d’activité
+      <select id="p-openai-activity-type">
+        <option value="__DEFAULT">✨ Par défaut</option>
+        <option value="ACTION_ST_BERNARD">🐕‍🦺 Action STB</option>
+        <option value="CORDEE">🪢 Cordée</option>
+        <option value="NOTE">📝 Note</option>
+        <option value="VERBATIM">💬 Verbatim</option>
+        <option value="AVIS">🗣️ Avis</option>
+        <option value="ALERTE">🚨 Alerte</option>
+      </select>
+    </label>
+    <textarea id="p-openai-activity" rows="6"></textarea>
+    <label>Prompt description consultant
+      <textarea id="p-openai-consultant" rows="6"></textarea>
+    </label>
+    <label>Prompt description guidée
+      <textarea id="p-openai-guidee" rows="6"></textarea>
+    </label>
+  </div>
 </div>
 </section>
 </main>
@@ -167,12 +179,9 @@
 <label id="fa-heures-wrap" class="hidden">Heures réalisées <select name="heures" id="fa-heures"></select></label>
 <label style="grid-column:1/-1" class="field-with-action">Description
   <div class="textarea-with-action">
-    <textarea name="description" required id="fa-desc" placeholder="#Team #Customer #Tech #Design #Product #Data"></textarea>
+    <textarea name="description" required id="fa-desc" class="description-field" placeholder="#Team #Customer #Tech #Design #Product #Data @Consultant"></textarea>
     <button type="button" class="btn ghost small ai-helper" id="fa-openai" title="Générer un résumé avec OpenAI">✨</button>
   </div>
-</label>
-<label id="fa-beneficiaires-wrap" class="hidden" style="grid-column:1/-1">Bénéficiaires
-  <select id="fa-beneficiaires" multiple></select>
 </label>
 </div>
     <div class="actions"><button type="button" class="btn danger" data-action="delete">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
@@ -192,7 +201,7 @@
     <label>Date de fin* <input type="date" id="fg-fin" required/></label>
     <label style="grid-column:1/-1" class="field-with-action">Description
       <div class="textarea-with-action">
-        <textarea id="fg-desc" placeholder="#Team #Customer #Tech #Design #Product #Data" style="min-height:200px;resize:none;overflow:hidden"></textarea>
+        <textarea id="fg-desc" class="description-field" placeholder="#Team #Customer #Tech #Design #Product #Data @Consultant"></textarea>
         <button type="button" class="btn ghost small ai-helper" id="fg-openai" title="Générer une description avec OpenAI">✨</button>
       </div>
     </label>
@@ -215,7 +224,7 @@
 <label>Boond Id <input name="boond_id" id="fc-boond" placeholder="12345"/></label>
 <label style="grid-column:1/-1" class="field-with-action">Description
   <div class="textarea-with-action">
-    <textarea name="description" id="fc-desc" placeholder="#Team #Customer #Tech #Design #Product #Data"></textarea>
+    <textarea name="description" id="fc-desc" class="description-field" placeholder="#Team #Customer #Tech #Design #Product #Data @Consultant"></textarea>
     <button type="button" class="btn ghost small ai-helper" id="fc-openai" title="Générer une description avec OpenAI">✨</button>
   </div>
 </label>
