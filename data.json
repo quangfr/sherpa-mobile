@@ -1990,11 +1990,12 @@
       "consultant_id": "37792a47-987e-429a-a969-b5e6d3450308",
       "type": "ACTION_ST_BERNARD",
       "date_publication": "2025-10-12",
-      "description": "Action STB Delivery menée avec l'équipe.\nObjectif : sécuriser l'impact utilisateur à court terme.\nDécisions partagées avec le coach produit.\nSuivi des indicateurs aligné sur la guidée.",
-      "heures": 1.5,
+      "description": "Edit",
+      "heures": 2,
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T12:38:24.597Z",
+      "_status": "updated"
     },
     {
       "id": "6278b236-b6ec-4d4d-9784-4494d01b661f",
