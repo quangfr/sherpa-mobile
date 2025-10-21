@@ -165,10 +165,11 @@
       "nom": "Pôlène 1 · Architecture Data",
       "description": "Guidée Pôlène pour Léo Garnier. Connecter afin de cartographier les échanges de données qui révèlent la valeur parcours.",
       "date_debut": "2024-11-26",
-      "date_fin": "2025-08-13",
+      "date_fin": "2025-12-31",
       "thematique_id": "polene",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T14:44:08.968Z",
+      "_status": "updated"
     },
     {
       "id": "e23dfc10-2708-4c53-86de-a760b9599870-70cddb51-1299-48c6-86a0-0d64dc5915c3-1",
@@ -1277,10 +1278,11 @@
       "type": "ACTION_ST_BERNARD",
       "date_publication": "2025-05-25",
       "description": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact.\nObjectif : sécuriser l'alignement OKR et clarifier les paris produit.\nDécisions partagées : indicateurs cibles, paris stratégiques et jalons temporels.\nSuivi : revue de priorisation programmée avec le sponsor business.",
-      "heures": 2,
+      "heures": 4,
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T14:44:38.857Z",
+      "_status": "updated"
     },
     {
       "id": "25da637f-0657-488b-bfbd-5628cddec818",
@@ -1367,12 +1369,14 @@
     {
       "id": "4067fc4d-6b6b-4239-9a68-ad159020be10",
       "consultant_id": "89d61ef7-9bb3-4e46-896c-38ad8dbc7de1",
-      "type": "ALERTE",
+      "type": "ACTION_ST_BERNARD",
       "date_publication": "2025-06-03",
       "description": "Alerte Goal Digger : signal critique détecté sur la guidée.\nRisque : dispersion des efforts sur des objectifs secondaires.\nPlan d'actions : resynchronisation des jalons et re-cadrage des critères d'arbitrage.\nCadre de suivi : rituel hebdo de suivi des OKR et des arbitrages de backlog.",
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T14:44:56.205Z",
+      "heures": 1.5,
+      "_status": "updated"
     },
     {
       "id": "db23c3ce-96ce-4d6d-b6ff-dd8f939c68dd",
@@ -1403,16 +1407,6 @@
       "description": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact.\nObjectif : sécuriser l'alignement OKR et clarifier les paris produit.\nDécisions partagées : indicateurs cibles, paris stratégiques et jalons temporels.\nSuivi : revue de priorisation programmée avec le sponsor business.",
       "heures": 3,
       "guidee_id": "aaac168c-abeb-4bbf-a075-74c6b36a7d7d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-2",
-      "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
-    },
-    {
-      "id": "a1e7c856-fc5b-43ed-87ba-6a431b2c2ca5",
-      "consultant_id": "89d61ef7-9bb3-4e46-896c-38ad8dbc7de1",
-      "type": "AVIS",
-      "date_publication": "2025-06-05",
-      "description": "Avis coach Goal Digger : progression sur la capacité à prioriser.\nPoints forts : vision alignée des objectifs et métriques d'impact.\nRecommandations : maintenir un arbitrage mensuel sur la valeur livrée.\nPartage : synthèse envoyée aux pilotes de stream et au coach produit.",
-      "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
