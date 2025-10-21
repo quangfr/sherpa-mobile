@@ -121,20 +121,6 @@
 
 ### 5.5 Sync & intégrations
 - **Aperçu JSON** lecture seule; **Import** via input file; **Réinit** : purge LS + bootstrap; **Diff/All** : copie presse-papiers; **Lien GitHub** : `meta.github_repo`. :contentReference[oaicite:60]{index=60} :contentReference[oaicite:61]{index=61}
-- **OpenAI ✨** : dans la modale Activité, un bouton envoie la description au modèle `gpt-5.0-nano` (résumé 3 lignes + hashtags). Clé lue via `window.SHERPA_OPENAI_KEY`. :contentReference[oaicite:60]{index=60}
-
-### 5.6 Configuration OpenAI
-1. Créer un **secret de dépôt** GitHub nommé `OPENAI_API_KEY` (`Settings` → `Secrets and variables` → `Actions`).
-2. Lors du déploiement (GitHub Pages / Action), générer un fichier non versionné `config.js` à la racine contenant :
-   ```html
-   <script>
-     window.SHERPA_OPENAI_KEY = "${OPENAI_API_KEY}";
-   </script>
-   ```
-   (le fichier est référencé avant `app.js`, le script peut être injecté par l’Action).
-3. En local, créer manuellement `config.js` (non commité) avec la même instruction pour tester.
-
-Sans ce fichier ou sans secret, le bouton `✨` avertit simplement que la clé est manquante.
 
 ---
 
