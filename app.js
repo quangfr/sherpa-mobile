@@ -25,6 +25,7 @@ const $$=sel=>document.querySelector(sel);
 const $$all=sel=>document.querySelectorAll(sel);
 const on=(el,ev,fn,opt)=>el?.addEventListener(ev,fn,opt);
 const formatHours=(value)=>{ const num=Number(value); if(!Number.isFinite(num)) return '0'; return num.toString().replace('.',','); };
+const deepClone=(obj)=>JSON.parse(JSON.stringify(obj));
 function formatActivityDate(dateStr){
   if(!dateStr) return '—';
   const date=parseDate(dateStr);
@@ -69,6 +70,8 @@ const getThematique=(id)=>{
   return list.find(t=>t.id===id)||list.find(t=>t.id==='autre')||null;
 };
 let store=load();
+let initialStoreSnapshot=JSON.parse(JSON.stringify(store));
+let lastSessionDiff={};
 /* LOAD / SAVE */
 function ensureThematiqueIds(arr){
   const taken=new Set();
@@ -186,8 +189,6 @@ $('db-fin-w').textContent=p.delai_alerte_jours;
 $('db-fin-x').textContent=p.fin_mission_sous_jours;
 $('db-stb-y').textContent=p.stb_recent_jours;
 $('db-avis-z').textContent=p.avis_manquant_depuis_jours;
-const recentLabel=$('db-actions-recent'); if(recentLabel) recentLabel.textContent=recentDays;
-const upcomingLabel=$('db-actions-upcoming'); if(upcomingLabel) upcomingLabel.textContent=upcomingDays;
 const fmt=(arr,box,title)=>{
 const out=$(box); out.innerHTML='';
 arr.forEach(c=>{
@@ -208,27 +209,52 @@ const recentCut=addDays(today,-recentDays);
 const upcomingCut=addDays(today,upcomingDays);
 const recentZero=zeroHourActs.filter(a=>{ const d=parseDate(a.date_publication); return d && d<=today && d>=recentCut; }).sort((a,b)=>b.date_publication.localeCompare(a.date_publication));
 const upcomingZero=zeroHourActs.filter(a=>{ const d=parseDate(a.date_publication); return d && d>today && d<=upcomingCut; }).sort((a,b)=>a.date_publication.localeCompare(b.date_publication));
-const renderActions=(arr,listId,countId)=>{
+const buildGuideeEntries=(arr, preferLatest)=>{
+  const map=new Map();
+  arr.forEach(action=>{
+    const gid=action.guidee_id;
+    if(!gid) return;
+    const actionDate=parseDate(action.date_publication||'');
+    if(!actionDate) return;
+    const existing=map.get(gid);
+    const shouldReplace=!existing || (preferLatest ? actionDate>existing.date : actionDate<existing.date);
+    if(shouldReplace){
+      const consultant=store.consultants.find(c=>c.id===action.consultant_id);
+      const guidee=store.guidees.find(g=>g.id===gid);
+      if(!consultant || !guidee) return;
+      map.set(gid,{action, consultant, guidee, date:actionDate});
+    }
+  });
+  const entries=[...map.values()];
+  entries.sort((a,b)=>preferLatest? b.date - a.date : a.date - b.date);
+  return entries;
+};
+const recentEntries=buildGuideeEntries(recentZero,true);
+const recentIds=new Set(recentEntries.map(entry=>entry.guidee.id));
+const upcomingEntries=buildGuideeEntries(upcomingZero,false).filter(entry=>!recentIds.has(entry.guidee.id));
+const renderGuideeEntries=(entries,listId,countId)=>{
   const listEl=$(listId);
   const countEl=$(countId);
   if(listEl) listEl.innerHTML='';
-  arr.forEach(a=>{
+  entries.forEach(entry=>{
+    const {consultant, guidee, action}=entry;
+    if(!consultant || !guidee || !action) return;
     const row=document.createElement('div');
     row.className='db-row';
-    const consultant=store.consultants.find(c=>c.id===a.consultant_id);
-    const title=esc(consultant?.nom||'—');
-    const desc=esc(a.description||'—');
-    row.innerHTML=`<div class="row space" style="gap:6px"><span class="linklike" data-open-act="${a.id}">${title}</span><span class="sub">${esc(formatActivityDate(a.date_publication||''))}</span></div><div class="sub">${desc}</div>`;
-    const link=row.querySelector('[data-open-act]');
-    if(link){
-      on(link,'click',()=>{ openTab('activite',true); openActivityModal(a.id); });
-    }
+    row.classList.add('clickable-row');
+    row.tabIndex=0;
+    const dateLabel=esc(formatActivityDate(action.date_publication||''));
+    row.innerHTML=`<div class="row space"><div class="row" style="gap:6px"><span class="linklike">${esc(consultant.nom||'—')}</span><span class="sub">/ ${esc(guidee.nom||'Sans titre')}</span></div><span class="sub">${dateLabel}</span></div>`;
+    on(row,'click',()=>{ gotoGuideeTimeline(guidee.id, action.id); });
+    on(row,'keydown',evt=>{
+      if(evt.key==='Enter' || evt.key===' '){ evt.preventDefault(); gotoGuideeTimeline(guidee.id, action.id); }
+    });
     listEl?.appendChild(row);
   });
-  if(countEl) countEl.textContent=arr.length;
+  if(countEl) countEl.textContent=entries.length;
 };
-renderActions(recentZero,'db-actions-recent-list','db-actions-recent-count');
-renderActions(upcomingZero,'db-actions-upcoming-list','db-actions-upcoming-count');
+renderGuideeEntries(recentEntries,'db-actions-recent-list','db-actions-recent-count');
+renderGuideeEntries(upcomingEntries,'db-actions-upcoming-list','db-actions-upcoming-count');
 }
 /* STATE */
 let state={
@@ -279,12 +305,12 @@ openTab('guidee',true);
 renderGuideeFilters();
 renderGuideeTimeline();
 }
-function gotoGuideeTimeline(gid){
+function gotoGuideeTimeline(gid, activityId=''){
   const g=store.guidees.find(x=>x.id===gid);
   if(!g){ return; }
   state.guidees.guidee_id=g.id;
   state.guidees.consultant_id=g.consultant_id||'';
-  state.guidees.selectedEventId='';
+  state.guidees.selectedEventId=activityId?`act-${activityId}`:'';
   renderGuideeFilters();
   renderGuideeTimeline();
   openTab('guidee',true);
@@ -448,7 +474,7 @@ const headerTitle=g?`${themeEmoji} ${guideeName}`:'';
 const headerLine=`<div class="clamp-1 objective-line"${headerTitle?` title="${esc(headerTitle)}"`:''}>${headerSegment || '—'}</div>`;
 const descLine=descText?`<div class="activity-desc${isSelected?'':' clamp-5'}" title="${descHtml}">${headerSegment? '— ' : ''}${descHtml}</div>`:'';
 const inlineEditButton=()=>`<button class="btn ghost small row-edit" data-inline-edit="${a.id}" title="Éditer l'activité">✏️</button>`;
-const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
+const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span></div>`;
 const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
 const tr=document.createElement('tr'); tr.classList.add('clickable');
 tr.style.setProperty('--selection-color',typeColor);
@@ -640,11 +666,16 @@ function renderGuideeTimeline(){
       else if(diff<0) ev.status='past';
     });
   });
+  const typeOrder=(val)=>{
+    if(val.type==='start') return -1;
+    if(val.type==='activity') return 0;
+    if(val.type==='end') return 1;
+    return 0;
+  };
   dated.sort((a,b)=>{
     const cmp=b.date.localeCompare(a.date);
     if(cmp!==0) return cmp;
-    const weight=val=>val.type==='activity'?1:(val.type==='end'?0:-1);
-    return weight(b)-weight(a);
+    return typeOrder(a)-typeOrder(b);
   });
   const availableIds=dated.map(ev=>ev.id);
   let selectedId=state.guidees.selectedEventId;
@@ -1101,8 +1132,61 @@ dlgC.close('ok'); save();
 };
 $$('#dlg-consultant .actions [value="del"]').onclick=(e)=>{ e.preventDefault(); if(!currentConsultantId){ dlgC.close(); return; } if(confirm('Supprimer ce consultant (et garder ses activités) ?')){ store.consultants=store.consultants.filter(c=>c.id!==currentConsultantId); dlgC.close('del'); save(); } };
 /* SYNC */
-function updateSyncPreview(){ const el=$('json-preview'); if(el) el.textContent=JSON.stringify(store,null,2); }
-$('btn-copy-json').onclick=async()=>{ await navigator.clipboard.writeText(JSON.stringify(store,null,2)); alert('JSON copié ✅'); };
+function diffArrayById(current=[], initial=[]){
+  const initialMap=new Map((initial||[]).filter(item=>item&&item.id).map(item=>[item.id,item]));
+  const currentMap=new Map((current||[]).filter(item=>item&&item.id).map(item=>[item.id,item]));
+  const result=[];
+  currentMap.forEach((item,id)=>{
+    const base=initialMap.get(id);
+    if(!base){
+      result.push({...deepClone(item), _status:'created'});
+    }else if(JSON.stringify(item)!==JSON.stringify(base)){
+      result.push({...deepClone(item), _status:'updated'});
+    }
+  });
+  initialMap.forEach((item,id)=>{
+    if(!currentMap.has(id)){
+      result.push({id, _status:'deleted'});
+    }
+  });
+  return result;
+}
+function diffParamsObject(current={}, initial={}){
+  const diff={};
+  const keys=new Set([...Object.keys(initial||{}), ...Object.keys(current||{})]);
+  keys.forEach(key=>{
+    if((initial||{})[key]!== (current||{})[key]){
+      diff[key]=current[key];
+    }
+  });
+  return diff;
+}
+function computeSessionDiff(){
+  const diff={};
+  const consultantsDiff=diffArrayById(store.consultants||[], initialStoreSnapshot.consultants||[]);
+  if(consultantsDiff.length) diff.consultants=consultantsDiff;
+  const activitiesDiff=diffArrayById(store.activities||[], initialStoreSnapshot.activities||[]);
+  if(activitiesDiff.length) diff.activities=activitiesDiff;
+  const guideesDiff=diffArrayById(store.guidees||[], initialStoreSnapshot.guidees||[]);
+  if(guideesDiff.length) diff.guidees=guideesDiff;
+  const paramsDiff=diffParamsObject(store.params||{}, initialStoreSnapshot.params||{});
+  if(Object.keys(paramsDiff).length) diff.params=paramsDiff;
+  const thematiquesDiff=diffArrayById(store.thematiques||[], initialStoreSnapshot.thematiques||[]);
+  if(thematiquesDiff.length) diff.thematiques=thematiquesDiff;
+  return diff;
+}
+function updateSyncPreview(){
+  const el=$('json-preview');
+  if(!el) return;
+  lastSessionDiff=computeSessionDiff();
+  const output=Object.keys(lastSessionDiff).length?JSON.stringify(lastSessionDiff,null,2):'{}';
+  el.textContent=output;
+}
+$('btn-copy-json').onclick=async()=>{
+  const payload=Object.keys(lastSessionDiff||{}).length?JSON.stringify(lastSessionDiff,null,2):'{}';
+  await navigator.clipboard.writeText(payload);
+  alert('JSON copié ✅');
+};
 const fileInput=$('file-import');
 const btnImportJson=$('btn-import-json');
 $('btn-reset-storage').onclick=resetFromDataJson;
@@ -1131,6 +1215,8 @@ if(!incoming || typeof incoming!=='object') throw new Error('Format vide');
 const migrated=migrateStore(incoming);
 localStorage.setItem(LS_KEY, JSON.stringify(migrated));
 store = migrated;
+initialStoreSnapshot=deepClone(store);
+lastSessionDiff={};
 refreshAll();
 alert(`LocalStorage réinitialisé depuis « ${sourceLabel} » ✅`);
 }
