@@ -80,6 +80,10 @@
           </select>
         </div>
       </div>
+      <div id="guidee-progress" class="guidee-progress hidden">
+        <div class="guidee-progress-bar"><span></span></div>
+        <div class="guidee-progress-label">0%</div>
+      </div>
     </div>
     <div class="pane-body hover-scroll">
       <div id="guidee-timeline" class="timeline"></div>
@@ -141,7 +145,7 @@
 </select></label>
 <label>Date <input type="date" name="date_publication" required id="fa-date"/></label>
 <label>Guidée <select name="guidee_id" id="fa-guidee"></select></label>
-<label id="fa-heures-wrap" class="hidden">Heures réalisées <input type="number" min="0" step="0.25" name="heures" id="fa-heures"/></label>
+<label id="fa-heures-wrap" class="hidden">Heures réalisées <select name="heures" id="fa-heures"></select></label>
 <label style="grid-column:1/-1">Description <textarea name="description" required id="fa-desc" placeholder="Description…"></textarea></label>
 </div>
     <div class="actions"><button type="button" class="btn danger" data-action="delete">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>

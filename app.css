@@ -51,6 +51,7 @@ textarea{width:100%;resize:vertical}
 .guidee-filters{display:grid;grid-template-columns:repeat(2,minmax(160px,1fr));gap:6px;align-items:center}
 @media (max-width:720px){.guidee-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pane-body{min-height:0;overflow:auto}
+#guidee-pane .pane-body{margin-top:20px}
 .hover-scroll{overflow:auto;scrollbar-gutter:stable both-edges;scrollbar-width:thin;scrollbar-color:transparent transparent}
 .hover-scroll:hover{ scrollbar-color:#c5c9d2 #eef1f6; }
 .hover-scroll::-webkit-scrollbar{width:8px;height:8px}
@@ -139,6 +140,7 @@ dialog::backdrop{background:#0006}
 .timeline-item.clickable .timeline-body{cursor:pointer}
 .timeline-edit{display:none}
 .timeline-item.selected .timeline-edit{display:inline-flex}
+.timeline-edit-guidee{display:inline-flex}
 .timeline-edit.btn{padding:2px 6px;font-size:12px}
 .timeline-edit.btn.small{font-size:12px}
 .hours-badge{display:inline-flex;align-items:center;gap:4px;padding:0 6px;border-radius:999px;background:var(--pill);color:#111;font-size:12px;line-height:1.4;font-weight:600}
@@ -206,7 +208,8 @@ main{height:calc(100vh - var(--headH));min-height:calc(100vh - var(--headH));ove
 .filters-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .filter-select{min-height:34px;font-size:12px}
 }
-.guidee-progress{position:sticky;bottom:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border-top:1px solid var(--border);z-index:2;--progress-color:var(--accent)}
+.guidee-progress{position:static;display:flex;align-items:center;gap:8px;padding:4px 0 0;background:transparent;border-top:none;--progress-color:var(--accent)}
+#guidee-pane .guidee-progress{padding:4px 0 0}
 .guidee-progress-bar{flex:1;height:4px;border-radius:999px;background:var(--border);position:relative;overflow:hidden}
 .guidee-progress-bar span{position:absolute;top:0;bottom:0;left:0;width:0;background:var(--progress-color);border-radius:inherit;transition:width .2s ease}
 .guidee-progress-label{font-size:12px;font-weight:600;min-width:52px;text-align:right;color:var(--muted)}

@@ -233,7 +233,7 @@ renderActions(upcomingZero,'db-actions-upcoming-list','db-actions-upcoming-count
 /* STATE */
 let state={
   filters:{consultant_id:'',type:'',month:'RECENT',thematique_id:''},
-  activities:{selectedId:''},
+  activities:{selectedId:'',shouldCenter:false},
   guidees:{consultant_id:'',guidee_id:'',selectedEventId:''}
 };
 /* CONSULTANTS */
@@ -443,8 +443,7 @@ const mobileContent=combinedText||'—';
 const friendlyDate=formatActivityDate(a.date_publication||'');
 const friendlyDateHtml=esc(friendlyDate);
 const rawDateTitle=esc(a.date_publication||'');
-const consultantButton=c?.id?`<span class="click-span" data-filter-consultant="${c.id}"><b>${esc(c.nom)}</b></span>`:`<span><b>${esc(c?.nom||'—')}</b></span>`;
-const consultantDesktop=c?.id?`<span class="click-span" data-filter-consultant="${c.id}"><b>${esc(c.nom)}</b></span>`:`<span><b>${esc(c?.nom||'—')}</b></span>`;
+const consultantLabel=`<span><b>${esc(c?.nom||'—')}</b></span>`;
 const headerTitle=g?`${themeEmoji} ${guideeName}`:'';
 const headerLine=`<div class="clamp-1 objective-line"${headerTitle?` title="${esc(headerTitle)}"`:''}>${headerSegment || '—'}</div>`;
 const descLine=descText?`<div class="activity-desc${isSelected?'':' clamp-5'}" title="${descHtml}">${headerSegment? '— ' : ''}${descHtml}</div>`:'';
@@ -460,7 +459,7 @@ tr.innerHTML = mobile
   <div class="row" style="gap:8px;justify-content:space-between;align-items:flex-start">
     <div class="row" style="gap:8px">
       <span class="pill ${meta.pill}">${meta.emoji} ${meta.label}</span>
-      ${consultantButton}
+      ${consultantLabel}
     </div>
     ${dateLineMobile}
   </div>
@@ -474,7 +473,7 @@ tr.innerHTML = mobile
   ${dateLineDesktop}
 </td>
 <td class="desktop-only">
-  ${consultantDesktop}
+  ${consultantLabel}
   <div class="sub">${esc(c?.titre_mission||'—')}</div>
 </td>
 <td class="main desktop-only">
@@ -483,13 +482,13 @@ tr.innerHTML = mobile
 </td>
 <td class="desktop-only nowrap actions-cell"><button class="btn small" data-edit="${a.id}" title="Éditer">✏️</button><button class="btn small danger" data-del="${a.id}" title="Supprimer">🗑️</button></td>`;
 on(tr,'click',(e)=>{
-  if(e.target.closest('button,[data-filter-consultant],[data-goto-guidee]')) return;
+  if(e.target.closest('button,[data-goto-guidee]')) return;
   if(state.activities.selectedId!==a.id){
     state.activities.selectedId=a.id;
+    state.activities.shouldCenter=true;
     renderActivities();
   }
 });
-tr.querySelectorAll('[data-filter-consultant]').forEach(el=>on(el,'click',(e)=>{ e.stopPropagation(); const cid=e.currentTarget.dataset.filterConsultant; if(cid) setConsultantFilter(cid); }));
 tr.querySelectorAll('[data-goto-guidee]').forEach(el=>on(el,'click',(e)=>{ e.stopPropagation(); const gid=e.currentTarget.dataset.gotoGuidee; if(gid) gotoGuideeTimeline(gid); }));
 tr.querySelectorAll('[data-inline-edit]').forEach(btn=>on(btn,'click',(e)=>{ e.stopPropagation(); openActivityModal(a.id); }));
 if(!mobile){
@@ -500,6 +499,15 @@ if(!mobile){
 }
 actTBody.appendChild(tr);
 });
+if(state.activities.shouldCenter){
+  const selectedRow=actTBody.querySelector('tr.selected');
+  if(selectedRow){
+    requestAnimationFrame(()=>{
+      selectedRow.scrollIntoView({block:'center',inline:'nearest',behavior:'smooth'});
+    });
+  }
+  state.activities.shouldCenter=false;
+}
 updateFilterHighlights();
 }
 on(window,'resize',()=>renderActivities());
@@ -696,10 +704,14 @@ function renderGuideeTimeline(){
     const friendlyDate=formatActivityDate(ev.date);
     const friendlyDateHtml=esc(friendlyDate);
     const rawDate=esc(ev.date||'');
-    const timelineEdit=ev.type==='activity' && ev.activity
-      ? `<button class="btn ghost small timeline-edit" data-inline-edit-activity="${ev.activity.id}" title="Éditer l'activité">✏️</button>`
-      : '';
-    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-primary">${consultantHtml}</div><div class="timeline-meta-date"><span class="bold" title="${rawDate}">${friendlyDateHtml}</span>${timelineEdit}</div></div>`;
+    const editButtons=[];
+    if(ev.type==='activity' && ev.activity){
+      editButtons.push(`<button class="btn ghost small timeline-edit" data-inline-edit-activity="${ev.activity.id}" title="Éditer l'activité">✏️</button>`);
+    }
+    if((ev.type==='start' || ev.type==='end') && ev.guidee){
+      editButtons.push(`<button class="btn ghost small timeline-edit timeline-edit-guidee" data-inline-edit-guidee="${ev.guidee.id}" title="Éditer la guidée">✏️</button>`);
+    }
+    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-primary">${consultantHtml}</div><div class="timeline-meta-date"><span class="bold" title="${rawDate}">${friendlyDateHtml}</span>${editButtons.join('')}</div></div>`;
     const hoursBadge=ev.activity && ev.activity.type==='ACTION_ST_BERNARD'
       ? `<span class="hours-badge"><b>${esc(formatHours(ev.activity.heures??0))}h</b></span>`
       : '';
@@ -714,7 +726,7 @@ function renderGuideeTimeline(){
       bodyHtml=`<div class="timeline-text clamp-3">${parts||'—'}</div>`;
     }else{
       const verb=ev.type==='start'?'Démarrage':'Fin';
-      const parts=[hoursBadge, `${verb} de la guidée ${guideeSpan}`].filter(Boolean).join(' ');
+      const parts=[`🚩 ${verb} de la guidée ${guideeSpan}`].filter(Boolean).join(' ');
       bodyHtml=`<div class="timeline-text clamp-3">${parts||'—'}</div>`;
     }
     const markerIcon=isSelected?'✔️':esc(ev.icon);
@@ -732,6 +744,10 @@ function renderGuideeTimeline(){
     const inlineEdit=item.querySelector('[data-inline-edit-activity]');
     if(inlineEdit){
       on(inlineEdit,'click',e=>{ e.stopPropagation(); openActivityModal(ev.activity.id); });
+    }
+    const guideeEdit=item.querySelector('[data-inline-edit-guidee]');
+    if(guideeEdit && ev.guidee){
+      on(guideeEdit,'click',e=>{ e.stopPropagation(); openGuideeModal(ev.guidee.id); });
     }
     timelineEl.appendChild(item);
   });
@@ -822,25 +838,49 @@ const faGuidee=$('fa-guidee');
 const faDesc=$('fa-desc');
 const btnFaGoto=$('fa-goto-consultant');
 const btnFaDelete=$$('#dlg-activity .actions [data-action="delete"]');
-faType.onchange=()=>{const isSTB=faType.value==='ACTION_ST_BERNARD'; faHeuresWrap.classList.toggle('hidden',!isSTB); faGuidee.required=isSTB; if(isSTB && faHeures.value==='') faHeures.value=0; updateFaGuideeOptions();};
-faConsult.onchange=updateFaGuideeOptions;
+if(faHeures && !faHeures.options.length){
+  const frag=document.createDocumentFragment();
+  for(let i=0;i<=30;i++){
+    const val=i*0.5;
+    const option=document.createElement('option');
+    option.value=String(val);
+    option.textContent=Number.isInteger(val)?String(val):String(val).replace('.',',');
+    frag.appendChild(option);
+  }
+  faHeures.appendChild(frag);
+}
+faType.onchange=()=>{
+  const isSTB=faType.value==='ACTION_ST_BERNARD';
+  faHeuresWrap.classList.toggle('hidden',!isSTB);
+  faGuidee.required=isSTB;
+  if(isSTB){
+    if(!faGuidee.value){
+      updateFaGuideeOptions();
+    }
+    if(faHeures.value==='') faHeures.value='0';
+  }
+};
+faConsult.onchange=()=>{ updateFaGuideeOptions(); };
 btnFaGoto.onclick=()=>{ const cid=faConsult.value; if(cid){ dlgA.close(); openConsultantModal(cid); } };
-function updateFaGuideeOptions(){
+function updateFaGuideeOptions(preferredId){
   if(!faGuidee) return;
-  const selected=faGuidee.value;
   const cid=faConsult.value;
   const list=store.guidees
     .filter(g=>!cid || g.consultant_id===cid)
     .sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
-  const opts=['<option value="">(Aucune)</option>',
-    ...list.map(g=>{
-      const theme=getThematique(g.thematique_id);
-      return `<option value="${g.id}">${esc(theme?.emoji||'🧭')} ${esc(g.nom||'Sans titre')}</option>`;
-    })
-  ];
+  if(!list.length){
+    faGuidee.innerHTML='<option value="" disabled>Sélectionner une guidée</option>';
+    faGuidee.value='';
+    return;
+  }
+  const opts=list.map(g=>{
+    const theme=getThematique(g.thematique_id);
+    return `<option value="${g.id}">${esc(theme?.emoji||'🧭')} ${esc(g.nom||'Sans titre')}</option>`;
+  });
   faGuidee.innerHTML=opts.join('');
-  if([...faGuidee.options].some(o=>o.value===selected)) faGuidee.value=selected;
-  else faGuidee.value='';
+  const desired=preferredId ?? faGuidee.value;
+  const hasDesired=desired && list.some(g=>g.id===desired);
+  faGuidee.value=hasDesired ? desired : (list[0]?.id||'');
 }
 $('btn-new-activity').onclick=()=>openActivityModal();
 let currentActivityId=null;
@@ -853,12 +893,16 @@ if(id && state.activities.selectedId!==id){
 faConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
 $('fa-date').value=todayStr();
 faDesc.value='';
-faType.value='ACTION_ST_BERNARD'; faHeuresWrap.classList.remove('hidden'); faHeures.value=0;
-faGuidee.innerHTML='<option value="">(Aucune)</option>';
+faType.value='ACTION_ST_BERNARD'; faHeuresWrap.classList.remove('hidden'); faHeures.value='0';
 if(id){
 const a=store.activities.find(x=>x.id===id); if(!a) return;
-faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; faHeures.value=(a.heures??0); updateFaGuideeOptions(); faGuidee.value=a.guidee_id||''; faType.onchange();
-}else{ updateFaGuideeOptions(); faType.onchange(); }
+faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; faHeures.value=String(a.heures??0);
+updateFaGuideeOptions(a.guidee_id||'');
+faType.onchange();
+}else{
+  updateFaGuideeOptions();
+  faType.onchange();
+}
 autoSizeKeepMax(faDesc, ACT_DESC_MAX);
 on(faDesc,'input',()=>autoSizeKeepMax(faDesc, ACT_DESC_MAX),{once:false});
 dlgA.showModal();
