@@ -2174,8 +2174,8 @@ magicLinkForm?.addEventListener('submit',async evt=>{
   const submitBtn=magicLinkForm.querySelector('button[type="submit"]');
   if(submitBtn) submitBtn.disabled=true;
   const actionCodeSettings={
-    url:window.location.origin+window.location.pathname,
-    handleCodeInApp:true
+  url: 'https://quangfr.github.io/sherpa-mobile/app.html',
+  handleCodeInApp: true,
   };
   try{
     await firebaseAuth.sendSignInLinkToEmail(email,actionCodeSettings);
