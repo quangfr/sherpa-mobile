@@ -27,6 +27,13 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px s
 .auth-magic{display:flex;flex-direction:column;gap:8px;text-align:left}
 .auth-magic label{font-weight:600;font-size:13px}
 .auth-magic input{width:100%}
+.auth-password{display:flex;flex-direction:column;gap:8px;text-align:left}
+.auth-password label{font-weight:600;font-size:13px}
+.auth-password input{width:100%}
+.auth-password .auth-actions{display:flex;gap:8px}
+.auth-password .auth-actions .btn{flex:1}
+.auth-link{background:none;border:none;padding:0;margin:0;color:var(--accent);font-size:12px;cursor:pointer;text-decoration:underline;align-self:flex-start}
+.auth-link:disabled{color:var(--muted);cursor:not-allowed;text-decoration:none}
 .auth-feedback{min-height:16px;font-size:12px;color:var(--muted);text-align:left}
 .auth-feedback.error{color:var(--red)}
 .auth-feedback.success{color:var(--green)}
