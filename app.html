@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>SHERPA — MVP v5.0.1</title><link rel="stylesheet" href="app.css"/><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script></head><body>
-<div class="auth-gate hidden" id="auth-gate"><div class="auth-card"><h1>Bienvenue sur Sherpa</h1><p class="auth-sub">Connectez-vous pour accéder à vos données.</p><button class="btn primary" id="btn-google-login">Continuer avec Google</button><div class="auth-divider"><span>ou</span></div><form class="auth-magic" id="magic-link-form"><label for="magic-email">Recevoir un lien magique</label><input id="magic-email" type="email" placeholder="vous@example.com" required/><button class="btn" type="submit">Envoyer le lien</button></form><div class="auth-feedback" id="magic-link-feedback"></div><div class="auth-divider"><span>ou</span></div><form class="auth-password" id="password-login-form"><label for="password-email">Connexion email</label><input id="password-email" type="email" placeholder="vous@example.com" autocomplete="email" required/><label for="password-password">Mot de passe</label><input id="password-password" type="password" placeholder="Votre mot de passe" autocomplete="current-password" required/><div class="auth-actions"><button class="btn primary" type="submit">Se connecter</button><button class="btn" type="button" id="btn-password-signup">Créer un compte</button></div></form><button class="auth-link" type="button" id="btn-password-reset">Mot de passe oublié ?</button><div class="auth-feedback" id="password-feedback"></div><div class="auth-feedback error" id="auth-error"></div></div></div>
-<header><div class="wrap header-bar"><nav class="tabs" id="tabs"></nav><div class="auth-user hidden" id="auth-user"><div class="auth-user-info" id="auth-user-info"></div><button class="btn small" id="btn-sign-out">Se déconnecter</button></div></div></header>
+<div class="auth-gate hidden" id="auth-gate"><div class="auth-card"><h1>Bienvenue sur Sherpa</h1><p class="auth-sub">Connectez-vous pour accéder à vos données.</p><form class="auth-password" id="password-login-form"><label for="password-email">Connexion email</label><input id="password-email" type="email" placeholder="vous@example.com" autocomplete="email" required/><label for="password-password">Mot de passe</label><input id="password-password" type="password" placeholder="Votre mot de passe" autocomplete="current-password" required/><div class="auth-actions"><button class="btn primary" type="submit">Se connecter</button><button class="btn" type="button" id="btn-password-signup">Créer un compte</button></div></form><button class="auth-link" type="button" id="btn-password-reset">Mot de passe oublié ?</button><div class="auth-feedback" id="password-feedback"></div><div class="auth-feedback error" id="auth-error"></div></div></div>
+<header><div class="wrap header-bar"><nav class="tabs" id="tabs"></nav><div class="header-actions"><button class="btn small" id="btn-sync-indicator" title="Synchronisation">⚠️</button><div class="auth-user hidden" id="auth-user"><button class="btn small" id="btn-sign-out">Se déconnecter</button></div></div></div></header>
 <main class="wrap">
 <!-- DASHBOARD -->
 <section class="view" id="view-dashboard">
@@ -106,11 +106,11 @@
     <div class="row space">
       <div class="title">🔃 Sync</div>
       <div class="row">
+        <button class="btn small" id="btn-refresh-remote">🔥 Rafraîchir</button>
         <button class="btn small danger" id="btn-reset-storage">🐈‍⬛ Réinitialiser</button>
         <a class="btn small" id="link-create-issue" href="#" target="_blank" rel="noopener">🐈‍⬛Mettre à jour</a>
         <button class="btn small" id="btn-copy-diff">📋 Copier diff</button>
         <button class="btn small" id="btn-copy-all">📋 Copier tout</button>
-        <button class="btn small" id="btn-refresh-remote">🔥 Rafraîchir</button>
         <button class="btn small" id="btn-import-json">📂 Charger</button>
       </div>
     </div>
@@ -120,8 +120,9 @@
     <input id="file-import" type="file" accept="application/json,.json" class="hidden"/>
   </div>
   <div class="card">
-    <div class="title">⏱️ Délais</div>
+    <div class="title">⚙️ Paramètres</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px">
+      <label>sync_interval_minutes <input type="number" id="p-sync_interval" min="1"/></label>
       <label>delai_alerte_jours <input type="number" id="p-delai_alerte" min="1"/></label>
       <label>fin_mission_sous_jours <input type="number" id="p-fin_mission_sous" min="1"/></label>
       <label>stb_recent_jours <input type="number" id="p-stb_recent" min="1"/></label>

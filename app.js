@@ -49,9 +49,19 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "990905978065",
   appId: "1:990905978065:web:1616a3df12abc4e086c9f0"
 };
-const FIRESTORE_COLLECTION='sherpaStores';
-const MAGIC_EMAIL_KEY='SHERPA_MAGIC_EMAIL';
-const AUTO_SYNC_INTERVAL_MS=10*60*1000;
+const DEFAULT_SYNC_INTERVAL_MINUTES=10;
+const SYNC_DEBOUNCE_MS=2000;
+const STALE_CHECK_INTERVAL_MS=30000;
+const FIRESTORE_COLLECTIONS={
+  consultants:'consultants',
+  activities:'activities',
+  guidees:'guidees',
+  params:'params',
+  thematiques:'thematiques',
+  meta:'meta'
+};
+const FIRESTORE_PARAMS_DOC='app';
+const FIRESTORE_META_DOC='app';
 const FIRESTORE_ENABLED=true;
 function fillPromptTemplate(template, values={}){
   return String(template||'').replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g,(match,key)=>{
@@ -308,12 +318,7 @@ const formatHours=(value)=>{ const num=Number(value); if(!Number.isFinite(num)) 
 const deepClone=(obj)=>JSON.parse(JSON.stringify(obj));
 const authGate=$('auth-gate');
 const authUserWrap=$('auth-user');
-const authUserInfo=$('auth-user-info');
 const btnSignOut=$('btn-sign-out');
-const btnGoogleLogin=$('btn-google-login');
-const magicLinkForm=$('magic-link-form');
-const magicEmailInput=$('magic-email');
-const magicLinkFeedback=$('magic-link-feedback');
 const passwordLoginForm=$('password-login-form');
 const passwordEmailInput=$('password-email');
 const passwordPasswordInput=$('password-password');
@@ -323,6 +328,7 @@ const btnPasswordReset=$('btn-password-reset');
 const authError=$('auth-error');
 const btnRefreshRemote=$('btn-refresh-remote');
 const syncStatusEl=$('sync-status');
+const btnSyncIndicator=$('btn-sync-indicator');
 function setSyncStatus(message, variant='info'){
   if(!syncStatusEl) return;
   syncStatusEl.textContent=message||'';
@@ -330,19 +336,12 @@ function setSyncStatus(message, variant='info'){
   if(variant==='success') syncStatusEl.classList.add('is-success');
   else if(variant==='warning') syncStatusEl.classList.add('is-warning');
   else if(variant==='error') syncStatusEl.classList.add('is-error');
+  updateSyncIndicator();
 }
 function setAuthError(message=''){
   if(!authError) return;
   authError.textContent=message||'';
   authError.classList.toggle('hidden',!message);
-}
-function setMagicLinkFeedback(message='',variant='info'){
-  if(!magicLinkFeedback) return;
-  magicLinkFeedback.textContent=message||'';
-  magicLinkFeedback.classList.remove('success','error');
-  if(variant==='success') magicLinkFeedback.classList.add('success');
-  else if(variant==='error') magicLinkFeedback.classList.add('error');
-  magicLinkFeedback.classList.toggle('hidden',!message);
 }
 function setPasswordFeedback(message='',variant='info'){
   if(!passwordFeedback) return;
@@ -363,24 +362,8 @@ function toggleAuthGate(show){
   authGate.classList.toggle('hidden',!show);
 }
 function renderAuthUser(user){
-  if(!authUserWrap || !authUserInfo) return;
-  if(!user){
-    authUserWrap.classList.add('hidden');
-    authUserInfo.innerHTML='';
-    return;
-  }
-  authUserWrap.classList.remove('hidden');
-  authUserInfo.innerHTML='';
-  if(user.displayName){
-    const nameEl=document.createElement('strong');
-    nameEl.textContent=user.displayName;
-    authUserInfo.appendChild(nameEl);
-  }
-  if(user.email){
-    const emailEl=document.createElement('span');
-    emailEl.textContent=user.email;
-    authUserInfo.appendChild(emailEl);
-  }
+  if(!authUserWrap) return;
+  authUserWrap.classList.toggle('hidden',!user);
 }
 function formatAuthError(err){
   if(!err) return 'Erreur inconnue.';
@@ -417,6 +400,7 @@ function formatActivityDate(dateStr){
 $$all('[data-close]').forEach(btn=>on(btn,'click',()=>{ const target=btn.dataset.close ? $(btn.dataset.close) : btn.closest('dialog'); target?.close('cancel'); }));
 /* DEFAULT STORE */
 const DEFAULT_PARAMS={
+  sync_interval_minutes:DEFAULT_SYNC_INTERVAL_MINUTES,
   delai_alerte_jours:7,
   fin_mission_sous_jours:60,
   stb_recent_jours:30,
@@ -492,6 +476,10 @@ let syncQueued=false;
 let lastRemoteWriteIso=null;
 let lastRemoteReadIso=null;
 let hasPendingChanges=false;
+let syncIndicatorState='error';
+let syncIndicatorIntervalId=null;
+let lastSyncSuccess=0;
+let lastSyncError=0;
 /* LOAD / SAVE */
 function ensureThematiqueIds(arr){
   const taken=new Set();
@@ -602,7 +590,7 @@ const TABS=[
 {id:'dashboard',labelFull:'Sherpa',labelShort:'Sherpa'},
 {id:'activite',labelFull:'🗂️ Activités',labelShort:'🗂️ Activités'},
 {id:'guidee',labelFull:'🧭 Guidées',labelShort:'🧭 Guidées'},
-{id:'reglages',labelFull:'⏱️Délais',labelShort:'⏱️'}
+{id:'reglages',labelFull:'⚙️',labelShort:'⚙️'}
 ];
 const tabsEl=$('tabs');
 const btnDashboardNewConsultant=$('btn-dashboard-new-consultant');
@@ -1381,6 +1369,7 @@ btnEditGuidee?.addEventListener('click',()=>{
 /* PARAMS */
 function renderParams(){
 const p=store.params||DEFAULT_PARAMS;
+$('p-sync_interval').value=p.sync_interval_minutes ?? DEFAULT_SYNC_INTERVAL_MINUTES;
 $('p-delai_alerte').value=p.delai_alerte_jours;
 $('p-fin_mission_sous').value=p.fin_mission_sous_jours;
 $('p-stb_recent').value=p.stb_recent_jours;
@@ -1431,6 +1420,7 @@ updateIssueLink(repoInput?.value);
 }
 $('btn-save-params').onclick=()=>{
 const p=store.params||(store.params={...DEFAULT_PARAMS});
+p.sync_interval_minutes=Math.max(1, Number($('p-sync_interval').value||DEFAULT_SYNC_INTERVAL_MINUTES));
 p.delai_alerte_jours=Number($('p-delai_alerte').value||7);
 p.fin_mission_sous_jours=Number($('p-fin_mission_sous').value||60);
 p.stb_recent_jours=Number($('p-stb_recent').value||30);
@@ -1463,7 +1453,9 @@ store.meta=store.meta||{};
 const repoInput=$('p-github-repo');
 const repoValue=normalizeRepo(repoInput?.value);
 store.meta.github_repo=repoValue || DEFAULT_GITHUB_REPO;
-save(); alert('Paramètres enregistrés.');
+save();
+restartAutoSync();
+alert('Paramètres enregistrés.');
 };
 
 /* MODALS (ACTIVITÉ) */
@@ -1847,6 +1839,8 @@ function computeSessionDiff(){
   if(Object.keys(paramsDiff).length) diff.params=paramsDiff;
   const thematiquesDiff=diffArrayById(store.thematiques||[], initialStoreSnapshot.thematiques||[]);
   if(thematiquesDiff.length) diff.thematiques=thematiquesDiff;
+  const metaDiff=diffParamsObject(store.meta||{}, initialStoreSnapshot.meta||{});
+  if(Object.keys(metaDiff).length) diff.meta=metaDiff;
   return diff;
 }
 function ensureSessionDiff(){
@@ -1859,18 +1853,116 @@ function formatSyncDate(iso){
   if(Number.isNaN(date.getTime())) return iso;
   return date.toLocaleString('fr-FR',{hour12:false});
 }
+function getSyncIntervalMinutes(){
+  const value=Number(store?.params?.sync_interval_minutes);
+  if(!Number.isFinite(value) || value<=0) return DEFAULT_SYNC_INTERVAL_MINUTES;
+  return value;
+}
+function getSyncIntervalMs(){
+  return getSyncIntervalMinutes()*60*1000;
+}
+function cleanFirestoreData(input){
+  if(Array.isArray(input)) return input.map(cleanFirestoreData);
+  if(input && typeof input==='object'){
+    if(typeof input.toDate==='function'){ return input; }
+    const output={};
+    Object.entries(input).forEach(([key,value])=>{
+      if(value===undefined) return;
+      output[key]=cleanFirestoreData(value);
+    });
+    return output;
+  }
+  return input;
+}
+function mapDocToItem(doc){
+  if(!doc) return null;
+  const data=doc.data?.()||{};
+  return {id:doc.id,...data};
+}
+function buildFullStoreDiff(){
+  const diff={};
+  ['consultants','activities','guidees','thematiques'].forEach(key=>{
+    const list=store?.[key];
+    if(Array.isArray(list) && list.length){
+      diff[key]=list.map(item=>({ ...deepClone(item), _status:'created'}));
+    }
+  });
+  if(store?.params) diff.params=deepClone(store.params);
+  if(store?.meta) diff.meta=deepClone(store.meta);
+  return diff;
+}
+function stopSyncIndicatorMonitor(){
+  if(syncIndicatorIntervalId){
+    clearInterval(syncIndicatorIntervalId);
+    syncIndicatorIntervalId=null;
+  }
+}
+function updateSyncIndicator(){
+  if(!btnSyncIndicator) return;
+  const connected=firebaseReady && !!currentUser;
+  if(!connected){
+    btnSyncIndicator.textContent='⚠️';
+    btnSyncIndicator.title='Connexion requise pour synchroniser.';
+    btnSyncIndicator.disabled=true;
+    return;
+  }
+  const now=Date.now();
+  const intervalMs=getSyncIntervalMs();
+  const stale=lastSyncSuccess>0 && (now-lastSyncSuccess>intervalMs);
+  let icon='✔️';
+  let title='Données synchronisées.';
+  let state=syncIndicatorState;
+  if(state!=='error' && !hasPendingChanges && !isSyncInFlight && stale){
+    state='stale';
+  }
+  if(state==='error'){
+    icon='⚠️';
+    title='Erreur de synchronisation. Cliquez pour rafraîchir.';
+  }else if(state==='pending' || hasPendingChanges || isSyncInFlight){
+    icon='⌛';
+    title='Modifications en attente de synchronisation.';
+  }else if(state==='stale'){
+    icon='⚠️';
+    title=`Dernière synchro au-delà de ${getSyncIntervalMinutes()} minutes. Cliquez pour rafraîchir.`;
+  }else{
+    const lastIso=store?.meta?.updated_at || lastRemoteWriteIso || lastRemoteReadIso || null;
+    title=lastIso?`Synchronisé. Dernière synchro : ${formatSyncDate(lastIso)}`:'Synchronisé.';
+  }
+  btnSyncIndicator.textContent=icon;
+  btnSyncIndicator.title=title;
+  btnSyncIndicator.disabled=false;
+}
+function startSyncIndicatorMonitor(){
+  stopSyncIndicatorMonitor();
+  updateSyncIndicator();
+  syncIndicatorIntervalId=setInterval(updateSyncIndicator,STALE_CHECK_INTERVAL_MS);
+}
+function restartAutoSync(){
+  if(!firebaseReady || !currentUser || !remoteReady) return;
+  stopAutoSync();
+  startAutoSync();
+  scheduleAutoSync();
+}
 function scheduleAutoSync(){
   if(autoSyncTimeout){
     clearTimeout(autoSyncTimeout);
     autoSyncTimeout=null;
   }
-  autoSyncTimeout=setTimeout(()=>{ syncIfDirty('debounce'); },AUTO_SYNC_INTERVAL_MS);
+  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
+  const delay=Math.min(getSyncIntervalMs(),SYNC_DEBOUNCE_MS);
+  autoSyncTimeout=setTimeout(()=>{ syncIfDirty('debounce'); },delay);
 }
 function startAutoSync(){
   if(autoSyncIntervalId){
     clearInterval(autoSyncIntervalId);
+    autoSyncIntervalId=null;
   }
-  autoSyncIntervalId=setInterval(()=>{ syncIfDirty('interval'); },AUTO_SYNC_INTERVAL_MS);
+  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser) return;
+  const interval=getSyncIntervalMs();
+  if(interval>0){
+    autoSyncIntervalId=setInterval(()=>{ syncIfDirty('interval'); },interval);
+  }
+  startSyncIndicatorMonitor();
 }
 function stopAutoSync(){
   if(autoSyncTimeout){
@@ -1881,11 +1973,15 @@ function stopAutoSync(){
     clearInterval(autoSyncIntervalId);
     autoSyncIntervalId=null;
   }
+  stopSyncIndicatorMonitor();
+  updateSyncIndicator();
 }
 function markRemoteDirty(reason='local-change'){
   if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
   hasPendingChanges=true;
   setSyncStatus('Modifications locales en attente de sauvegarde…','warning');
+  syncIndicatorState='pending';
+  updateSyncIndicator();
   scheduleAutoSync();
 }
 async function syncIfDirty(reason='auto'){
@@ -1893,6 +1989,14 @@ async function syncIfDirty(reason='auto'){
   const diff=ensureSessionDiff();
   if(!diff || !Object.keys(diff).length){
     hasPendingChanges=false;
+    if(autoSyncTimeout){
+      clearTimeout(autoSyncTimeout);
+      autoSyncTimeout=null;
+    }
+    if(!isSyncInFlight){
+      syncIndicatorState='ok';
+      updateSyncIndicator();
+    }
     return;
   }
   if(isSyncInFlight){
@@ -1905,10 +2009,13 @@ async function syncIfDirty(reason='auto'){
     autoSyncTimeout=null;
   }
   try{
-    await saveStoreToFirestore(reason);
+    await saveStoreToFirestore(reason,diff);
   }catch(err){
     console.error('syncIfDirty error:',err);
     hasPendingChanges=true;
+    syncIndicatorState='error';
+    lastSyncError=Date.now();
+    updateSyncIndicator();
     scheduleAutoSync();
   }finally{
     if(syncQueued){
@@ -1917,98 +2024,151 @@ async function syncIfDirty(reason='auto'){
     }
   }
 }
-async function saveStoreToFirestore(reason='auto'){
+async function saveStoreToFirestore(reason='auto', diffOverride=null){
   if(!firebaseDb || !currentUser) return;
+  const diff=diffOverride || ensureSessionDiff();
+  if(!diff || !Object.keys(diff).length){
+    syncIndicatorState='ok';
+    updateSyncIndicator();
+    return;
+  }
   isSyncInFlight=true;
-  const docRef=firebaseDb.collection(FIRESTORE_COLLECTION).doc(currentUser.uid);
-  const payload={
-    store:deepClone(store),
-    updatedAtISO:nowISO(),
-    lastWriter:{uid:currentUser.uid,email:currentUser.email||null},
-    lastReason:reason
+  syncIndicatorState='pending';
+  updateSyncIndicator();
+  const batch=firebaseDb.batch();
+  const nowIso=nowISO();
+  const applyArrayDiff=(collectionName, entries=[])=>{
+    entries.forEach(item=>{
+      const {_status,id,...rest}=item||{};
+      if(!id) return;
+      const docRef=firebaseDb.collection(collectionName).doc(String(id));
+      if(_status==='deleted'){
+        batch.delete(docRef);
+        return;
+      }
+      const payload=cleanFirestoreData({...rest,id,updated_at:rest.updated_at||nowIso});
+      batch.set(docRef,payload,{merge:false});
+    });
   };
+  if(diff.consultants) applyArrayDiff(FIRESTORE_COLLECTIONS.consultants,diff.consultants);
+  if(diff.activities) applyArrayDiff(FIRESTORE_COLLECTIONS.activities,diff.activities);
+  if(diff.guidees) applyArrayDiff(FIRESTORE_COLLECTIONS.guidees,diff.guidees);
+  if(diff.thematiques) applyArrayDiff(FIRESTORE_COLLECTIONS.thematiques,diff.thematiques);
+  if(diff.params){
+    const paramsRef=firebaseDb.collection(FIRESTORE_COLLECTIONS.params).doc(FIRESTORE_PARAMS_DOC);
+    const payload=cleanFirestoreData(diff.params);
+    batch.set(paramsRef,payload,{merge:true});
+    store.params={...store.params,...diff.params};
+  }
+  if(diff.meta){
+    store.meta={...store.meta,...diff.meta};
+  }
+  store.meta=store.meta||{};
+  store.meta.version=6.0;
+  const metaRef=firebaseDb.collection(FIRESTORE_COLLECTIONS.meta).doc(FIRESTORE_META_DOC);
+  const metaPayload=cleanFirestoreData({
+    ...(store.meta||{}),
+    updated_at_iso:nowIso,
+    last_writer:currentUser.email||currentUser.uid||null,
+    last_reason:reason
+  });
   const serverStamp=(firebase.firestore && firebase.firestore.FieldValue && firebase.firestore.FieldValue.serverTimestamp) ? firebase.firestore.FieldValue.serverTimestamp() : null;
-  if(serverStamp) payload.updatedAt=serverStamp;
+  if(serverStamp) metaPayload.updated_at=serverStamp;
+  batch.set(metaRef,metaPayload,{merge:true});
   setSyncStatus('Sauvegarde sur Firestore…','warning');
   try{
-    await docRef.set(payload,{merge:false});
+    await batch.commit();
+    store.meta=store.meta||{};
+    store.meta.updated_at=nowIso;
+    store.meta.updated_at_iso=nowIso;
+    store.meta.last_writer=currentUser.email||currentUser.uid||null;
+    store.meta.last_reason=reason;
     initialStoreSnapshot=deepClone(store);
     lastSessionDiff={};
-    lastRemoteWriteIso=payload.updatedAtISO;
+    lastRemoteWriteIso=nowIso;
     hasPendingChanges=false;
     remoteReady=true;
+    syncIndicatorState='ok';
+    lastSyncSuccess=Date.now();
     updateSyncPreview();
-    setSyncStatus(`Dernière sauvegarde : ${formatSyncDate(payload.updatedAtISO)}`,'success');
+    setSyncStatus(`Dernière sauvegarde : ${formatSyncDate(nowIso)}`,'success');
   }catch(err){
     console.error('Firestore save error:',err);
     hasPendingChanges=true;
+    syncIndicatorState='error';
+    lastSyncError=Date.now();
     setSyncStatus(`Erreur de sauvegarde Firestore : ${err.message||err}`,'error');
     throw err;
   }finally{
     isSyncInFlight=false;
+    updateSyncIndicator();
   }
 }
 async function loadRemoteStore(options={}){
   if(!firebaseDb || !currentUser) return;
   const {manual=false}=options;
+  syncIndicatorState='pending';
+  updateSyncIndicator();
   setSyncStatus(manual?'Rafraîchissement depuis Firestore…':'Chargement des données depuis Firestore…','warning');
   try{
-    const docRef=firebaseDb.collection(FIRESTORE_COLLECTION).doc(currentUser.uid);
-    const snap=await docRef.get();
-    if(snap.exists){
-      const data=snap.data()||{};
-      const remoteStore=data.store;
-      lastRemoteReadIso=nowISO();
-      const updatedIso=data.updatedAtISO || (data.updatedAt && typeof data.updatedAt.toDate==='function' ? data.updatedAt.toDate().toISOString() : null);
-      if(remoteStore && typeof remoteStore==='object'){
-        applyIncomingStore(remoteStore,'firestore',{alert:false});
-        initialStoreSnapshot=deepClone(store);
-        lastSessionDiff={};
-        remoteReady=true;
-        hasPendingChanges=false;
-        if(updatedIso) lastRemoteWriteIso=updatedIso;
-        const message=updatedIso?`Dernière lecture distante : ${formatSyncDate(updatedIso)}`:'Synchronisation distante terminée.';
-        setSyncStatus(message,'success');
-      }else{
-        remoteReady=true;
-        hasPendingChanges=false;
-        setSyncStatus('Données distantes vides : les données locales sont conservées.','warning');
-      }
-    }else{
+    const [consultantsSnap,activitiesSnap,guideesSnap,thematiquesSnap,paramsDoc,metaDoc]=await Promise.all([
+      firebaseDb.collection(FIRESTORE_COLLECTIONS.consultants).get(),
+      firebaseDb.collection(FIRESTORE_COLLECTIONS.activities).get(),
+      firebaseDb.collection(FIRESTORE_COLLECTIONS.guidees).get(),
+      firebaseDb.collection(FIRESTORE_COLLECTIONS.thematiques).get(),
+      firebaseDb.collection(FIRESTORE_COLLECTIONS.params).doc(FIRESTORE_PARAMS_DOC).get(),
+      firebaseDb.collection(FIRESTORE_COLLECTIONS.meta).doc(FIRESTORE_META_DOC).get()
+    ]);
+    const hasRemoteData=!consultantsSnap.empty || !activitiesSnap.empty || !guideesSnap.empty || !thematiquesSnap.empty || (paramsDoc.exists && Object.keys(paramsDoc.data()||{}).length>0);
+    if(!hasRemoteData){
       remoteReady=true;
-      setSyncStatus('Aucune sauvegarde distante — initialisation en cours…','warning');
-      await saveStoreToFirestore('initial-upload');
+      setSyncStatus('Aucune donnée distante détectée — initialisation en cours…','warning');
+      await saveStoreToFirestore('initial-upload',buildFullStoreDiff());
+      return;
     }
+    const mapCollection=snap=>snap.docs.map(doc=>{
+      const item=mapDocToItem(doc);
+      return item ? cleanFirestoreData(item) : null;
+    }).filter(Boolean);
+    const remoteStore={
+      consultants:mapCollection(consultantsSnap),
+      activities:mapCollection(activitiesSnap),
+      guidees:mapCollection(guideesSnap),
+      thematiques:mapCollection(thematiquesSnap),
+      params:{...DEFAULT_PARAMS,...cleanFirestoreData(paramsDoc.exists?paramsDoc.data():{})},
+      meta:cleanFirestoreData(metaDoc.exists?metaDoc.data():{})
+    };
+    const rawMeta=remoteStore.meta||{};
+    const serverTimestamp=rawMeta.updated_at;
+    const metaIso=rawMeta.updated_at_iso || (serverTimestamp && typeof serverTimestamp.toDate==='function' ? serverTimestamp.toDate().toISOString() : null) || nowISO();
+    remoteStore.meta={
+      ...store.meta,
+      ...rawMeta,
+      updated_at:metaIso,
+      updated_at_iso:metaIso,
+      github_repo:normalizeRepo(rawMeta.github_repo)||store.meta?.github_repo||DEFAULT_GITHUB_REPO,
+      version:6.0
+    };
+    applyIncomingStore(remoteStore,'firestore',{alert:false});
+    initialStoreSnapshot=deepClone(store);
+    lastSessionDiff={};
+    remoteReady=true;
+    hasPendingChanges=false;
+    lastRemoteReadIso=metaIso;
+    lastRemoteWriteIso=metaIso;
+    lastSyncSuccess=Date.now();
+    syncIndicatorState='ok';
+    updateSyncPreview();
+    const message=metaIso?`Dernière lecture distante : ${formatSyncDate(metaIso)}`:'Synchronisation distante terminée.';
+    setSyncStatus(message,'success');
   }catch(err){
     console.error('Firestore load error:',err);
+    syncIndicatorState='error';
+    lastSyncError=Date.now();
     setSyncStatus(`Erreur de lecture Firestore : ${err.message||err}`,'error');
     throw err;
-  }
-}
-async function handleEmailLinkSignIn(){
-  if(!firebaseAuth) return;
-  const href=window.location.href;
-  if(!firebaseAuth.isSignInWithEmailLink(href)) return;
-  let email=window.localStorage.getItem(MAGIC_EMAIL_KEY)||'';
-  if(!email){
-    email=window.prompt('Entrez votre adresse email pour confirmer le lien de connexion :')||'';
-  }
-  email=email.trim();
-  if(!email){
-    setAuthError('Adresse email requise pour valider le lien magique.');
-    return;
-  }
-  try{
-    await firebaseAuth.signInWithEmailLink(email,href);
-    window.localStorage.removeItem(MAGIC_EMAIL_KEY);
-    setMagicLinkFeedback('Connexion en cours…','success');
-  }catch(err){
-    console.error('Lien magique invalide:',err);
-    setAuthError(formatAuthError(err));
   }finally{
-    try{
-      window.history.replaceState({},document.title,window.location.origin+window.location.pathname);
-    }catch{}
+    updateSyncIndicator();
   }
 }
 async function handleAuthStateChanged(user){
@@ -2019,9 +2179,10 @@ async function handleAuthStateChanged(user){
     btnSignOut?.removeAttribute('disabled');
     toggleAuthGate(false);
     setAuthError('');
-    setMagicLinkFeedback('');
     setPasswordFeedback('');
     passwordLoginForm?.reset();
+    syncIndicatorState='pending';
+    updateSyncIndicator();
     try{
       await loadRemoteStore({manual:false});
       startAutoSync();
@@ -2037,15 +2198,18 @@ async function handleAuthStateChanged(user){
     hasPendingChanges=false;
     stopAutoSync();
     if(FIRESTORE_ENABLED) toggleAuthGate(true);
-    setMagicLinkFeedback('');
     setPasswordFeedback('');
     setSyncStatus('Connexion requise pour la synchronisation.');
+    syncIndicatorState='error';
+    lastSyncSuccess=0;
+    lastRemoteReadIso=null;
+    lastRemoteWriteIso=null;
+    updateSyncIndicator();
   }
 }
 function initFirebase(){
   if(!FIRESTORE_ENABLED) return;
   setAuthError('');
-  setMagicLinkFeedback('');
   setPasswordFeedback('');
   if(typeof firebase==='undefined'){
     console.warn('Firebase SDK indisponible.');
@@ -2066,7 +2230,6 @@ function initFirebase(){
       });
     }
     firebaseReady=true;
-    handleEmailLinkSignIn();
     firebaseAuth.onAuthStateChanged(handleAuthStateChanged);
   }catch(err){
     console.error('Firebase init error:',err);
@@ -2174,46 +2337,6 @@ const f=e.target.files?.[0]; if(!f) return;
 try{ const text=await f.text(); const data=JSON.parse(text); applyIncomingStore(data, f.name); }
 catch(err){ console.error('Import JSON invalide:', err); alert('Fichier JSON invalide ❌'); }
 });
-btnGoogleLogin?.addEventListener('click',async()=>{
-  if(typeof firebase==='undefined' || !firebaseAuth){ setAuthError('Firebase non disponible.'); return; }
-  setAuthError('');
-  setMagicLinkFeedback('');
-  try{
-    const provider=new firebase.auth.GoogleAuthProvider();
-    await firebaseAuth.signInWithPopup(provider);
-  }catch(err){
-    console.error('Google sign-in error:',err);
-    const code=String(err.code||'');
-    if(code.includes('popup-closed')||code.includes('cancelled')) return;
-    setAuthError(formatAuthError(err));
-  }
-});
-magicLinkForm?.addEventListener('submit',async evt=>{
-  evt.preventDefault();
-  if(!firebaseAuth){ setAuthError('Firebase non disponible.'); return; }
-  const email=magicEmailInput?.value.trim();
-  if(!email){ setAuthError('Adresse email requise.'); return; }
-  setAuthError('');
-  setMagicLinkFeedback('Envoi du lien…');
-  const submitBtn=magicLinkForm.querySelector('button[type="submit"]');
-  if(submitBtn) submitBtn.disabled=true;
-  const actionCodeSettings={
-  url: 'https://quangfr.github.io/sherpa-mobile/app.html',
-  handleCodeInApp: true,
-  };
-  try{
-    await firebaseAuth.sendSignInLinkToEmail(email,actionCodeSettings);
-    window.localStorage.setItem(MAGIC_EMAIL_KEY,email);
-    setMagicLinkFeedback(`Lien envoyé à ${email}.`, 'success');
-    magicLinkForm.reset();
-  }catch(err){
-    console.error('Magic link error:',err);
-    setMagicLinkFeedback('', 'info');
-    setAuthError(formatAuthError(err));
-  }finally{
-    if(submitBtn) submitBtn.disabled=false;
-  }
-});
 passwordLoginForm?.addEventListener('submit',async evt=>{
   evt.preventDefault();
   if(!firebaseAuth){ setAuthError('Firebase non disponible.'); return; }
@@ -2254,7 +2377,7 @@ btnPasswordSignup?.addEventListener('click',async()=>{
 });
 btnPasswordReset?.addEventListener('click',async()=>{
   if(!firebaseAuth){ setAuthError('Firebase non disponible.'); return; }
-  const email=((passwordEmailInput?.value||magicEmailInput?.value||'')).trim();
+  const email=(passwordEmailInput?.value||'').trim();
   if(!email){ setPasswordFeedback('Indiquez votre email pour réinitialiser.','error'); return; }
   setAuthError('');
   setPasswordFeedback('Envoi du lien de réinitialisation…');
@@ -2282,12 +2405,18 @@ btnRefreshRemote?.addEventListener('click',async()=>{
     if(FIRESTORE_ENABLED) toggleAuthGate(true);
     return;
   }
+  syncIndicatorState='pending';
+  updateSyncIndicator();
   try{
     await loadRemoteStore({manual:true});
     scheduleAutoSync();
   }catch(err){
     console.error('Manual refresh error:',err);
   }
+});
+btnSyncIndicator?.addEventListener('click',()=>{
+  if(btnSyncIndicator.disabled) return;
+  btnRefreshRemote?.click();
 });
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
@@ -2303,6 +2432,7 @@ btnSignOut?.setAttribute('disabled','true');
 btnRefreshRemote?.setAttribute('disabled','true');
 if(FIRESTORE_ENABLED) toggleAuthGate(true); else toggleAuthGate(false);
 renderAuthUser(null);
+updateSyncIndicator();
 function applyIncomingStore(incoming, sourceLabel, options={}){
   if(!incoming || typeof incoming!=='object') throw new Error('Format vide');
   const migrated=migrateStore(incoming);
