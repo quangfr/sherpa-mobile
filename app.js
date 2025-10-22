@@ -45,7 +45,7 @@ const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBgXKNpUPebJO6HBvGJFYIQwfYEr8HeaWU",
   authDomain: "sherpa-5938b.firebaseapp.com",
   projectId: "sherpa-5938b",
-  storageBucket: "sherpa-5938b.firebasestorage.app",
+  storageBucket: "sherpa-5938b.appspot.com",
   messagingSenderId: "990905978065",
   appId: "1:990905978065:web:1616a3df12abc4e086c9f0"
 };
@@ -314,6 +314,12 @@ const btnGoogleLogin=$('btn-google-login');
 const magicLinkForm=$('magic-link-form');
 const magicEmailInput=$('magic-email');
 const magicLinkFeedback=$('magic-link-feedback');
+const passwordLoginForm=$('password-login-form');
+const passwordEmailInput=$('password-email');
+const passwordPasswordInput=$('password-password');
+const passwordFeedback=$('password-feedback');
+const btnPasswordSignup=$('btn-password-signup');
+const btnPasswordReset=$('btn-password-reset');
 const authError=$('auth-error');
 const btnRefreshRemote=$('btn-refresh-remote');
 const syncStatusEl=$('sync-status');
@@ -337,6 +343,20 @@ function setMagicLinkFeedback(message='',variant='info'){
   if(variant==='success') magicLinkFeedback.classList.add('success');
   else if(variant==='error') magicLinkFeedback.classList.add('error');
   magicLinkFeedback.classList.toggle('hidden',!message);
+}
+function setPasswordFeedback(message='',variant='info'){
+  if(!passwordFeedback) return;
+  passwordFeedback.textContent=message||'';
+  passwordFeedback.classList.remove('success','error');
+  if(variant==='success') passwordFeedback.classList.add('success');
+  else if(variant==='error') passwordFeedback.classList.add('error');
+  passwordFeedback.classList.toggle('hidden',!message);
+}
+function togglePasswordControls(disabled){
+  const submitBtn=passwordLoginForm?.querySelector('button[type="submit"]');
+  [passwordEmailInput,passwordPasswordInput,submitBtn,btnPasswordSignup,btnPasswordReset].forEach(ctrl=>{
+    if(ctrl) ctrl.disabled=!!disabled;
+  });
 }
 function toggleAuthGate(show){
   if(!authGate) return;
@@ -2000,6 +2020,8 @@ async function handleAuthStateChanged(user){
     toggleAuthGate(false);
     setAuthError('');
     setMagicLinkFeedback('');
+    setPasswordFeedback('');
+    passwordLoginForm?.reset();
     try{
       await loadRemoteStore({manual:false});
       startAutoSync();
@@ -2016,6 +2038,7 @@ async function handleAuthStateChanged(user){
     stopAutoSync();
     if(FIRESTORE_ENABLED) toggleAuthGate(true);
     setMagicLinkFeedback('');
+    setPasswordFeedback('');
     setSyncStatus('Connexion requise pour la synchronisation.');
   }
 }
@@ -2023,16 +2046,17 @@ function initFirebase(){
   if(!FIRESTORE_ENABLED) return;
   setAuthError('');
   setMagicLinkFeedback('');
-  if(typeof firebase==='undefined'){ 
+  setPasswordFeedback('');
+  if(typeof firebase==='undefined'){
     console.warn('Firebase SDK indisponible.');
     setSyncStatus('Firebase non disponible.','error');
     return;
   }
   try{
-    firebaseApp=firebase.initializeApp(FIREBASE_CONFIG);
-    firebaseAuth=firebase.auth();
+    firebaseApp=(firebase.apps && firebase.apps.length)?firebase.app():firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseAuth=firebaseApp.auth();
     firebaseAuth.useDeviceLanguage?.();
-    firebaseDb=firebase.firestore();
+    firebaseDb=firebaseApp.firestore();
     if(firebaseDb?.settings){
       try{ firebaseDb.settings({ignoreUndefinedProperties:true}); }catch{}
     }
@@ -2188,6 +2212,61 @@ magicLinkForm?.addEventListener('submit',async evt=>{
     setAuthError(formatAuthError(err));
   }finally{
     if(submitBtn) submitBtn.disabled=false;
+  }
+});
+passwordLoginForm?.addEventListener('submit',async evt=>{
+  evt.preventDefault();
+  if(!firebaseAuth){ setAuthError('Firebase non disponible.'); return; }
+  const email=(passwordEmailInput?.value||'').trim();
+  const password=passwordPasswordInput?.value||'';
+  if(!email || !password){ setPasswordFeedback('Email et mot de passe requis.','error'); return; }
+  setAuthError('');
+  setPasswordFeedback('Connexion en cours…');
+  togglePasswordControls(true);
+  try{
+    await firebaseAuth.signInWithEmailAndPassword(email,password);
+    setPasswordFeedback('Connexion réussie.','success');
+  }catch(err){
+    console.error('Password sign-in error:',err);
+    setPasswordFeedback(formatAuthError(err),'error');
+  }finally{
+    togglePasswordControls(false);
+  }
+});
+btnPasswordSignup?.addEventListener('click',async()=>{
+  if(!firebaseAuth){ setAuthError('Firebase non disponible.'); return; }
+  const email=(passwordEmailInput?.value||'').trim();
+  const password=passwordPasswordInput?.value||'';
+  if(!email || !password){ setPasswordFeedback('Email et mot de passe requis.','error'); return; }
+  if(password.length<6){ setPasswordFeedback('Mot de passe : 6 caractères minimum.','error'); return; }
+  setAuthError('');
+  setPasswordFeedback('Création du compte…');
+  togglePasswordControls(true);
+  try{
+    await firebaseAuth.createUserWithEmailAndPassword(email,password);
+    setPasswordFeedback('Compte créé et connecté ✅','success');
+  }catch(err){
+    console.error('Password sign-up error:',err);
+    setPasswordFeedback(formatAuthError(err),'error');
+  }finally{
+    togglePasswordControls(false);
+  }
+});
+btnPasswordReset?.addEventListener('click',async()=>{
+  if(!firebaseAuth){ setAuthError('Firebase non disponible.'); return; }
+  const email=((passwordEmailInput?.value||magicEmailInput?.value||'')).trim();
+  if(!email){ setPasswordFeedback('Indiquez votre email pour réinitialiser.','error'); return; }
+  setAuthError('');
+  setPasswordFeedback('Envoi du lien de réinitialisation…');
+  btnPasswordReset.disabled=true;
+  try{
+    await firebaseAuth.sendPasswordResetEmail(email);
+    setPasswordFeedback(`Email de réinitialisation envoyé à ${email}.`,'success');
+  }catch(err){
+    console.error('Password reset error:',err);
+    setPasswordFeedback(formatAuthError(err),'error');
+  }finally{
+    btnPasswordReset.disabled=false;
   }
 });
 btnSignOut?.addEventListener('click',()=>{
