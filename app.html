@@ -1,5 +1,6 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>SHERPA — MVP v5.0.1</title><link rel="stylesheet" href="app.css"/></head><body>
-<header><div class="wrap"><nav class="tabs" id="tabs"></nav></div></header>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>SHERPA — MVP v5.0.1</title><link rel="stylesheet" href="app.css"/><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script></head><body>
+<div class="auth-gate hidden" id="auth-gate"><div class="auth-card"><h1>Bienvenue sur Sherpa</h1><p class="auth-sub">Connectez-vous pour accéder à vos données.</p><button class="btn primary" id="btn-google-login">Continuer avec Google</button><div class="auth-divider"><span>ou</span></div><form class="auth-magic" id="magic-link-form"><label for="magic-email">Recevoir un lien magique</label><input id="magic-email" type="email" placeholder="vous@example.com" required/><button class="btn" type="submit">Envoyer le lien</button></form><div class="auth-feedback" id="magic-link-feedback"></div><div class="auth-feedback error" id="auth-error"></div></div></div>
+<header><div class="wrap header-bar"><nav class="tabs" id="tabs"></nav><div class="auth-user hidden" id="auth-user"><div class="auth-user-info" id="auth-user-info"></div><button class="btn small" id="btn-sign-out">Se déconnecter</button></div></div></header>
 <main class="wrap">
 <!-- DASHBOARD -->
 <section class="view" id="view-dashboard">
@@ -109,10 +110,12 @@
         <a class="btn small" id="link-create-issue" href="#" target="_blank" rel="noopener">🐈‍⬛Mettre à jour</a>
         <button class="btn small" id="btn-copy-diff">📋 Copier diff</button>
         <button class="btn small" id="btn-copy-all">📋 Copier tout</button>
+        <button class="btn small" id="btn-refresh-remote">🔥 Rafraîchir</button>
         <button class="btn small" id="btn-import-json">📂 Charger</button>
       </div>
     </div>
     <div class="sub" style="margin:6px 0">Aperçu de vos données (lecture seule) — vous pouvez copier le JSON.</div>
+    <div class="sync-status sub" id="sync-status">Connexion requise pour la synchronisation.</div>
     <pre id="json-preview" class="mono hover-scroll" style="max-height:400px;overflow:auto;border:1px solid var(--border);padding:10px;border-radius:10px"></pre>
     <input id="file-import" type="file" accept="application/json,.json" class="hidden"/>
   </div>
