@@ -42,7 +42,7 @@ const DEFAULT_ACTIVITY_PROMPTS=(()=>{
 const OPENAI_MODEL='gpt-5-nano';
 const OPENAI_ENDPOINT='https://openai.tranxq.workers.dev/';
 const firebaseConfig = {
-  apiKey: "AIzaSyARxt7v7UGrOAMY6yF8457IcCKYQajUQ4M",
+  apiKey: "AIzaSyAbYOZuGD0Wk-Vs2pfbv63ApdHINUrCMHY",
   authDomain: "sherpa-5938b.firebaseapp.com",
   projectId: "sherpa-5938b",
   storageBucket: "sherpa-5938b.firebasestorage.app",
