@@ -28,7 +28,7 @@
   <div class="pane-header">
     <div class="row header-line">
       <div class="row header-main" style="gap:10px">
-        <div class="title">🗂️ Activités</div>
+        <div class="title">📌 Activités</div>
         <div class="pill" id="activities-count">0</div>
         <button class="btn small primary" id="btn-new-activity">Ajouter</button>
         <button class="btn small" id="btn-reset-filters">Réinitialiser</button>
@@ -69,7 +69,7 @@
     <div class="pane-header">
       <div class="row space guidee-header">
         <div class="row" style="gap:10px;flex-wrap:wrap">
-          <div class="title">🧭 Guidées</div>
+          <div class="title">🗺️ Guidées</div>
           <button class="btn small primary" id="btn-new-guidee">Créer</button>
           <button class="btn small" id="btn-edit-guidee">Éditer</button>
           <button class="btn small" id="btn-reset-guidee-filters">Réinitialiser</button>
@@ -79,7 +79,7 @@
             <option value="">👤 Tous</option>
           </select>
           <select id="filter-guidee" title="Filtrer par guidée">
-            <option value="">🧭 Toutes</option>
+            <option value="">🗺️ Toutes</option>
           </select>
         </div>
       </div>
@@ -103,18 +103,6 @@
 <section class="view" id="view-reglages">
 <div class="reglages-grid">
   <div class="card">
-    <div class="row space">
-      <div class="title">🔃 Sync</div>
-      <div class="row">
-        <button class="btn small" id="btn-refresh-remote">🔥 Rafraîchir</button>
-        <a class="btn small" id="link-create-issue" href="#" target="_blank" rel="noopener">🐈‍⬛Mettre à jour</a>
-        <button class="btn small" id="btn-copy-diff">📋 Copier diff</button>
-        <button class="btn small" id="btn-copy-all">📋 Copier tout</button>
-      </div>
-    </div>
-    <div class="sync-status sub" id="sync-status">Connexion requise pour la synchronisation.</div>
-  </div>
-  <div class="card">
     <div class="title">⚙️ Paramètres</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px">
       <label>sync_interval_minutes <input type="number" id="p-sync_interval" min="1"/></label>
@@ -122,41 +110,42 @@
       <label>fin_mission_sous_jours <input type="number" id="p-fin_mission_sous" min="1"/></label>
       <label>stb_recent_jours <input type="number" id="p-stb_recent" min="1"/></label>
       <label>avis_manquant_depuis_jours <input type="number" id="p-avis_manquant" min="1"/></label>
-      <label>objectif_recent_jours <input type="number" id="p-objectif_recent" min="1"/></label>
       <label>activites_recent_jours <input type="number" id="p-activites_recent" min="1"/></label>
       <label>activites_a_venir_jours <input type="number" id="p-activites_avenir" min="1"/></label>
-      <label>objectif_bar_max_heures <input type="number" id="p-objectif_bar_max" min="1" step="1"/></label>
-      <label style="grid-column:1/-1">Repo GitHub <input type="text" id="p-github-repo" placeholder="owner/repo"/></label>
     </div>
     <label style="grid-column:1/-1">Liste des hashtags disponibles (séparés par un espace)
       <textarea id="p-hashtags" rows="4" placeholder="#ProductBacklogPrioritization #ProductUserStories …"></textarea>
     </label>
     <div class="row" style="margin-top:8px"><button class="btn primary small" id="btn-save-params">Enregistrer</button></div>
     <div class="sub" style="margin-top:6px">Les titres du Dashboard & l’affichage des barres se mettent à jour automatiquement.</div>
+    <div class="backup-block">
+      <div class="subtitle">Backup</div>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <button class="btn small" id="btn-import-json">📤 Importer la donnée en JSON</button>
+        <button class="btn small" id="btn-export-json">📥 Exporter la donnée en JSON</button>
+      </div>
+    </div>
   </div>
   <div class="card">
     <div class="title">🤖 Prompts IA</div>
-    <p class="sub">Texte envoyé à l’assistant pour retravailler les descriptions.</p>
-    <label>Prompt assistant activité
-      <textarea id="p-openai-activity" rows="12"></textarea>
-    </label>
-      <div class="prompt-structures" id="activity-structure-guide">
-        <div class="subtitle">Structures attendues</div>
-        <ul>
-          <li><span class="bold">🗣️ Avis :</span> 💪 Points forts (qualité ou réussite marquante) · ⚠️ Points de vigilance (fragilité ou axe d’attention) · 🌱 Pistes de progression (action pour évoluer)</li>
-          <li><span class="bold">🐕‍🦺 Action saint_bernard :</span> 🎯 Contexte (situation nécessitant soutien) · 🫱 Actions réalisées (geste concret du coach) · 💬 Résultats perçus (effet observé immédiat) · 🔁 Suivi prévu (prochaine étape prévue)</li>
-          <li><span class="bold">🪢 Cordée :</span> 📚 Thématique (sujet ou domaine partagé) · 👥 Rôle joué (posture ou implication) · 🌟 Valeurs apportées (bénéfice collectif visible) · 🔁 Suivi prévu (suite ou prolongement prévu)</li>
-          <li><span class="bold">📝 Note :</span> 🎯 Contexte (cadre ou événement observé) · 💬 Faits observés (observation factuelle) · 📎 Impacts (effet ou enseignement clé)</li>
-          <li><span class="bold">💬 Verbatim :</span> 💬 Verbatim (citation ou synthèse des propos) · 🎯 Situation (moment ou contexte associé) · 📎 Enseignements (ce qu’il faut retenir)</li>
-          <li><span class="bold">🚨 Alerte :</span> 🚨 Signalement (sujet précis d’alerte) · ⚠️ Risques (impacts potentiels) · 🔁 Suivi prévu (actions envisagées)</li>
-        </ul>
-      </div>
-    <label>Prompt description guidée
-      <textarea id="p-openai-guidee" rows="8"></textarea>
-    </label>
-    <label>Prompt description consultant
-      <textarea id="p-openai-consultant" rows="8"></textarea>
-    </label>
+    <p class="sub">Sélectionnez un prompt pour le modifier.</p>
+    <label for="prompt-type">Type de prompt</label>
+    <select id="prompt-type">
+      <option value="activity:ACTION_ST_BERNARD">Activité action st bernard</option>
+      <option value="activity:VERBATIM">Activité verbatim client</option>
+      <option value="activity:AVIS">Activité avis coach</option>
+      <option value="activity:CORDEE">Activité cordée</option>
+      <option value="activity:NOTE">Activité note</option>
+      <option value="activity:ALERTE">Activité alerte</option>
+      <option value="guidee">Guidée</option>
+      <option value="consultant">Consultant</option>
+    </select>
+    <label for="prompt-editor">Contenu du prompt</label>
+    <textarea id="prompt-editor" rows="12"></textarea>
+    <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+      <button class="btn small" id="btn-reset-prompt">Réinitialiser</button>
+      <button class="btn primary small" id="btn-save-prompt">Enregistrer</button>
+    </div>
   </div>
 </div>
 </section>
@@ -187,7 +176,7 @@
 <label id="fa-heures-wrap" class="hidden">Heures réalisées <select name="heures" id="fa-heures"></select></label>
 <label style="grid-column:1/-1" class="field-with-action">Description
   <div class="textarea-with-action">
-    <textarea name="description" id="fa-desc" class="description-field" placeholder="#Team #Customer #Tech #Design #Product #Data @Consultant"></textarea>
+    <textarea name="description" id="fa-desc" class="description-field" placeholder="#Team #Tech #Data #Customer #Design #Product"></textarea>
     <button type="button" class="btn ghost small ai-helper" id="fa-openai" title="Générer une description structurée">✨</button>
   </div>
 </label>
@@ -214,7 +203,7 @@
     <label>Date de fin* <input type="date" id="fg-fin" required/></label>
     <label style="grid-column:1/-1" class="field-with-action">Description
       <div class="textarea-with-action">
-        <textarea id="fg-desc" class="description-field" placeholder="#Team #Customer #Tech #Design #Product #Data @Consultant"></textarea>
+        <textarea id="fg-desc" class="description-field" placeholder="#Team #Tech #Data #Customer #Design #Product"></textarea>
         <button type="button" class="btn ghost small ai-helper" id="fg-openai" title="Générer une description avec OpenAI">✨</button>
       </div>
     </label>
@@ -225,7 +214,7 @@
 <div class="row space modal-header">
 <h3>✏️ Consultant</h3>
 <div class="row" style="gap:6px">
-<button type="button" class="btn small" id="fc-goto-guidees">🧭Guidées</button>
+<button type="button" class="btn small" id="fc-goto-guidees">🗺️ Guidées</button>
 <a class="btn small" id="fc-boond-link" href="#" target="_blank" rel="noopener" aria-disabled="true">🟧Fiche Boond</a>
 <button type="button" class="btn ghost modal-close" data-close="dlg-consultant" aria-label="Fermer">✕</button>
 </div>
@@ -237,7 +226,7 @@
 <label>Boond Id <input name="boond_id" id="fc-boond" placeholder="12345"/></label>
 <label style="grid-column:1/-1" class="field-with-action">Description
   <div class="textarea-with-action">
-    <textarea name="description" id="fc-desc" class="description-field" placeholder="#Team #Customer #Tech #Design #Product #Data @Consultant"></textarea>
+    <textarea name="description" id="fc-desc" class="description-field" placeholder="#Team #Tech #Data #Customer #Design #Product"></textarea>
     <button type="button" class="btn ghost small ai-helper" id="fc-openai" title="Générer une description avec OpenAI">✨</button>
   </div>
 </label>
