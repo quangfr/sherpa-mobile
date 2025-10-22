@@ -41,10 +41,13 @@ const DEFAULT_ACTIVITY_PROMPTS=(()=>{
 })();
 const OPENAI_MODEL='gpt-5-nano';
 const OPENAI_ENDPOINT='https://openai.tranxq.workers.dev/';
-const FIREBASE_CONFIG={
-  apiKey:'AIzaSyARxt7v7UGrOAMY6yF8457IcCKYQajUQ4M',
-  authDomain:'sherpa-5938b.firebaseapp.com',
-  projectId:'sherpa-5938b'
+const firebaseConfig = {
+  apiKey: "AIzaSyAbYOZuGD0Wk-Vs2pfbv63ApdHINUrCMHY",
+  authDomain: "sherpa-5938b.firebaseapp.com",
+  projectId: "sherpa-5938b",
+  storageBucket: "sherpa-5938b.firebasestorage.app",
+  messagingSenderId: "990905978065",
+  appId: "1:990905978065:web:1616a3df12abc4e086c9f0"
 };
 const FIRESTORE_COLLECTION='sherpaStores';
 const MAGIC_EMAIL_KEY='SHERPA_MAGIC_EMAIL';
