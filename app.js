@@ -29,16 +29,145 @@ const DEFAULT_HASHTAG_CATALOG=[
   '#TechSQL','#TechPowerBI','#TechAutomation','#TechDocumentation','#TechIntegration',
   '#CustomerInsight','#CustomerRelationship','#CustomerValue','#CustomerFeedback','#CustomerExperience'
 ].join(' ');
-const DEFAULT_OPENAI_PROMPT='Faire un résumé synthétique structuré en 3 lignes de ce qui est écrit, en qualifiant avec 1-3 hashtags suivants (liste des hashtags ci-dessus) : {{activity_type}} {{activity_description}}';
-const DEFAULT_OPENAI_CONSULTANT_PROMPT='Reformule en français la description suivante pour une fiche consultant Sherpa. Résume en 3 phrases maximum, souligne le titre de mission "{{consultant_mission}}" s\'il est fourni et ajoute 1 à 2 hashtags pertinents parmi {{hashtags_catalog}}. Consultant : {{consultant_name}}. Description source : {{consultant_description}}';
-const DEFAULT_OPENAI_GUIDEE_PROMPT='Synthétise en 3 phrases claires la description de guidée ci-dessous en mettant en avant l\'intention, les livrables attendus et 1 à 2 hashtags (parmi {{hashtags_catalog}}). Consultant : {{consultant_name}}. Guidée : {{guidee_name}}. Description source : {{guidee_description}}';
+const DEFAULT_ACTIVITY_PROMPT=`Je suis manager coach et j'assure le suivi des consultants PO.
+Peux-tu me générer à partir des infos suivantes une description de l'activité de manière plus structurée :
+- Activité : {{activity.title}} {{activity.description}}
+- Compréhension du contexte : {{guidee.title}} {{guidee.description}}
+- Consultant : {{consultant.title}} {{consultant.description}}
+Utilise les mots-clés des hashtags lorsqu'on parle de compétences ({{hashtags_catalog}}).
+Respecte strictement la structure correspondant au type d'activité détaillée ci-dessous.`;
+const DEFAULT_OPENAI_CONSULTANT_PROMPT=`Transforme cette description consultant en un portrait structuré et professionnel.
+Respecte strictement le format :
+💼 Mission actuelle : contexte, client, rôle principal
+🎯 Objectifs pro : ambitions à court/moyen terme
+💡 Compétences : #Product #Team #Tech #Data #Customer
+🌱 Forces : atouts distinctifs ou points d’appui
+⚠️ Points de veille : freins, besoins ou risques à accompagner
+💬 Style relationnel : posture, communication, énergie
+Utilise les informations suivantes : {{consultant.title}} {{consultant.description}}
+Ajoute les hashtags pertinents parmi {{hashtags_catalog}} et termine par des suggestions # et @ si utiles.`;
+const DEFAULT_OPENAI_GUIDEE_PROMPT=`Transforme cette description de guidée en respectant strictement cette structure :
+🎯 Objectif : résultat visé ou compétence à renforcer
+🧩 Contexte : mission, situation ou besoin à l’origine
+🤝 Accompagnement prévu : format, fréquence, durée
+💡 Compétences : #Product #Team #Tech #Data #Customer
+🌱 Indicateurs : signes concrets de progression attendus
+💬 Résultat / bilan : constat en fin de cycle
+Utilise les données : Guidée {{guidee.title}} {{guidee.description}} | Consultant {{consultant.title}} {{consultant.description}}
+Réutilise les hashtags pertinents parmi {{hashtags_catalog}} et termine par des suggestions # et @ si adaptées.`;
 const ACTIVITY_TYPES=['ACTION_ST_BERNARD','CORDEE','NOTE','VERBATIM','AVIS','ALERTE'];
-const ACTIVITY_PROMPT_KEYS=['__DEFAULT',...ACTIVITY_TYPES];
-const DEFAULT_ACTIVITY_PROMPTS=(()=>{
-  const base={__DEFAULT:DEFAULT_OPENAI_PROMPT};
-  ACTIVITY_TYPES.forEach(type=>{ base[type]=DEFAULT_OPENAI_PROMPT; });
-  return base;
-})();
+const ACTIVITY_PROMPT_STRUCTURES={
+  __DEFAULT:`Structure attendue :
+• Résumé : Faits marquants et décisions
+• Impact : Effet produit pour le consultant ou l'équipe
+• Suites : Actions ou points de suivi
+Termine par des suggestions de hashtags ou mentions si pertinent (#… / @…).`,
+  AVIS:`Structure attendue :
+💪 Points forts : qualité ou réussite marquante
+⚠️ Points de vigilance : fragilité ou axe d’attention
+🌱 Pistes de progression : action pour évoluer
+Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`,
+  ACTION_ST_BERNARD:`Structure attendue :
+🎯 Contexte : situation nécessitant soutien
+🫱 Actions réalisées : geste concret du coach
+💬 Résultats perçus : effet observé immédiat
+🔁 Suivi prévu : prochaine étape prévue
+Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`,
+  CORDEE:`Structure attendue :
+📚 Thématique : sujet ou domaine partagé
+👥 Rôle joué : posture ou implication
+🌟 Valeurs apportées : bénéfice collectif visible
+🔁 Suivi prévu : suite ou prolongement prévu
+Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`,
+  NOTE:`Structure attendue :
+🎯 Contexte : cadre ou événement observé
+💬 Faits observés : observation factuelle
+📎 Impacts : effet ou enseignement clé
+Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`,
+  VERBATIM:`Structure attendue :
+💬 Verbatim : citation ou synthèse des propos
+🎯 Situation : moment ou contexte associé
+📎 Enseignements : ce qu'il faut retenir
+Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`,
+  ALERTE:`Structure attendue :
+🚨 Signalement : sujet précis d'alerte
+⚠️ Risques : impacts potentiels
+🔁 Suivi prévu : actions envisagées
+Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`
+};
+const DEFAULT_ACTIVITY_DESCRIPTION_TEMPLATES={
+  __DEFAULT:`• Résumé : faits marquants et décisions
+• Impact : effet produit pour le consultant ou l'équipe
+• Suites : actions ou points de suivi
+
+#
+@`,
+  AVIS:`💪 Points forts : qualité ou réussite marquante
+⚠️ Points de vigilance : fragilité ou axe d’attention
+🌱 Pistes de progression : action pour évoluer
+
+#
+@`,
+  ACTION_ST_BERNARD:`🎯 Contexte : situation nécessitant soutien
+🫱 Actions réalisées : geste concret du coach
+💬 Résultats perçus : effet observé immédiat
+🔁 Suivi prévu : prochaine étape prévue
+
+#
+@`,
+  CORDEE:`📚 Thématique : sujet ou domaine partagé
+👥 Rôle joué : posture ou implication
+🌟 Valeurs apportées : bénéfice collectif visible
+🔁 Suivi prévu : suite ou prolongement prévu
+
+#
+@`,
+  NOTE:`🎯 Contexte : cadre ou événement observé
+💬 Faits observés : observation factuelle
+📎 Impacts : effet ou enseignement clé
+
+#
+@`,
+  VERBATIM:`💬 Verbatim : citation ou synthèse des propos
+🎯 Situation : moment ou contexte associé
+📎 Enseignements : ce qu'il faut retenir
+
+#
+@`,
+  ALERTE:`🚨 Signalement : sujet précis d'alerte
+⚠️ Risques : impacts potentiels
+🔁 Suivi prévu : actions envisagées
+
+#
+@`
+};
+const DEFAULT_GUIDEE_DESCRIPTION_TEMPLATE=`🎯 Objectif : résultat visé ou compétence à renforcer
+🧩 Contexte : mission, situation ou besoin à l’origine
+🤝 Accompagnement prévu : format, fréquence, durée
+💡 Compétences : #Product #Team #Tech #Data #Customer
+🌱 Indicateurs : signes concrets de progression attendus
+💬 Résultat / bilan : constat en fin de cycle
+
+#
+@`;
+const DEFAULT_CONSULTANT_DESCRIPTION_TEMPLATE=`💼 Mission actuelle : contexte, client, rôle principal
+🎯 Objectifs pro : ambitions à court/moyen terme
+💡 Compétences : #Product #Team #Tech #Data #Customer
+🌱 Forces : atouts distinctifs ou points d’appui
+⚠️ Points de veille : freins, besoins ou risques à accompagner
+💬 Style relationnel : posture, communication, énergie
+
+#
+@`;
+const DEFAULT_ACTIVITY_TITLE_PROMPT=`Propose un titre court (6 mots maximum) et impactant pour cette activité.
+Type : {{activity.type_label}}
+Consultant : {{consultant.name}}
+Description : {{activity.description}}
+Réponds uniquement par le titre.`;
+const DEFAULT_GUIDEE_TITLE_PROMPT=`Propose un titre court (6 mots maximum) et orienté résultat pour cette guidée.
+Consultant : {{consultant.name}}
+Description : {{guidee.description}}
+Réponds uniquement par le titre.`;
 const OPENAI_MODEL='gpt-5-nano';
 const OPENAI_ENDPOINT='https://openai.tranxq.workers.dev/';
 const FIREBASE_CONFIG = {
@@ -64,9 +193,19 @@ const FIRESTORE_PARAMS_DOC='app';
 const FIRESTORE_META_DOC='app';
 const FIRESTORE_ENABLED=true;
 function fillPromptTemplate(template, values={}){
-  return String(template||'').replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g,(match,key)=>{
-    const value=values?.[key];
-    return value!==undefined && value!==null ? String(value) : '';
+  return String(template||'').replace(/{{\s*([a-zA-Z0-9_.]+)\s*}}/g,(match,key)=>{
+    const path=key.split('.');
+    let current=values;
+    for(const part of path){
+      if(current && typeof current==='object' && part in current){
+        current=current[part];
+      }else{
+        current='';
+        break;
+      }
+    }
+    if(current===undefined || current===null) return '';
+    return String(current);
   });
 }
 function normalizeHashtag(raw){
@@ -410,37 +549,17 @@ const DEFAULT_PARAMS={
   objectif_recent_jours:15,
   objectif_bar_max_heures:10,
   hashtags_catalog:DEFAULT_HASHTAG_CATALOG,
-  openai_activity_prompts:{...DEFAULT_ACTIVITY_PROMPTS},
-  openai_activity_prompt:DEFAULT_OPENAI_PROMPT,
+  openai_activity_prompt:DEFAULT_ACTIVITY_PROMPT,
   openai_consultant_prompt:DEFAULT_OPENAI_CONSULTANT_PROMPT,
   openai_guidee_prompt:DEFAULT_OPENAI_GUIDEE_PROMPT
 };
 const DEFAULT_GITHUB_REPO='quangfr/sherpa-mobile';
-function normalizeActivityPromptType(type){
-  return ACTIVITY_PROMPT_KEYS.includes(type)?type:'__DEFAULT';
-}
-function getActivityPrompts(params){
-  const base={...DEFAULT_ACTIVITY_PROMPTS};
-  const raw=params?.openai_activity_prompts;
-  if(raw && typeof raw==='object'){
-    Object.entries(raw).forEach(([key,value])=>{
-      if(typeof value==='string') base[key]=value;
-    });
-  }
-  const legacy=typeof params?.openai_activity_prompt==='string'?params.openai_activity_prompt.trim():'';
-  if(legacy){
-    if(!base.__DEFAULT || base.__DEFAULT===DEFAULT_OPENAI_PROMPT) base.__DEFAULT=legacy;
-    ACTIVITY_TYPES.forEach(type=>{
-      if(base[type]===DEFAULT_OPENAI_PROMPT) base[type]=legacy;
-    });
-  }
-  if(!base.__DEFAULT) base.__DEFAULT=DEFAULT_OPENAI_PROMPT;
-  return base;
-}
 function getActivityPrompt(params,type){
-  const prompts=getActivityPrompts(params);
-  const key=normalizeActivityPromptType(type);
-  return prompts[key] ?? prompts.__DEFAULT ?? DEFAULT_OPENAI_PROMPT;
+  const basePrompt=typeof params?.openai_activity_prompt==='string' && params.openai_activity_prompt.trim()
+    ? params.openai_activity_prompt.trim()
+    : DEFAULT_ACTIVITY_PROMPT;
+  const structure=ACTIVITY_PROMPT_STRUCTURES[type] || ACTIVITY_PROMPT_STRUCTURES.__DEFAULT;
+  return `${basePrompt}\n\n${structure}`.trim();
 }
 const DEFAULT_THEMATIQUES=[
   {id:'le-cardinal',nom:'Le Cardinal',emoji:'🧊',color:'#3b82f6'},
@@ -462,7 +581,6 @@ const getThematique=(id)=>{
 let store=load();
 let initialStoreSnapshot=JSON.parse(JSON.stringify(store));
 let lastSessionDiff={};
-let activityPromptDrafts={...DEFAULT_ACTIVITY_PROMPTS};
 let firebaseApp=null;
 let firebaseAuth=null;
 let firebaseDb=null;
@@ -496,9 +614,18 @@ function ensureThematiqueIds(arr){
 function migrateStore(data){
   const migrated={...data};
   migrated.params={...DEFAULT_PARAMS,...(data.params||{})};
-  migrated.params.openai_activity_prompts=getActivityPrompts(migrated.params);
-  migrated.params.openai_activity_prompt=migrated.params.openai_activity_prompts.__DEFAULT||DEFAULT_OPENAI_PROMPT;
-  migrated.thematiques=ensureThematiqueIds(data.thematiques && data.thematiques.length?data.thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})));
+  const legacyPrompts=data?.params?.openai_activity_prompts;
+  if((!migrated.params.openai_activity_prompt || !migrated.params.openai_activity_prompt.trim()) && legacyPrompts && typeof legacyPrompts==='object'){
+    const legacyDefault=legacyPrompts.__DEFAULT;
+    if(typeof legacyDefault==='string' && legacyDefault.trim()){
+      migrated.params.openai_activity_prompt=legacyDefault.trim();
+    }
+  }
+  migrated.params.openai_activity_prompt=(migrated.params.openai_activity_prompt||'').trim()||DEFAULT_ACTIVITY_PROMPT;
+  migrated.params.openai_consultant_prompt=(migrated.params.openai_consultant_prompt||'').trim()||DEFAULT_OPENAI_CONSULTANT_PROMPT;
+  migrated.params.openai_guidee_prompt=(migrated.params.openai_guidee_prompt||'').trim()||DEFAULT_OPENAI_GUIDEE_PROMPT;
+  delete migrated.params.openai_activity_prompts;
+  migrated.thematiques=ensureThematiqueIds(data.thematiques && data.thematiques.length?data.thematiques:DEFAULT_THEMATIQUES.map(t=>({...t}))); 
   if(Array.isArray(migrated.consultants)){
     migrated.consultants=migrated.consultants.map(c=>{
       const copy={...c};
@@ -541,12 +668,20 @@ function migrateStore(data){
   }
   if(Array.isArray(migrated.activities)){
     migrated.activities=migrated.activities.map(act=>{
-      if(act.objectif_id && !act.guidee_id){
+      const updated={...act};
+      if(updated.objectif_id && !updated.guidee_id){
         const candidate=migrated.guidees.find(g=>g.nom===act.objectif_nom && g.consultant_id===act.consultant_id);
-        if(candidate) act.guidee_id=candidate.id;
+        if(candidate) updated.guidee_id=candidate.id;
       }
-      delete act.objectif_id;
-      return act;
+      delete updated.objectif_id;
+      const rawTitle=typeof updated.title==='string'?updated.title.trim():'';
+      if(rawTitle){
+        updated.title=rawTitle;
+      }else{
+        const firstLine=String(updated.description||'').split(/\r?\n/).find(line=>line.trim())||'';
+        updated.title=firstLine.trim().slice(0,160) || 'Sans titre';
+      }
+      return updated;
     });
   }
   delete migrated.objectifs;
@@ -572,6 +707,13 @@ function hasLocalData(){
   }catch{
     return false;
   }
+}
+function storeHasRecords(){
+  if(!store || typeof store!=='object') return false;
+  return ['consultants','activities','guidees'].some(key=>Array.isArray(store[key]) && store[key].length>0);
+}
+function hasOfflineDataAvailable(){
+  return hasLocalData() || storeHasRecords();
 }
 function getGithubRepo(){
   const meta=store?.meta||{};
@@ -701,7 +843,7 @@ renderGuideeEntries(upcomingEntries,'db-actions-upcoming-list','db-actions-upcom
 }
 /* STATE */
 let state={
-  filters:{consultant_id:'',type:'',month:'RECENT',hashtag:''},
+  filters:{consultant_id:'',type:'',month:'ALL',hashtag:''},
   activities:{selectedId:'',shouldCenter:false},
   guidees:{consultant_id:'',guidee_id:'',selectedEventId:''}
 };
@@ -771,7 +913,7 @@ function updateFilterHighlights(){
   selectConsultant?.classList.toggle('active',!!state.filters.consultant_id);
   selectType?.classList.toggle('active',!!state.filters.type);
   selectHashtag?.classList.toggle('active',!!state.filters.hashtag);
-  const monthActive=state.filters.month && state.filters.month!=='RECENT';
+  const monthActive=state.filters.month && state.filters.month!=='ALL';
   selectMonth?.classList.toggle('active',monthActive);
 }
 function refreshMonthOptions(){
@@ -804,8 +946,8 @@ function refreshMonthOptions(){
   if(values.includes(state.filters.month)){
     selectMonth.value=state.filters.month;
   }else{
-    state.filters.month='RECENT';
-    selectMonth.value='RECENT';
+    state.filters.month='ALL';
+    selectMonth.value='ALL';
   }
 }
 function refreshHashtagOptions(){
@@ -834,15 +976,15 @@ function refreshHashtagOptions(){
 }
 on(selectType,'change',e=>{state.filters.type=e.target.value; renderActivities();});
 $('btn-reset-filters').onclick=()=>{
-  state.filters={consultant_id:'',type:'',month:'RECENT',hashtag:''};
+  state.filters={consultant_id:'',type:'',month:'ALL',hashtag:''};
   state.activities.selectedId='';
   if(selectConsultant) selectConsultant.value='';
   if(selectType) selectType.value='';
-  if(selectMonth) selectMonth.value='RECENT';
+  if(selectMonth) selectMonth.value='ALL';
   if(selectHashtag) selectHashtag.value='';
   renderActivities();
 };
-on(selectMonth,'change',e=>{ state.filters.month=e.target.value||'RECENT'; renderActivities(); });
+on(selectMonth,'change',e=>{ state.filters.month=e.target.value||'ALL'; renderActivities(); });
 on(selectHashtag,'change',e=>{state.filters.hashtag=e.target.value; renderActivities();});
 on(selectConsultant,'change',e=>{ state.filters.consultant_id=e.target.value; renderActivities(); });
 btnEditActivity?.addEventListener('click',()=>{
@@ -875,7 +1017,7 @@ const params=store.params||DEFAULT_PARAMS;
 const recentDays=Math.max(1,Number(params.activites_recent_jours)||30);
 const upcomingDays=Math.max(1,Number(params.activites_a_venir_jours)||30);
 const today=new Date();
-const monthFilter=month||'RECENT';
+const monthFilter=month||'ALL';
 const list= store.activities
 .filter(a=>!consultant_id || a.consultant_id===consultant_id)
 .filter(a=>!type || a.type===type)
@@ -935,8 +1077,10 @@ const g=a.guidee_id ? store.guidees.find(x=>x.id===a.guidee_id):null;
 const meta=TYPE_META[a.type]||{emoji:'❓',pill:'',label:a.type};
 const typeColor=TYPE_COLORS[a.type]||'var(--accent)';
 const heuresBadge = a.type==='ACTION_ST_BERNARD' ? `<span class="hours-badge"><b>${esc(formatHours(a.heures??0))}h</b></span>`:'';
-const descText=a.description||'';
+const descText=(a.description||'').trim();
 const descHtml=esc(descText);
+const titleText=(a.title||'').trim()||'Sans titre';
+const titleHtml=esc(titleText);
 const isSelected=state.activities.selectedId===a.id;
 const guideeName=g?.nom||'Sans titre';
 const guideeLink=g?`<span class="click-span guidee-link" data-goto-guidee="${g.id}" title="Voir la guidée"><span class="guidee-emoji">🧭</span> <span class="bold">${esc(guideeName)}</span></span>`:'';
@@ -948,16 +1092,18 @@ const beneficiariesBadge=beneficiariesNames.length
   ? `<span class="activity-beneficiary" title="Bénéficiaires">🪢 ${esc(beneficiariesNames.join(', '))}</span>`
   : '';
 const headerPieces=[heuresBadge,guideeLink,beneficiariesBadge].filter(Boolean);
-const headerSegment=headerPieces.join(' ');
-const combinedText=descText?`${headerSegment?`${headerSegment} — `:''}${descHtml}`:(headerSegment||'');
-const mobileContent=combinedText||'—';
+const metaLine=headerPieces.length?`<div class="objective-line">${headerPieces.join(' ')}</div>`:'';
+const titleLine=`<div class="activity-title">${titleHtml}</div>`;
+const descLine=descText
+  ? `<div class="activity-desc${isSelected?'':' clamp-5'}">${descHtml}</div>`
+  : `<div class="activity-desc muted">—</div>`;
+const mobileDesc=isSelected
+  ? `<div class="mobile-desc expanded" data-act="${a.id}"><div class="text">${descHtml||'—'}</div></div>`
+  : `<div class="mobile-desc" data-act="${a.id}"><div class="text${descText?' clamp-5':''}">${descHtml||'—'}</div></div>`;
 const friendlyDate=formatActivityDate(a.date_publication||'');
 const friendlyDateHtml=esc(friendlyDate);
 const rawDateTitle=esc(a.date_publication||'');
 const consultantLabel=`<span><b>${esc(c?.nom||'—')}</b></span>`;
-const headerTitle=g?`🧭 ${guideeName}`:'';
-const headerLine=`<div class="clamp-1 objective-line"${headerTitle?` title="${esc(headerTitle)}"`:''}>${headerSegment || '—'}</div>`;
-const descLine=descText?`<div class="activity-desc${isSelected?'':' clamp-5'}" title="${descHtml}">${headerSegment? '— ' : ''}${descHtml}</div>`:'';
 const inlineEditButton=()=>`<button class="btn ghost small row-edit" data-inline-edit="${a.id}" title="Éditer l'activité">✏️</button>`;
 const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span></div>`;
 const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
@@ -979,9 +1125,9 @@ tr.innerHTML = mobile
     </div>
     ${dateLineMobile}
   </div>
-  <div class="mobile-desc${isSelected?' expanded':''}" data-act="${a.id}">
-    <div class="text${isSelected?'':' clamp-5'}">${mobileContent}</div>
-  </div>
+  ${titleLine}
+  ${metaLine||''}
+  ${mobileDesc}
 </td>`
 : `
 <td class="desktop-only">
@@ -994,7 +1140,8 @@ tr.innerHTML = mobile
   <div class="sub">${esc(c?.titre_mission||'—')}</div>
 </td>
 <td class="main desktop-only">
-  ${headerLine}
+  ${titleLine}
+  ${metaLine||''}
   ${descLine}
 </td>`;
 on(tr,'click',(e)=>{
@@ -1263,7 +1410,7 @@ function renderGuideeTimeline(){
     item.style.setProperty('--selection-color',color);
     item.style.setProperty('--timeline-border','var(--border)');
     item.style.setProperty('--timeline-marker-border','var(--border)');
-    const consultantHtml=`<span class="bold">${esc(consultant?.nom||'—')}</span>`;
+    const consultantName=esc(consultant?.nom||'—');
     const friendlyDate=formatActivityDate(ev.date);
     const friendlyDateHtml=esc(friendlyDate);
     const rawDate=esc(ev.date||'');
@@ -1274,25 +1421,36 @@ function renderGuideeTimeline(){
     if((ev.type==='start' || ev.type==='end') && ev.guidee){
       editButtons.push(`<button class="btn ghost small timeline-edit timeline-edit-guidee" data-inline-edit-guidee="${ev.guidee.id}" title="Éditer la guidée">✏️</button>`);
     }
-    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-primary">${consultantHtml}</div><div class="timeline-meta-date"><span class="bold" title="${rawDate}">${friendlyDateHtml}</span>${editButtons.join('')}</div></div>`;
     const hoursBadge=ev.activity && ev.activity.type==='ACTION_ST_BERNARD'
       ? `<span class="hours-badge"><b>${esc(formatHours(ev.activity.heures??0))}h</b></span>`
       : '';
+    const metaPrimaryPieces=[];
+    if(ev.type==='activity' && ev.activity){
+      const title=esc((ev.activity.title||'').trim()||'Sans titre');
+      metaPrimaryPieces.push(`<span class="bold">${title}</span>`);
+    }else{
+      metaPrimaryPieces.push(`<span class="bold">${consultantName}</span>`);
+    }
+    if(hoursBadge) metaPrimaryPieces.push(hoursBadge);
+    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-primary">${metaPrimaryPieces.join(' ')}</div><div class="timeline-meta-date"><span class="bold" title="${rawDate}">${friendlyDateHtml}</span>${editButtons.join('')}</div></div>`;
     const guideeSpan=g
       ? `<span class="click-span guidee-link" data-filter-guidee="${g.id}"><span class="guidee-emoji">🧭</span> <span class="bold">${esc(g.nom||'Sans titre')}</span></span>`
       : '';
     let bodyHtml='';
     if(ev.type==='activity'){
-      const raw=(ev.activity?.description||'').replace(/\r?\n/g,' ');
-      const clean=esc(raw.replace(/\s+/g,' ').trim());
+      const desc=(ev.activity?.description||'').trim();
+      const descHtml=esc(desc);
       const beneficiariesNames=(ev.activity?.type==='CORDEE' && Array.isArray(ev.activity?.beneficiaires))
         ? ev.activity.beneficiaires.map(id=>store.consultants.find(c=>c.id===id)?.nom).filter(Boolean)
         : [];
       const beneficiariesHtml=beneficiariesNames.length
         ? `<span class="activity-beneficiary" title="Bénéficiaires">🪢 ${esc(beneficiariesNames.join(', '))}</span>`
         : '';
-      const parts=[hoursBadge, beneficiariesHtml, clean||'—'].filter(Boolean).join(' ');
-      bodyHtml=`<div class="timeline-text clamp-3">${parts||'—'}</div>`;
+      const infoPieces=[beneficiariesHtml, guideeSpan].filter(Boolean).join(' ');
+      const infoLine=infoPieces?`<div class="timeline-meta-secondary">${infoPieces}</div>`:'';
+      const descriptionClass=isSelected?'timeline-description':`timeline-description clamp-8`;
+      const descriptionContent=descHtml||'—';
+      bodyHtml=`${infoLine}<div class="${descriptionClass}">${descriptionContent}</div>`;
     }else{
       const verb=ev.type==='start'?'Démarrage':'Fin';
       const flagIcon='🧭';
@@ -1382,26 +1540,9 @@ const hashtagsInput=$('p-hashtags');
 if(hashtagsInput){
   hashtagsInput.value=p.hashtags_catalog ?? DEFAULT_HASHTAG_CATALOG;
 }
-activityPromptDrafts={...getActivityPrompts(p)};
-const activityPromptSelect=$('p-openai-activity-type');
 const activityPromptTextarea=$('p-openai-activity');
-if(activityPromptSelect && activityPromptTextarea){
-  const initialType=normalizeActivityPromptType(activityPromptSelect.value);
-  activityPromptSelect.value=initialType;
-  activityPromptTextarea.dataset.currentType=initialType;
-  activityPromptTextarea.value=activityPromptDrafts[initialType] ?? DEFAULT_OPENAI_PROMPT;
-  activityPromptTextarea.oninput=()=>{
-    const currentType=normalizeActivityPromptType(activityPromptTextarea.dataset.currentType);
-    activityPromptDrafts[currentType]=activityPromptTextarea.value;
-  };
-  activityPromptSelect.onchange=()=>{
-    const previousType=normalizeActivityPromptType(activityPromptTextarea.dataset.currentType);
-    activityPromptDrafts[previousType]=activityPromptTextarea.value;
-    const nextType=normalizeActivityPromptType(activityPromptSelect.value);
-    activityPromptSelect.value=nextType;
-    activityPromptTextarea.dataset.currentType=nextType;
-    activityPromptTextarea.value=activityPromptDrafts[nextType] ?? DEFAULT_OPENAI_PROMPT;
-  };
+if(activityPromptTextarea){
+  activityPromptTextarea.value=p.openai_activity_prompt ?? DEFAULT_ACTIVITY_PROMPT;
 }
 const consultantPromptInput=$('p-openai-consultant');
 if(consultantPromptInput){
@@ -1432,23 +1573,12 @@ p.objectif_bar_max_heures=Math.max(1, Number($('p-objectif_bar_max').value||10))
 const hashtagsInput=$('p-hashtags');
 p.hashtags_catalog=hashtagsInput?.value.trim()||DEFAULT_HASHTAG_CATALOG;
 const activityPromptTextarea=$('p-openai-activity');
-if(activityPromptTextarea){
-  const type=normalizeActivityPromptType(activityPromptTextarea.dataset.currentType);
-  activityPromptDrafts[type]=activityPromptTextarea.value;
-}
-const promptsToStore={...DEFAULT_ACTIVITY_PROMPTS};
-Object.entries(activityPromptDrafts).forEach(([key,value])=>{
-  if(typeof value==='string'){
-    const trimmed=value.trim();
-    promptsToStore[key]=trimmed || DEFAULT_OPENAI_PROMPT;
-  }
-});
-p.openai_activity_prompts=promptsToStore;
-p.openai_activity_prompt=promptsToStore.__DEFAULT||DEFAULT_OPENAI_PROMPT;
+p.openai_activity_prompt=activityPromptTextarea?.value.trim()||DEFAULT_ACTIVITY_PROMPT;
 const consultantPromptInput=$('p-openai-consultant');
 p.openai_consultant_prompt=consultantPromptInput?.value.trim()||DEFAULT_OPENAI_CONSULTANT_PROMPT;
 const guideePromptInput=$('p-openai-guidee');
 p.openai_guidee_prompt=guideePromptInput?.value.trim()||DEFAULT_OPENAI_GUIDEE_PROMPT;
+delete p.openai_activity_prompts;
 store.meta=store.meta||{};
 const repoInput=$('p-github-repo');
 const repoValue=normalizeRepo(repoInput?.value);
@@ -1466,10 +1596,26 @@ const faHeures=$('fa-heures');
 const faConsult=$('fa-consultant');
 const faGuidee=$('fa-guidee');
 const faDesc=$('fa-desc');
+const faTitle=$('fa-title');
+const faTitleAI=$('fa-title-ai');
 const btnFaGoto=$('fa-goto-consultant');
 const btnFaDelete=$$('#dlg-activity .actions [data-action="delete"]');
 const faOpenAI=$('fa-openai');
 attachHashtagAutocomplete(faDesc);
+const getActivityDescriptionTemplate=(type)=>DEFAULT_ACTIVITY_DESCRIPTION_TEMPLATES[type] || DEFAULT_ACTIVITY_DESCRIPTION_TEMPLATES.__DEFAULT;
+let lastActivityTemplateApplied='';
+function applyActivityDescriptionTemplate(type,{force=false}={}){
+  if(!faDesc) return;
+  const template=getActivityDescriptionTemplate(type);
+  const current=faDesc.value.trim();
+  if(force || !current || (lastActivityTemplateApplied && current===lastActivityTemplateApplied)){
+    faDesc.value=template;
+    faDesc.dispatchEvent(new Event('input',{bubbles:true}));
+    lastActivityTemplateApplied=template.trim();
+  }else{
+    lastActivityTemplateApplied=current;
+  }
+}
 if(faHeures && !faHeures.options.length){
   const frag=document.createDocumentFragment();
   for(let i=0;i<=30;i++){
@@ -1494,6 +1640,7 @@ faType.onchange=()=>{
   }else{
     faHeures.value='0';
   }
+  applyActivityDescriptionTemplate(value);
 };
 faConsult.onchange=()=>{ updateFaGuideeOptions(); };
 btnFaGoto.onclick=()=>{ const cid=faConsult.value; if(cid){ dlgA.close(); openConsultantModal(cid); } };
@@ -1503,17 +1650,45 @@ faOpenAI?.addEventListener('click',async()=>{
   const params=store?.params||DEFAULT_PARAMS;
   const template=getActivityPrompt(params,faType.value);
   const typeMeta=TYPE_META[faType.value]||{label:faType.value};
-  const consultantName=store.consultants.find(c=>c.id===faConsult.value)?.nom||'';
-  const guideeName=faGuidee?.value ? (store.guidees.find(g=>g.id===faGuidee.value)?.nom||'') : '';
+  const consultant=store.consultants.find(c=>c.id===faConsult.value)||null;
+  const guidee=faGuidee?.value ? (store.guidees.find(g=>g.id===faGuidee.value)||null) : null;
+  const currentTitle=(faTitle?.value||'').trim()||'Sans titre';
   const prompt=fillPromptTemplate(template,{
-    activity_type:typeMeta.label||faType.value,
-    activity_description:currentText,
-    consultant_name:consultantName,
-    guidee_name:guideeName,
+    activity:{
+      title:currentTitle,
+      description:currentText,
+      type:faType.value,
+      type_label:typeMeta.label||faType.value
+    },
+    guidee:{
+      title:guidee?.nom||'',
+      description:guidee?.description||''
+    },
+    consultant:{
+      name:consultant?.nom||'',
+      title:consultant?.titre_mission||consultant?.nom||'',
+      description:consultant?.description||''
+    },
     hashtags_catalog:getConfiguredHashtags().join(' ')
   }).trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
   await invokeAIHelper(faOpenAI,faDesc,prompt);
+});
+faTitleAI?.addEventListener('click',async()=>{
+  const description=faDesc?.value.trim()||'';
+  if(!description){ alert('Renseignez la description pour suggérer un titre.'); return; }
+  const consultant=store.consultants.find(c=>c.id===faConsult.value)||null;
+  const typeMeta=TYPE_META[faType.value]||{label:faType.value};
+  const prompt=fillPromptTemplate(DEFAULT_ACTIVITY_TITLE_PROMPT,{
+    activity:{
+      description:description,
+      type_label:typeMeta.label||faType.value
+    },
+    consultant:{
+      name:consultant?.nom||''
+    }
+  });
+  await invokeAIHelper(faTitleAI,faTitle,prompt);
 });
 function updateFaGuideeOptions(preferredId){
   if(!faGuidee) return;
@@ -1543,25 +1718,29 @@ if(id && state.activities.selectedId!==id){
 faConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
 $('fa-date').value=todayStr();
 faDesc.value='';
+if(faTitle) faTitle.value='';
 faType.value='ACTION_ST_BERNARD'; faHeuresWrap.classList.remove('hidden'); faHeures.value='0';
 if(id){
 const a=store.activities.find(x=>x.id===id); if(!a) return;
-faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; faHeures.value=String(a.heures??0);
+faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; if(faTitle) faTitle.value=a.title||''; faHeures.value=String(a.heures??0);
 updateFaGuideeOptions(a.guidee_id||'');
 faType.onchange();
 }else{
   updateFaGuideeOptions();
   faType.onchange();
 }
+lastActivityTemplateApplied=faDesc.value.trim();
+applyActivityDescriptionTemplate(faType.value,{force:!id});
 dlgA.showModal();
 }
 $('form-activity').onsubmit=(e)=>{
 e.preventDefault();
 const isSTB=faType.value==='ACTION_ST_BERNARD';
 const heuresValue=isSTB ? Number(faHeures.value??0) : undefined;
-const data={ consultant_id:faConsult.value, type:faType.value, date_publication:$('fa-date').value, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined };
+const titleValue=(faTitle?.value||'').trim();
+const data={ consultant_id:faConsult.value, type:faType.value, date_publication:$('fa-date').value, title:titleValue, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined };
 const heuresInvalid=isSTB && (!Number.isFinite(heuresValue) || heuresValue<0);
-const missing = !data.consultant_id || !data.type || !data.date_publication || !data.description || heuresInvalid || (isSTB && !data.guidee_id);
+const missing = !data.consultant_id || !data.type || !data.date_publication || !data.title || heuresInvalid || (isSTB && !data.guidee_id);
 if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
 if(currentActivityId){ Object.assign(store.activities.find(x=>x.id===currentActivityId),data,{updated_at:nowISO()}); }else{ store.activities.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
@@ -1586,6 +1765,7 @@ const fgDebut=$('fg-debut');
 const fgFin=$('fg-fin');
 const fgDesc=$('fg-desc');
 const fgOpenAI=$('fg-openai');
+const fgTitleAI=$('fg-title-ai');
 const btnFgEditConsultant=$('fg-edit-consultant');
 attachHashtagAutocomplete(fgDesc);
 fgOpenAI?.addEventListener('click',async()=>{
@@ -1594,16 +1774,32 @@ fgOpenAI?.addEventListener('click',async()=>{
   const params=store?.params||DEFAULT_PARAMS;
   const template=params.openai_guidee_prompt||DEFAULT_OPENAI_GUIDEE_PROMPT;
   const consultantId=fgConsult?.value||'';
-  const consultantName=consultantId? (store.consultants.find(c=>c.id===consultantId)?.nom||'') : '';
-  const guideeName=fgNom?.value.trim()||'';
+  const consultant=consultantId? (store.consultants.find(c=>c.id===consultantId)||null) : null;
+  const guideeTitle=fgNom?.value.trim()||'';
   const prompt=fillPromptTemplate(template,{
-    guidee_description:currentText,
-    consultant_name:consultantName,
-    guidee_name:guideeName,
+    guidee:{
+      title:guideeTitle,
+      description:currentText
+    },
+    consultant:{
+      name:consultant?.nom||'',
+      title:consultant?.titre_mission||consultant?.nom||'',
+      description:consultant?.description||''
+    },
     hashtags_catalog:getConfiguredHashtags().join(' ')
   }).trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
   await invokeAIHelper(fgOpenAI,fgDesc,prompt);
+});
+fgTitleAI?.addEventListener('click',async()=>{
+  const description=fgDesc?.value.trim()||'';
+  if(!description){ alert('Renseignez la description pour suggérer un titre.'); return; }
+  const consultant=store.consultants.find(c=>c.id===fgConsult.value)||null;
+  const prompt=fillPromptTemplate(DEFAULT_GUIDEE_TITLE_PROMPT,{
+    guidee:{description:description},
+    consultant:{name:consultant?.nom||''}
+  });
+  await invokeAIHelper(fgTitleAI,fgNom,prompt);
 });
 let guideeInitialSnapshot=null;
 function snapshotGuideeForm(){
@@ -1674,6 +1870,10 @@ function openGuideeModal(id=null){
   fgConsult.value=g?.consultant_id||baseConsult||'';
   fgNom.value=g?.nom||'';
   fgDesc.value=g?.description||'';
+  if(!fgDesc.value.trim()){
+    fgDesc.value=DEFAULT_GUIDEE_DESCRIPTION_TEMPLATE;
+    fgDesc.dispatchEvent(new Event('input',{bubbles:true}));
+  }
   const start=g?.date_debut || todayStr();
   fgDebut.value=start;
   const consultant=store.consultants.find(c=>c.id===(g?.consultant_id||fgConsult.value));
@@ -1748,9 +1948,11 @@ fcOpenAI?.addEventListener('click',async()=>{
   const consultantName=fcNom?.value.trim()||'';
   const missionTitle=fcTitre?.value.trim()||'';
   const prompt=fillPromptTemplate(template,{
-    consultant_name:consultantName,
-    consultant_mission:missionTitle,
-    consultant_description:currentText,
+    consultant:{
+      name:consultantName,
+      title:missionTitle||consultantName,
+      description:currentText
+    },
     hashtags_catalog:getConfiguredHashtags().join(' ')
   }).trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
@@ -1777,6 +1979,10 @@ if(fcTitre) fcTitre.value=c?.titre_mission||'';
 if(fcFin) fcFin.value=c?.date_fin||'';
 if(fcBoond) fcBoond.value=c?.boond_id||'';
 if(fcDesc) fcDesc.value=c?.description||'';
+if(fcDesc && !fcDesc.value.trim()){
+  fcDesc.value=DEFAULT_CONSULTANT_DESCRIPTION_TEMPLATE;
+  fcDesc.dispatchEvent(new Event('input',{bubbles:true}));
+}
 updateBoondLink(c?.boond_id||'');
 dlgC.showModal();
 }
@@ -1902,8 +2108,8 @@ function updateSyncIndicator(){
   const connected=firebaseReady && !!currentUser;
   if(!connected){
     btnSyncIndicator.textContent='⚠️';
-    btnSyncIndicator.title='Connexion requise pour synchroniser.';
-    btnSyncIndicator.disabled=true;
+    btnSyncIndicator.title='Hors connexion — cliquez pour vous connecter.';
+    btnSyncIndicator.disabled=false;
     return;
   }
   const now=Date.now();
@@ -2197,9 +2403,10 @@ async function handleAuthStateChanged(user){
     remoteReady=false;
     hasPendingChanges=false;
     stopAutoSync();
-    if(FIRESTORE_ENABLED) toggleAuthGate(true);
+    const shouldShowGate=FIRESTORE_ENABLED && !hasOfflineDataAvailable();
+    toggleAuthGate(shouldShowGate);
     setPasswordFeedback('');
-    setSyncStatus('Connexion requise pour la synchronisation.');
+    setSyncStatus('Travail hors connexion — connectez-vous pour synchroniser.');
     syncIndicatorState='error';
     lastSyncSuccess=0;
     lastRemoteReadIso=null;
@@ -2271,11 +2478,7 @@ function updateIssueLink(repoOverride,diffOverride){
   issueLink.removeAttribute('aria-disabled');
 }
 function updateSyncPreview(){
-  const el=$('json-preview');
-  if(!el) return;
   const diff=ensureSessionDiff();
-  const output=Object.keys(diff).length?JSON.stringify(diff,null,2):'{}';
-  el.textContent=output;
   updateIssueLink(undefined,diff);
 }
 btnCopyDiff?.addEventListener('click',async()=>{
@@ -2314,29 +2517,6 @@ if(issueLink){
     }
   });
 }
-const fileInput=$('file-import');
-const btnImportJson=$('btn-import-json');
-$('btn-reset-storage').onclick=resetFromDataJson;
-btnImportJson?.addEventListener('click',()=>{ fileInput.value=''; fileInput.click(); });
-async function resetFromDataJson(){
-try{
-const base=new URL('.', location.href);
-const url=new URL('data.json', base).href;
-const resp=await fetch(url, {cache:'no-store'});
-if(!resp.ok) throw new Error('HTTP '+resp.status);
-const data=await resp.json();
-applyIncomingStore(data, 'data.json');
-}catch(err){
-console.warn('Échec fetch data.json → fallback file picker:', err);
-alert("Impossible de charger 'data.json' depuis le répertoire courant.\nSélectionnez un fichier JSON local.");
-fileInput.value=''; fileInput.click();
-}
-}
-on(fileInput,'change', async (e)=>{
-const f=e.target.files?.[0]; if(!f) return;
-try{ const text=await f.text(); const data=JSON.parse(text); applyIncomingStore(data, f.name); }
-catch(err){ console.error('Import JSON invalide:', err); alert('Fichier JSON invalide ❌'); }
-});
 passwordLoginForm?.addEventListener('submit',async evt=>{
   evt.preventDefault();
   if(!firebaseAuth){ setAuthError('Firebase non disponible.'); return; }
@@ -2402,7 +2582,7 @@ btnSignOut?.addEventListener('click',()=>{
 btnRefreshRemote?.addEventListener('click',async()=>{
   if(!firebaseReady || !currentUser){
     setSyncStatus('Connectez-vous pour rafraîchir vos données.', 'warning');
-    if(FIRESTORE_ENABLED) toggleAuthGate(true);
+    if(FIRESTORE_ENABLED && !hasOfflineDataAvailable()) toggleAuthGate(true);
     return;
   }
   syncIndicatorState='pending';
@@ -2415,6 +2595,12 @@ btnRefreshRemote?.addEventListener('click',async()=>{
   }
 });
 btnSyncIndicator?.addEventListener('click',()=>{
+  if(!currentUser){
+    if(FIRESTORE_ENABLED && !hasOfflineDataAvailable()){
+      toggleAuthGate(true);
+    }
+    return;
+  }
   if(btnSyncIndicator.disabled) return;
   btnRefreshRemote?.click();
 });
@@ -2430,7 +2616,10 @@ window.addEventListener('beforeunload',()=>{
 });
 btnSignOut?.setAttribute('disabled','true');
 btnRefreshRemote?.setAttribute('disabled','true');
-if(FIRESTORE_ENABLED) toggleAuthGate(true); else toggleAuthGate(false);
+toggleAuthGate(FIRESTORE_ENABLED && !hasOfflineDataAvailable());
+if(hasOfflineDataAvailable()){
+  setSyncStatus('Travail hors connexion — connectez-vous pour synchroniser.');
+}
 renderAuthUser(null);
 updateSyncIndicator();
 function applyIncomingStore(incoming, sourceLabel, options={}){
@@ -2453,13 +2642,6 @@ function renderActivityFiltersOptions(){
   updateFilterHighlights();
 }
 function refreshAll(){ renderConsultantOptions(); renderActivityFiltersOptions(); renderActivities(); renderGuideeFilters(); renderGuideeTimeline(); renderParams(); dashboard(); updateSyncPreview(); }
-/* Auto-bootstrap si vide */
-if(!FIRESTORE_ENABLED){
-(function autoBootstrapIfEmpty(){
-const hadData = (()=>{ try{ const obj=JSON.parse(localStorage.getItem(LS_KEY)||'null'); return obj && ((obj.consultants||[]).length + (obj.activities||[]).length + (obj.guidees||[]).length) > 0; }catch{return false;} })();
-if(!hadData){ resetFromDataJson(); }
-})();
-}
 /* Premier rendu */
 if(FIRESTORE_ENABLED){
   initFirebase();
