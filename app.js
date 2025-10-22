@@ -20,7 +20,7 @@ const formatMonthLabel=(key)=>{
   const idx=Math.max(0,Math.min(11,(Number(month)||1)-1));
   return `${MONTH_NAMES[idx]} ${year}`;
 };
-const CORE_HASHTAG_HINTS=['#Team','#Customer','#Tech','#Design','#Product','#Data'];
+const CORE_HASHTAG_HINTS=['#Team','#Tech','#Data','#Customer','#Design','#Product'];
 const DEFAULT_HASHTAG_CATALOG=[
   '#ProductBacklogPrioritization','#ProductUserStories','#ProductRoadmap','#ProductKPIs','#ProductVision',
   '#DataExploration','#DataVisualization','#DataModeling','#DataStorytelling','#DataGovernance',
@@ -29,145 +29,78 @@ const DEFAULT_HASHTAG_CATALOG=[
   '#TechSQL','#TechPowerBI','#TechAutomation','#TechDocumentation','#TechIntegration',
   '#CustomerInsight','#CustomerRelationship','#CustomerValue','#CustomerFeedback','#CustomerExperience'
 ].join(' ');
-const DEFAULT_ACTIVITY_PROMPT=`Je suis manager coach et j'assure le suivi des consultants PO.
-Peux-tu me générer à partir des infos suivantes une description de l'activité de manière plus structurée :
+const DEFAULT_ACTIVITY_PROMPTS={
+  ACTION_ST_BERNARD:`Tu es manager coach et tu formalises une activité Action Saint Bernard.
+Base-toi sur les informations suivantes :
 - Activité : {{activity.title}} {{activity.description}}
-- Compréhension du contexte : {{guidee.title}} {{guidee.description}}
+- Guidée : {{guidee.title}} {{guidee.description}}
 - Consultant : {{consultant.title}} {{consultant.description}}
-Utilise les mots-clés des hashtags lorsqu'on parle de compétences ({{hashtags_catalog}}).
-Respecte strictement la structure correspondant au type d'activité détaillée ci-dessous.`;
-const DEFAULT_OPENAI_CONSULTANT_PROMPT=`Transforme cette description consultant en un portrait structuré et professionnel.
-Respecte strictement le format :
-💼 Mission actuelle : contexte, client, rôle principal
-🎯 Objectifs pro : ambitions à court/moyen terme
-💡 Compétences : #Product #Team #Tech #Data #Customer
-🌱 Forces : atouts distinctifs ou points d’appui
-⚠️ Points de veille : freins, besoins ou risques à accompagner
-💬 Style relationnel : posture, communication, énergie
-Utilise les informations suivantes : {{consultant.title}} {{consultant.description}}
-Ajoute les hashtags pertinents parmi {{hashtags_catalog}} et termine par des suggestions # et @ si utiles.`;
-const DEFAULT_OPENAI_GUIDEE_PROMPT=`Transforme cette description de guidée en respectant strictement cette structure :
-🎯 Objectif : résultat visé ou compétence à renforcer
-🧩 Contexte : mission, situation ou besoin à l’origine
-🤝 Accompagnement prévu : format, fréquence, durée
-💡 Compétences : #Product #Team #Tech #Data #Customer
-🌱 Indicateurs : signes concrets de progression attendus
-💬 Résultat / bilan : constat en fin de cycle
-Utilise les données : Guidée {{guidee.title}} {{guidee.description}} | Consultant {{consultant.title}} {{consultant.description}}
-Réutilise les hashtags pertinents parmi {{hashtags_catalog}} et termine par des suggestions # et @ si adaptées.`;
+Rédige quatre parties : Contexte, Actions réalisées, Résultats observés, Suivi prévu.
+Intègre les hashtags pertinents tirés de {{hashtags_catalog}} lorsque c'est utile.`,
+  VERBATIM:`Tu es manager coach et tu synthétises un verbatim client.
+Informations disponibles :
+- Activité : {{activity.title}} {{activity.description}}
+- Guidée : {{guidee.title}} {{guidee.description}}
+- Consultant : {{consultant.title}} {{consultant.description}}
+Structure ton texte en trois parties : Verbatim, Situation, Enseignements clés.
+Ajoute des hashtags pertinents issus de {{hashtags_catalog}} uniquement si nécessaire.`,
+  AVIS:`Tu es manager coach et tu rédiges un avis de coaching.
+Utilise :
+- Activité : {{activity.title}} {{activity.description}}
+- Guidée : {{guidee.title}} {{guidee.description}}
+- Consultant : {{consultant.title}} {{consultant.description}}
+Respecte la structure suivante : Points forts, Points de vigilance, Pistes de progression.
+Incorpore les hashtags utiles provenant de {{hashtags_catalog}} lorsque c'est pertinent.`,
+  CORDEE:`Tu es manager coach et tu relates une activité Cordée.
+Appuie-toi sur :
+- Activité : {{activity.title}} {{activity.description}}
+- Guidée : {{guidee.title}} {{guidee.description}}
+- Consultant : {{consultant.title}} {{consultant.description}}
+Organise la synthèse en quatre rubriques : Thématique, Rôle joué, Valeur apportée, Suite prévue.
+Ajoute les hashtags pertinents issus de {{hashtags_catalog}} lorsque cela apporte de la clarté.`,
+  NOTE:`Tu es manager coach et tu rédiges une note d'observation.
+Informations :
+- Activité : {{activity.title}} {{activity.description}}
+- Guidée : {{guidee.title}} {{guidee.description}}
+- Consultant : {{consultant.title}} {{consultant.description}}
+Structure la réponse en trois volets : Contexte, Faits observés, Impacts.
+Insère des hashtags pertinents depuis {{hashtags_catalog}} seulement si cela aide la lecture.`,
+  ALERTE:`Tu es manager coach et tu dois signaler une alerte.
+Base-toi sur :
+- Activité : {{activity.title}} {{activity.description}}
+- Guidée : {{guidee.title}} {{guidee.description}}
+- Consultant : {{consultant.title}} {{consultant.description}}
+Respecte trois sections : Signalement, Risques, Suivi prévu.
+Inclue les hashtags pertinents provenant de {{hashtags_catalog}} lorsque cela facilite le suivi.`
+};
+const DEFAULT_OPENAI_PROMPTS={
+  activities:{...DEFAULT_ACTIVITY_PROMPTS},
+  guidee:`Tu es manager coach et tu reformules cette description de guidée pour la rendre claire et actionnable.
+Utilise les données suivantes :
+- Guidée : {{guidee.title}} {{guidee.description}}
+- Consultant : {{consultant.title}} {{consultant.description}}
+Présente six parties : Objectif, Contexte, Accompagnement prévu, Compétences mobilisées, Indicateurs de progression, Résultat ou bilan.
+Ajoute les hashtags pertinents issus de {{hashtags_catalog}} si cela renforce la compréhension.`,
+  consultant:`Tu es manager coach et tu dresses un portrait professionnel du consultant à partir de sa description.
+Informations disponibles : {{consultant.title}} {{consultant.description}}
+Décris six sections : Mission actuelle, Objectifs professionnels, Compétences clés, Forces, Points de veille, Style relationnel.
+Inclue des hashtags pertinents tirés de {{hashtags_catalog}} uniquement s'ils apportent de la valeur.`
+};
+const cloneDefaultPrompts=()=>({
+  activities:{...DEFAULT_OPENAI_PROMPTS.activities},
+  guidee:DEFAULT_OPENAI_PROMPTS.guidee,
+  consultant:DEFAULT_OPENAI_PROMPTS.consultant
+});
 const ACTIVITY_TYPES=['ACTION_ST_BERNARD','CORDEE','NOTE','VERBATIM','AVIS','ALERTE'];
-const ACTIVITY_PROMPT_STRUCTURES={
-  __DEFAULT:`Structure attendue :
-• Résumé : Faits marquants et décisions
-• Impact : Effet produit pour le consultant ou l'équipe
-• Suites : Actions ou points de suivi
-Termine par des suggestions de hashtags ou mentions si pertinent (#… / @…).`,
-  AVIS:`Structure attendue :
-💪 Points forts : qualité ou réussite marquante
-⚠️ Points de vigilance : fragilité ou axe d’attention
-🌱 Pistes de progression : action pour évoluer
-Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`,
-  ACTION_ST_BERNARD:`Structure attendue :
-🎯 Contexte : situation nécessitant soutien
-🫱 Actions réalisées : geste concret du coach
-💬 Résultats perçus : effet observé immédiat
-🔁 Suivi prévu : prochaine étape prévue
-Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`,
-  CORDEE:`Structure attendue :
-📚 Thématique : sujet ou domaine partagé
-👥 Rôle joué : posture ou implication
-🌟 Valeurs apportées : bénéfice collectif visible
-🔁 Suivi prévu : suite ou prolongement prévu
-Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`,
-  NOTE:`Structure attendue :
-🎯 Contexte : cadre ou événement observé
-💬 Faits observés : observation factuelle
-📎 Impacts : effet ou enseignement clé
-Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`,
-  VERBATIM:`Structure attendue :
-💬 Verbatim : citation ou synthèse des propos
-🎯 Situation : moment ou contexte associé
-📎 Enseignements : ce qu'il faut retenir
-Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`,
-  ALERTE:`Structure attendue :
-🚨 Signalement : sujet précis d'alerte
-⚠️ Risques : impacts potentiels
-🔁 Suivi prévu : actions envisagées
-Ajoute en fin de réponse des suggestions de hashtags ou mentions (#… / @…).`
-};
-const DEFAULT_ACTIVITY_DESCRIPTION_TEMPLATES={
-  __DEFAULT:`• Résumé : faits marquants et décisions
-• Impact : effet produit pour le consultant ou l'équipe
-• Suites : actions ou points de suivi
-
-#
-@`,
-  AVIS:`💪 Points forts : qualité ou réussite marquante
-⚠️ Points de vigilance : fragilité ou axe d’attention
-🌱 Pistes de progression : action pour évoluer
-
-#
-@`,
-  ACTION_ST_BERNARD:`🎯 Contexte : situation nécessitant soutien
-🫱 Actions réalisées : geste concret du coach
-💬 Résultats perçus : effet observé immédiat
-🔁 Suivi prévu : prochaine étape prévue
-
-#
-@`,
-  CORDEE:`📚 Thématique : sujet ou domaine partagé
-👥 Rôle joué : posture ou implication
-🌟 Valeurs apportées : bénéfice collectif visible
-🔁 Suivi prévu : suite ou prolongement prévu
-
-#
-@`,
-  NOTE:`🎯 Contexte : cadre ou événement observé
-💬 Faits observés : observation factuelle
-📎 Impacts : effet ou enseignement clé
-
-#
-@`,
-  VERBATIM:`💬 Verbatim : citation ou synthèse des propos
-🎯 Situation : moment ou contexte associé
-📎 Enseignements : ce qu'il faut retenir
-
-#
-@`,
-  ALERTE:`🚨 Signalement : sujet précis d'alerte
-⚠️ Risques : impacts potentiels
-🔁 Suivi prévu : actions envisagées
-
-#
-@`
-};
-const DEFAULT_GUIDEE_DESCRIPTION_TEMPLATE=`🎯 Objectif : résultat visé ou compétence à renforcer
-🧩 Contexte : mission, situation ou besoin à l’origine
-🤝 Accompagnement prévu : format, fréquence, durée
-💡 Compétences : #Product #Team #Tech #Data #Customer
-🌱 Indicateurs : signes concrets de progression attendus
-💬 Résultat / bilan : constat en fin de cycle
-
-#
-@`;
-const DEFAULT_CONSULTANT_DESCRIPTION_TEMPLATE=`💼 Mission actuelle : contexte, client, rôle principal
-🎯 Objectifs pro : ambitions à court/moyen terme
-💡 Compétences : #Product #Team #Tech #Data #Customer
-🌱 Forces : atouts distinctifs ou points d’appui
-⚠️ Points de veille : freins, besoins ou risques à accompagner
-💬 Style relationnel : posture, communication, énergie
-
-#
-@`;
-const DEFAULT_ACTIVITY_TITLE_PROMPT=`Propose un titre court (6 mots maximum) et impactant pour cette activité.
+const DEFAULT_ACTIVITY_TITLE_PROMPT=`Propose un titre court (6 mots maximum) qui commence par une émoji pertinente pour cette activité.
 Type : {{activity.type_label}}
 Consultant : {{consultant.name}}
 Description : {{activity.description}}
-Réponds uniquement par le titre.`;
-const DEFAULT_GUIDEE_TITLE_PROMPT=`Propose un titre court (6 mots maximum) et orienté résultat pour cette guidée.
+Réponds uniquement par ce titre.`;
+const DEFAULT_GUIDEE_TITLE_PROMPT=`Propose un titre court (6 mots maximum) qui commence par une émoji pertinente pour cette guidée.
 Consultant : {{consultant.name}}
 Description : {{guidee.description}}
-Réponds uniquement par le titre.`;
+Réponds uniquement par ce titre.`;
 const OPENAI_MODEL='gpt-5-nano';
 const OPENAI_ENDPOINT='https://openai.tranxq.workers.dev/';
 const FIREBASE_CONFIG = {
@@ -515,7 +448,7 @@ function formatAuthError(err){
   const message=String(err.message||err||'').replace(/^Firebase:\s*/,'');
   return message || 'Erreur inconnue.';
 }
-function formatActivityDate(dateStr){
+function formatActivityDate(dateStr,{selected=false}={}){
   if(!dateStr) return '—';
   const date=parseDate(dateStr);
   if(!date) return '—';
@@ -523,7 +456,9 @@ function formatActivityDate(dateStr){
   const diff=daysDiff(date,today);
   const params=(store?.params)||DEFAULT_PARAMS;
   const recentDays=Math.max(1,Number(params.activites_recent_jours)||30);
-  const upcomingDays=Math.max(1,Number(params.activites_a_venir_jours)||30);
+  if(selected){
+    return date.toLocaleDateString('fr-FR');
+  }
   if(diff===0) return "Aujourd'hui";
   if(diff===-1) return 'Hier';
   if(diff===-2) return 'Avant-hier';
@@ -531,8 +466,13 @@ function formatActivityDate(dateStr){
     const days=-diff;
     return `Il y a ${days} jour${days>1?'s':''}`;
   }
-  if(diff>0 && diff<=upcomingDays){
-    return `Dans ${diff} jour${diff>1?'s':''}`;
+  if(diff>0){
+    if(diff<=63){
+      const weeks=Math.max(1,Math.ceil(diff/7));
+      return `Dans ${weeks} semaine${weeks>1?'s':''}`;
+    }
+    const months=Math.max(1,Math.ceil(diff/30));
+    return `Dans ${months} mois`;
   }
   return date.toLocaleDateString('fr-FR');
 }
@@ -546,20 +486,15 @@ const DEFAULT_PARAMS={
   avis_manquant_depuis_jours:60,
   activites_recent_jours:30,
   activites_a_venir_jours:30,
-  objectif_recent_jours:15,
-  objectif_bar_max_heures:10,
   hashtags_catalog:DEFAULT_HASHTAG_CATALOG,
-  openai_activity_prompt:DEFAULT_ACTIVITY_PROMPT,
-  openai_consultant_prompt:DEFAULT_OPENAI_CONSULTANT_PROMPT,
-  openai_guidee_prompt:DEFAULT_OPENAI_GUIDEE_PROMPT
+  openai_prompts:cloneDefaultPrompts()
 };
-const DEFAULT_GITHUB_REPO='quangfr/sherpa-mobile';
 function getActivityPrompt(params,type){
-  const basePrompt=typeof params?.openai_activity_prompt==='string' && params.openai_activity_prompt.trim()
-    ? params.openai_activity_prompt.trim()
-    : DEFAULT_ACTIVITY_PROMPT;
-  const structure=ACTIVITY_PROMPT_STRUCTURES[type] || ACTIVITY_PROMPT_STRUCTURES.__DEFAULT;
-  return `${basePrompt}\n\n${structure}`.trim();
+  const custom=typeof params?.openai_prompts?.activities?.[type]==='string'
+    ? params.openai_prompts.activities[type].trim()
+    : '';
+  const fallback=DEFAULT_OPENAI_PROMPTS.activities[type]||'';
+  return (custom||fallback).trim();
 }
 const DEFAULT_THEMATIQUES=[
   {id:'le-cardinal',nom:'Le Cardinal',emoji:'🧊',color:'#3b82f6'},
@@ -614,16 +549,59 @@ function ensureThematiqueIds(arr){
 function migrateStore(data){
   const migrated={...data};
   migrated.params={...DEFAULT_PARAMS,...(data.params||{})};
-  const legacyPrompts=data?.params?.openai_activity_prompts;
-  if((!migrated.params.openai_activity_prompt || !migrated.params.openai_activity_prompt.trim()) && legacyPrompts && typeof legacyPrompts==='object'){
-    const legacyDefault=legacyPrompts.__DEFAULT;
-    if(typeof legacyDefault==='string' && legacyDefault.trim()){
-      migrated.params.openai_activity_prompt=legacyDefault.trim();
+  const prompts=cloneDefaultPrompts();
+  const incomingPrompts=data?.params?.openai_prompts;
+  if(incomingPrompts && typeof incomingPrompts==='object'){
+    if(incomingPrompts.activities && typeof incomingPrompts.activities==='object'){
+      ACTIVITY_TYPES.forEach(type=>{
+        const val=incomingPrompts.activities[type];
+        if(typeof val==='string' && val.trim()){
+          prompts.activities[type]=val.trim();
+        }
+      });
+    }
+    if(typeof incomingPrompts.guidee==='string' && incomingPrompts.guidee.trim()){
+      prompts.guidee=incomingPrompts.guidee.trim();
+    }
+    if(typeof incomingPrompts.consultant==='string' && incomingPrompts.consultant.trim()){
+      prompts.consultant=incomingPrompts.consultant.trim();
     }
   }
-  migrated.params.openai_activity_prompt=(migrated.params.openai_activity_prompt||'').trim()||DEFAULT_ACTIVITY_PROMPT;
-  migrated.params.openai_consultant_prompt=(migrated.params.openai_consultant_prompt||'').trim()||DEFAULT_OPENAI_CONSULTANT_PROMPT;
-  migrated.params.openai_guidee_prompt=(migrated.params.openai_guidee_prompt||'').trim()||DEFAULT_OPENAI_GUIDEE_PROMPT;
+  const legacyActivityMap=data?.params?.openai_activity_prompts;
+  if(legacyActivityMap && typeof legacyActivityMap==='object'){
+    ACTIVITY_TYPES.forEach(type=>{
+      const val=legacyActivityMap[type];
+      if(typeof val==='string' && val.trim()){
+        prompts.activities[type]=val.trim();
+      }
+    });
+  }
+  const legacyActivitySingle=typeof data?.params?.openai_activity_prompt==='string'
+    ? data.params.openai_activity_prompt.trim()
+    : '';
+  if(legacyActivitySingle){
+    ACTIVITY_TYPES.forEach(type=>{
+      if(!legacyActivityMap || typeof legacyActivityMap[type]!=='string' || !legacyActivityMap[type].trim()){
+        prompts.activities[type]=legacyActivitySingle;
+      }
+    });
+  }
+  const legacyGuidee=typeof data?.params?.openai_guidee_prompt==='string'
+    ? data.params.openai_guidee_prompt.trim()
+    : '';
+  if(legacyGuidee){
+    prompts.guidee=legacyGuidee;
+  }
+  const legacyConsultant=typeof data?.params?.openai_consultant_prompt==='string'
+    ? data.params.openai_consultant_prompt.trim()
+    : '';
+  if(legacyConsultant){
+    prompts.consultant=legacyConsultant;
+  }
+  migrated.params.openai_prompts=prompts;
+  delete migrated.params.openai_activity_prompt;
+  delete migrated.params.openai_consultant_prompt;
+  delete migrated.params.openai_guidee_prompt;
   delete migrated.params.openai_activity_prompts;
   migrated.thematiques=ensureThematiqueIds(data.thematiques && data.thematiques.length?data.thematiques:DEFAULT_THEMATIQUES.map(t=>({...t}))); 
   if(Array.isArray(migrated.consultants)){
@@ -637,42 +615,9 @@ function migrateStore(data){
   if(!Array.isArray(migrated.guidees)){
     migrated.guidees=[];
   }
-  if(Array.isArray(data.objectifs) && data.objectifs.length && migrated.guidees.length===0){
-    const other=DEFAULT_THEMATIQUES.find(t=>t.id==='autre');
-    const defTheme=other?.id||'autre';
-    data.objectifs.forEach(o=>{
-      const base={
-        id:uid(),
-        consultant_id:null,
-        nom:o.titre||'Sans titre',
-        description:o.description||'',
-        date_debut:todayStr(),
-        date_fin:undefined,
-        thematique_id:defTheme,
-        created_at:o.created_at||nowISO(),
-        updated_at:o.updated_at||nowISO()
-      };
-      const links=Array.isArray(o.consultants)&&o.consultants.length?o.consultants:[{consultant_id:null}];
-      links.forEach((link,idx)=>{
-        const gid=uid();
-        migrated.guidees.push({...base,id:gid,consultant_id:link.consultant_id||null,updated_at:nowISO(),created_at:nowISO(),date_debut:todayStr(),date_fin:undefined});
-        if(Array.isArray(migrated.activities)){
-          migrated.activities.forEach(act=>{
-            if(act.objectif_id===o.id && (!link.consultant_id || act.consultant_id===link.consultant_id)){
-              act.guidee_id=gid;
-            }
-          });
-        }
-      });
-    });
-  }
   if(Array.isArray(migrated.activities)){
     migrated.activities=migrated.activities.map(act=>{
       const updated={...act};
-      if(updated.objectif_id && !updated.guidee_id){
-        const candidate=migrated.guidees.find(g=>g.nom===act.objectif_nom && g.consultant_id===act.consultant_id);
-        if(candidate) updated.guidee_id=candidate.id;
-      }
       delete updated.objectif_id;
       const rawTitle=typeof updated.title==='string'?updated.title.trim():'';
       if(rawTitle){
@@ -686,15 +631,15 @@ function migrateStore(data){
   }
   delete migrated.objectifs;
   const incomingMeta=data.meta||{};
-  const incomingRepo=typeof incomingMeta.github_repo==='string'?incomingMeta.github_repo.trim():'';
-  const githubRepo=incomingRepo||DEFAULT_GITHUB_REPO;
-  migrated.meta={...incomingMeta,github_repo:githubRepo,version:6.0,updated_at:nowISO()};
+  const cleanedMeta={...incomingMeta};
+  delete cleanedMeta.github_repo;
+  migrated.meta={...cleanedMeta,version:6.0,updated_at:nowISO()};
   return migrated;
 }
 function load(){
 const raw=localStorage.getItem(LS_KEY);
 if(raw){ try{ const parsed=JSON.parse(raw); return migrateStore(parsed);}catch{ console.warn('LocalStorage invalide, on repart vide.'); } }
-const empty={consultants:[],activities:[],guidees:[],thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})),params:{...DEFAULT_PARAMS},meta:{version:6.0,updated_at:nowISO(),github_repo:DEFAULT_GITHUB_REPO}};
+const empty={consultants:[],activities:[],guidees:[],thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})),params:{...DEFAULT_PARAMS},meta:{version:6.0,updated_at:nowISO()}};
 localStorage.setItem(LS_KEY, JSON.stringify(empty));
 return empty;
 }
@@ -715,11 +660,6 @@ function storeHasRecords(){
 function hasOfflineDataAvailable(){
   return hasLocalData() || storeHasRecords();
 }
-function getGithubRepo(){
-  const meta=store?.meta||{};
-  const repo=typeof meta.github_repo==='string'?meta.github_repo.trim():'';
-  return repo || DEFAULT_GITHUB_REPO;
-}
 function save(reason='local-change'){
   store.meta=store.meta||{};
   store.meta.updated_at=nowISO();
@@ -729,10 +669,10 @@ function save(reason='local-change'){
 }
 /* NAV TABS */
 const TABS=[
-{id:'dashboard',labelFull:'Sherpa',labelShort:'Sherpa'},
-{id:'activite',labelFull:'🗂️ Activités',labelShort:'🗂️ Activités'},
-{id:'guidee',labelFull:'🧭 Guidées',labelShort:'🧭 Guidées'},
-{id:'reglages',labelFull:'⚙️',labelShort:'⚙️'}
+ {id:'dashboard',labelFull:'🧭 Sherpa',labelShort:'🧭'},
+ {id:'activite',labelFull:'📌',labelShort:'📌'},
+ {id:'guidee',labelFull:'🗺️',labelShort:'🗺️'},
+ {id:'reglages',labelFull:'⚙️ Paramètres',labelShort:'⚙️'}
 ];
 const tabsEl=$('tabs');
 const btnDashboardNewConsultant=$('btn-dashboard-new-consultant');
@@ -754,10 +694,9 @@ const tabBtn=$$('#tab-'+id); if(tabBtn) tabBtn.classList.add('active');
 $$all('.view').forEach(v=>v.classList.remove('active'));
 const view=$$('#view-'+id); if(view) view.classList.add('active');
 if(persist) localStorage.setItem(TAB_KEY,id);
-if(id==='reglages') updateSyncPreview();
 }
 const storedTab=localStorage.getItem(TAB_KEY);
-openTab(storedTab==='objectif'?'guidee':(storedTab||'activite'));
+openTab(storedTab||'activite');
 /* DASHBOARD (inchangé) */
 function dashboard(){
 const p=store.params||DEFAULT_PARAMS, today=new Date();
@@ -829,7 +768,8 @@ const renderGuideeEntries=(entries,listId,countId)=>{
     row.tabIndex=0;
     const dateLabel=esc(formatActivityDate(action.date_publication||''));
     const status=statusOf(consultant);
-    row.innerHTML=`<div class="row space"><div class="row" style="gap:6px"><span class="dot ${status}" title="État"></span><span class="linklike">${esc(consultant.nom||'—')}</span><span class="sub">/ ${esc(guidee.nom||'Sans titre')}</span></div><span class="sub">${dateLabel}</span></div>`;
+    const hoursValue=Number.isFinite(Number(action.heures))?formatHours(action.heures):'0';
+    row.innerHTML=`<div class="row space"><div class="row" style="gap:6px"><span class="dot ${status}" title="État"></span><span class="linklike">${esc(consultant.nom||'—')}</span><span class="hours-badge"><b>${esc(hoursValue)}h</b></span></div><span class="sub">• ${dateLabel}</span></div>`;
     on(row,'click',()=>{ gotoGuideeTimeline(guidee.id, action.id); });
     on(row,'keydown',evt=>{
       if(evt.key==='Enter' || evt.key===' '){ evt.preventDefault(); gotoGuideeTimeline(guidee.id, action.id); }
@@ -845,7 +785,8 @@ renderGuideeEntries(upcomingEntries,'db-actions-upcoming-list','db-actions-upcom
 let state={
   filters:{consultant_id:'',type:'',month:'ALL',hashtag:''},
   activities:{selectedId:'',shouldCenter:false},
-  guidees:{consultant_id:'',guidee_id:'',selectedEventId:''}
+  guidees:{consultant_id:'',guidee_id:'',selectedEventId:''},
+  prompts:{selected:'activity:ACTION_ST_BERNARD'}
 };
 /* CONSULTANTS */
 function statusOf(c){
@@ -1083,7 +1024,6 @@ const titleText=(a.title||'').trim()||'Sans titre';
 const titleHtml=esc(titleText);
 const isSelected=state.activities.selectedId===a.id;
 const guideeName=g?.nom||'Sans titre';
-const guideeLink=g?`<span class="click-span guidee-link" data-goto-guidee="${g.id}" title="Voir la guidée"><span class="guidee-emoji">🧭</span> <span class="bold">${esc(guideeName)}</span></span>`:'';
 const beneficiariesIds=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
 const beneficiariesNames=beneficiariesIds
   .map(id=>store.consultants.find(cons=>cons.id===id)?.nom)
@@ -1091,16 +1031,19 @@ const beneficiariesNames=beneficiariesIds
 const beneficiariesBadge=beneficiariesNames.length
   ? `<span class="activity-beneficiary" title="Bénéficiaires">🪢 ${esc(beneficiariesNames.join(', '))}</span>`
   : '';
-const headerPieces=[heuresBadge,guideeLink,beneficiariesBadge].filter(Boolean);
-const metaLine=headerPieces.length?`<div class="objective-line">${headerPieces.join(' ')}</div>`:'';
-const titleLine=`<div class="activity-title">${titleHtml}</div>`;
+const headerPieces=[beneficiariesBadge].filter(Boolean);
+const metaLine=headerPieces.length?`<div class="activity-meta">${headerPieces.join(' ')}</div>`:'';
+const titleLine=`<div class="activity-title">${heuresBadge?`${heuresBadge} `:''}<span>${titleHtml}</span></div>`;
 const descLine=descText
   ? `<div class="activity-desc${isSelected?'':' clamp-5'}">${descHtml}</div>`
   : `<div class="activity-desc muted">—</div>`;
+const guideeInfo=(isSelected && g)
+  ? `<div class="activity-guidee"><span class="activity-guidee-label">🗺️ Guidée :</span> <span class="click-span" data-goto-guidee="${g.id}">${esc(guideeName)}</span></div>`
+  : '';
 const mobileDesc=isSelected
   ? `<div class="mobile-desc expanded" data-act="${a.id}"><div class="text">${descHtml||'—'}</div></div>`
   : `<div class="mobile-desc" data-act="${a.id}"><div class="text${descText?' clamp-5':''}">${descHtml||'—'}</div></div>`;
-const friendlyDate=formatActivityDate(a.date_publication||'');
+const friendlyDate=formatActivityDate(a.date_publication||'',{selected:isSelected});
 const friendlyDateHtml=esc(friendlyDate);
 const rawDateTitle=esc(a.date_publication||'');
 const consultantLabel=`<span><b>${esc(c?.nom||'—')}</b></span>`;
@@ -1128,6 +1071,7 @@ tr.innerHTML = mobile
   ${titleLine}
   ${metaLine||''}
   ${mobileDesc}
+  ${guideeInfo}
 </td>`
 : `
 <td class="desktop-only">
@@ -1143,6 +1087,7 @@ tr.innerHTML = mobile
   ${titleLine}
   ${metaLine||''}
   ${descLine}
+  ${guideeInfo}
 </td>`;
 on(tr,'click',(e)=>{
   if(e.target.closest('button,[data-goto-guidee]')) return;
@@ -1183,6 +1128,81 @@ const btnEditGuidee=$('btn-edit-guidee');
 const guideeProgress=$('guidee-progress');
 const guideeProgressFill=guideeProgress?.querySelector('.guidee-progress-bar span');
 const guideeProgressLabel=guideeProgress?.querySelector('.guidee-progress-label');
+const promptTypeSelect=$('prompt-type');
+const promptEditor=$('prompt-editor');
+const btnSavePrompt=$('btn-save-prompt');
+const btnResetPrompt=$('btn-reset-prompt');
+const btnImportJson=$('btn-import-json');
+const btnExportJson=$('btn-export-json');
+function parsePromptKey(raw){
+  const key=String(raw||'').trim();
+  if(key.startsWith('activity:')){
+    const [,type] = key.split(':');
+    return {category:'activity',type:(type||'ACTION_ST_BERNARD')};
+  }
+  if(key==='consultant') return {category:'consultant'};
+  return {category:'guidee'};
+}
+function getPromptDefaultValue(key){
+  const info=parsePromptKey(key);
+  if(info.category==='activity') return DEFAULT_OPENAI_PROMPTS.activities[info.type]||'';
+  if(info.category==='consultant') return DEFAULT_OPENAI_PROMPTS.consultant||'';
+  return DEFAULT_OPENAI_PROMPTS.guidee||'';
+}
+function getPromptValueForKey(key){
+  const info=parsePromptKey(key);
+  const prompts=store?.params?.openai_prompts;
+  if(info.category==='activity'){
+    const val=prompts?.activities?.[info.type];
+    if(typeof val==='string' && val.trim()) return val.trim();
+  }else if(info.category==='consultant'){
+    const val=prompts?.consultant;
+    if(typeof val==='string' && val.trim()) return val.trim();
+  }else{
+    const val=prompts?.guidee;
+    if(typeof val==='string' && val.trim()) return val.trim();
+  }
+  return getPromptDefaultValue(key);
+}
+function setPromptValue(key,value){
+  if(!store.params) store.params={...DEFAULT_PARAMS};
+  if(!store.params.openai_prompts) store.params.openai_prompts=cloneDefaultPrompts();
+  const info=parsePromptKey(key);
+  const trimmed=String(value||'').trim();
+  const container=store.params.openai_prompts;
+  if(info.category==='activity'){
+    container.activities=container.activities||{};
+    if(trimmed){
+      container.activities[info.type]=trimmed;
+    }else{
+      delete container.activities[info.type];
+    }
+  }else if(info.category==='consultant'){
+    if(trimmed){
+      container.consultant=trimmed;
+    }else{
+      delete container.consultant;
+    }
+  }else{
+    if(trimmed){
+      container.guidee=trimmed;
+    }else{
+      delete container.guidee;
+    }
+  }
+}
+function renderPromptEditor(){
+  if(!promptEditor || !promptTypeSelect) return;
+  const currentKey=state.prompts?.selected || promptTypeSelect.value || 'activity:ACTION_ST_BERNARD';
+  const normalizedKey=currentKey.startsWith('activity:') && !ACTIVITY_TYPES.includes(currentKey.split(':')[1])
+    ? `activity:${ACTIVITY_TYPES[0]}`
+    : currentKey;
+  state.prompts.selected=normalizedKey;
+  if(promptTypeSelect.value!==normalizedKey){
+    promptTypeSelect.value=normalizedKey;
+  }
+  promptEditor.value=getPromptValueForKey(normalizedKey);
+}
 function updateGuideeEditButton(targetId=''){
   if(!btnEditGuidee) return;
   const hasTarget=!!targetId;
@@ -1245,8 +1265,8 @@ function renderGuideeFilters(){
     const guideeList=store.guidees
       .filter(g=>!state.guidees.consultant_id || g.consultant_id===state.guidees.consultant_id)
       .sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
-    const opts=['<option value="">🧭 Toutes</option>',
-      ...guideeList.map(g=>`<option value="${esc(g.id)}">🧭 ${esc(g.nom||'Sans titre')}</option>`)
+    const opts=['<option value="">🗺️ Toutes</option>',
+      ...guideeList.map(g=>`<option value="${esc(g.id)}">🗺️ ${esc(g.nom||'Sans titre')}</option>`)
     ];
     const html=opts.join('');
     if(selectGuidee.innerHTML!==html) selectGuidee.innerHTML=html;
@@ -1286,7 +1306,7 @@ function renderGuideeTimeline(){
         id:`start-${g.id}`,
         type:'start',
         date:startDate,
-        icon:'🧭',
+        icon:'',
         color:defaultColor,
         guidee:g,
         consultant:consultant,
@@ -1315,7 +1335,7 @@ function renderGuideeTimeline(){
         id:`end-${g.id}`,
         type:'end',
         date:endDate,
-        icon:'🧭',
+        icon:'',
         color:defaultColor,
         guidee:g,
         consultant:consultant,
@@ -1406,12 +1426,12 @@ function renderGuideeTimeline(){
     item.className=classes.join(' ');
     item.dataset.eventId=ev.id;
     const color=ev.color||'var(--accent)';
-    item.style.setProperty('--timeline-color','var(--border)');
+    item.style.setProperty('--timeline-color',color);
     item.style.setProperty('--selection-color',color);
     item.style.setProperty('--timeline-border','var(--border)');
     item.style.setProperty('--timeline-marker-border','var(--border)');
     const consultantName=esc(consultant?.nom||'—');
-    const friendlyDate=formatActivityDate(ev.date);
+    const friendlyDate=formatActivityDate(ev.date,{selected:isSelected});
     const friendlyDateHtml=esc(friendlyDate);
     const rawDate=esc(ev.date||'');
     const editButtons=[];
@@ -1425,17 +1445,14 @@ function renderGuideeTimeline(){
       ? `<span class="hours-badge"><b>${esc(formatHours(ev.activity.heures??0))}h</b></span>`
       : '';
     const metaPrimaryPieces=[];
+    if(hoursBadge) metaPrimaryPieces.push(hoursBadge);
     if(ev.type==='activity' && ev.activity){
       const title=esc((ev.activity.title||'').trim()||'Sans titre');
       metaPrimaryPieces.push(`<span class="bold">${title}</span>`);
     }else{
       metaPrimaryPieces.push(`<span class="bold">${consultantName}</span>`);
     }
-    if(hoursBadge) metaPrimaryPieces.push(hoursBadge);
-    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-primary">${metaPrimaryPieces.join(' ')}</div><div class="timeline-meta-date"><span class="bold" title="${rawDate}">${friendlyDateHtml}</span>${editButtons.join('')}</div></div>`;
-    const guideeSpan=g
-      ? `<span class="click-span guidee-link" data-filter-guidee="${g.id}"><span class="guidee-emoji">🧭</span> <span class="bold">${esc(g.nom||'Sans titre')}</span></span>`
-      : '';
+    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-primary">${metaPrimaryPieces.join(' ')}</div><div class="timeline-meta-date"><span class="timeline-date-dot">•</span><span class="bold" title="${rawDate}">${friendlyDateHtml}</span>${editButtons.join('')}</div></div>`;
     let bodyHtml='';
     if(ev.type==='activity'){
       const desc=(ev.activity?.description||'').trim();
@@ -1446,16 +1463,15 @@ function renderGuideeTimeline(){
       const beneficiariesHtml=beneficiariesNames.length
         ? `<span class="activity-beneficiary" title="Bénéficiaires">🪢 ${esc(beneficiariesNames.join(', '))}</span>`
         : '';
-      const infoPieces=[beneficiariesHtml, guideeSpan].filter(Boolean).join(' ');
+      const infoPieces=[beneficiariesHtml].filter(Boolean).join(' ');
       const infoLine=infoPieces?`<div class="timeline-meta-secondary">${infoPieces}</div>`:'';
       const descriptionClass=isSelected?'timeline-description':`timeline-description clamp-8`;
       const descriptionContent=descHtml||'—';
       bodyHtml=`${infoLine}<div class="${descriptionClass}">${descriptionContent}</div>`;
     }else{
       const verb=ev.type==='start'?'Démarrage':'Fin';
-      const flagIcon='🧭';
-      const parts=[`${flagIcon} ${verb} de la guidée ${guideeSpan}`].filter(Boolean).join(' ');
-      bodyHtml=`<div class="timeline-text clamp-3">${parts||'—'}</div>`;
+      const parts=[`${verb} de la guidée`];
+      bodyHtml=`<div class="timeline-text clamp-3">${parts.join(' ')}</div>`;
     }
     const markerIcon=isSelected?'✔️':esc(ev.icon);
     item.innerHTML=`<div class="timeline-marker">${markerIcon}</div><div class="timeline-body">${metaHtml}${bodyHtml}</div>`;
@@ -1479,10 +1495,6 @@ function renderGuideeTimeline(){
     }
     timelineEl.appendChild(item);
   });
-  timelineEl.querySelectorAll('[data-filter-guidee]').forEach(btn=>on(btn,'click',e=>{
-    const id=e.currentTarget.dataset.filterGuidee;
-    if(id){ gotoGuideeTimeline(id); }
-  }));
   if(shouldScroll){
     const rawId=state.guidees.selectedEventId||'';
     const safeId=typeof CSS!=='undefined' && typeof CSS.escape==='function' ? CSS.escape(rawId) : rawId;
@@ -1532,32 +1544,13 @@ $('p-delai_alerte').value=p.delai_alerte_jours;
 $('p-fin_mission_sous').value=p.fin_mission_sous_jours;
 $('p-stb_recent').value=p.stb_recent_jours;
 $('p-avis_manquant').value=p.avis_manquant_depuis_jours;
-$('p-objectif_recent').value=p.objectif_recent_jours;
 $('p-activites_recent').value=p.activites_recent_jours ?? 30;
 $('p-activites_avenir').value=p.activites_a_venir_jours ?? 30;
-$('p-objectif_bar_max').value=p.objectif_bar_max_heures ?? 10;
 const hashtagsInput=$('p-hashtags');
 if(hashtagsInput){
   hashtagsInput.value=p.hashtags_catalog ?? DEFAULT_HASHTAG_CATALOG;
 }
-const activityPromptTextarea=$('p-openai-activity');
-if(activityPromptTextarea){
-  activityPromptTextarea.value=p.openai_activity_prompt ?? DEFAULT_ACTIVITY_PROMPT;
-}
-const consultantPromptInput=$('p-openai-consultant');
-if(consultantPromptInput){
-  consultantPromptInput.value=p.openai_consultant_prompt ?? DEFAULT_OPENAI_CONSULTANT_PROMPT;
-}
-const guideePromptInput=$('p-openai-guidee');
-if(guideePromptInput){
-  guideePromptInput.value=p.openai_guidee_prompt ?? DEFAULT_OPENAI_GUIDEE_PROMPT;
-}
-const repoInput=$('p-github-repo');
-if(repoInput){
-const storedRepo=normalizeRepo(store?.meta?.github_repo);
-repoInput.value=storedRepo || getGithubRepo();
-}
-updateIssueLink(repoInput?.value);
+renderPromptEditor();
 }
 $('btn-save-params').onclick=()=>{
 const p=store.params||(store.params={...DEFAULT_PARAMS});
@@ -1566,27 +1559,80 @@ p.delai_alerte_jours=Number($('p-delai_alerte').value||7);
 p.fin_mission_sous_jours=Number($('p-fin_mission_sous').value||60);
 p.stb_recent_jours=Number($('p-stb_recent').value||30);
 p.avis_manquant_depuis_jours=Number($('p-avis_manquant').value||60);
-p.objectif_recent_jours=Number($('p-objectif_recent').value||15);
 p.activites_recent_jours=Math.max(1, Number($('p-activites_recent').value||30));
 p.activites_a_venir_jours=Math.max(1, Number($('p-activites_avenir').value||30));
-p.objectif_bar_max_heures=Math.max(1, Number($('p-objectif_bar_max').value||10));
 const hashtagsInput=$('p-hashtags');
 p.hashtags_catalog=hashtagsInput?.value.trim()||DEFAULT_HASHTAG_CATALOG;
-const activityPromptTextarea=$('p-openai-activity');
-p.openai_activity_prompt=activityPromptTextarea?.value.trim()||DEFAULT_ACTIVITY_PROMPT;
-const consultantPromptInput=$('p-openai-consultant');
-p.openai_consultant_prompt=consultantPromptInput?.value.trim()||DEFAULT_OPENAI_CONSULTANT_PROMPT;
-const guideePromptInput=$('p-openai-guidee');
-p.openai_guidee_prompt=guideePromptInput?.value.trim()||DEFAULT_OPENAI_GUIDEE_PROMPT;
-delete p.openai_activity_prompts;
-store.meta=store.meta||{};
-const repoInput=$('p-github-repo');
-const repoValue=normalizeRepo(repoInput?.value);
-store.meta.github_repo=repoValue || DEFAULT_GITHUB_REPO;
 save();
 restartAutoSync();
 alert('Paramètres enregistrés.');
 };
+if(promptTypeSelect){
+  on(promptTypeSelect,'change',e=>{
+    const key=e.target.value;
+    state.prompts.selected=key;
+    renderPromptEditor();
+  });
+}
+btnSavePrompt?.addEventListener('click',()=>{
+  const key=state.prompts?.selected || promptTypeSelect?.value || 'activity:ACTION_ST_BERNARD';
+  if(!promptEditor){ alert('Éditeur indisponible.'); return; }
+  setPromptValue(key,promptEditor.value||'');
+  save();
+  alert('Prompt enregistré.');
+});
+btnResetPrompt?.addEventListener('click',()=>{
+  const key=state.prompts?.selected || promptTypeSelect?.value || 'activity:ACTION_ST_BERNARD';
+  setPromptValue(key,'');
+  renderPromptEditor();
+  save();
+  alert('Prompt réinitialisé.');
+});
+btnExportJson?.addEventListener('click',()=>{
+  try{
+    const payload=JSON.stringify(store,null,2);
+    const blob=new Blob([payload],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url;
+    const stamp=todayStr();
+    link.download=`sherpa-backup-${stamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }catch(err){
+    console.error('Export JSON error:',err);
+    alert('Export impossible.');
+  }
+});
+btnImportJson?.addEventListener('click',()=>{
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='application/json';
+  input.addEventListener('change',()=>{
+    const file=input.files?.[0];
+    if(!file) return;
+    if(!confirm(`Importer « ${file.name} » et remplacer les données locales ?`)) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const content=typeof reader.result==='string'?reader.result:'';
+        const parsed=JSON.parse(content);
+        applyIncomingStore(parsed,'import',{alert:true});
+      }catch(err){
+        console.error('Import JSON error:',err);
+        alert('Import impossible : fichier invalide.');
+      }
+    };
+    reader.onerror=()=>{
+      console.error('Import JSON read error:',reader.error);
+      alert('Lecture du fichier impossible.');
+    };
+    reader.readAsText(file);
+  },{once:true});
+  input.click();
+});
 
 /* MODALS (ACTIVITÉ) */
 const dlgA=$('dlg-activity');
@@ -1602,20 +1648,6 @@ const btnFaGoto=$('fa-goto-consultant');
 const btnFaDelete=$$('#dlg-activity .actions [data-action="delete"]');
 const faOpenAI=$('fa-openai');
 attachHashtagAutocomplete(faDesc);
-const getActivityDescriptionTemplate=(type)=>DEFAULT_ACTIVITY_DESCRIPTION_TEMPLATES[type] || DEFAULT_ACTIVITY_DESCRIPTION_TEMPLATES.__DEFAULT;
-let lastActivityTemplateApplied='';
-function applyActivityDescriptionTemplate(type,{force=false}={}){
-  if(!faDesc) return;
-  const template=getActivityDescriptionTemplate(type);
-  const current=faDesc.value.trim();
-  if(force || !current || (lastActivityTemplateApplied && current===lastActivityTemplateApplied)){
-    faDesc.value=template;
-    faDesc.dispatchEvent(new Event('input',{bubbles:true}));
-    lastActivityTemplateApplied=template.trim();
-  }else{
-    lastActivityTemplateApplied=current;
-  }
-}
 if(faHeures && !faHeures.options.length){
   const frag=document.createDocumentFragment();
   for(let i=0;i<=30;i++){
@@ -1640,7 +1672,6 @@ faType.onchange=()=>{
   }else{
     faHeures.value='0';
   }
-  applyActivityDescriptionTemplate(value);
 };
 faConsult.onchange=()=>{ updateFaGuideeOptions(); };
 btnFaGoto.onclick=()=>{ const cid=faConsult.value; if(cid){ dlgA.close(); openConsultantModal(cid); } };
@@ -1701,7 +1732,7 @@ function updateFaGuideeOptions(preferredId){
     faGuidee.value='';
     return;
   }
-  const opts=list.map(g=>`<option value="${g.id}">🧭 ${esc(g.nom||'Sans titre')}</option>`);
+  const opts=list.map(g=>`<option value="${g.id}">🗺️ ${esc(g.nom||'Sans titre')}</option>`);
   faGuidee.innerHTML=opts.join('');
   const desired=preferredId ?? faGuidee.value;
   const hasDesired=desired && list.some(g=>g.id===desired);
@@ -1729,8 +1760,6 @@ faType.onchange();
   updateFaGuideeOptions();
   faType.onchange();
 }
-lastActivityTemplateApplied=faDesc.value.trim();
-applyActivityDescriptionTemplate(faType.value,{force:!id});
 dlgA.showModal();
 }
 $('form-activity').onsubmit=(e)=>{
@@ -1772,7 +1801,7 @@ fgOpenAI?.addEventListener('click',async()=>{
   const currentText=fgDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
   const params=store?.params||DEFAULT_PARAMS;
-  const template=params.openai_guidee_prompt||DEFAULT_OPENAI_GUIDEE_PROMPT;
+  const template=params.openai_prompts?.guidee || DEFAULT_OPENAI_PROMPTS.guidee;
   const consultantId=fgConsult?.value||'';
   const consultant=consultantId? (store.consultants.find(c=>c.id===consultantId)||null) : null;
   const guideeTitle=fgNom?.value.trim()||'';
@@ -1862,18 +1891,18 @@ function populateGuideeFormConsultants(){
   if(!fgConsult) return;
   fgConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
 }
-function openGuideeModal(id=null){
+function openGuideeModal(id=null,options={}){
+  const {defaultConsultantId=''}=options||{};
   currentGuideeId=id;
   populateGuideeFormConsultants();
-  const baseConsult=fgConsult.options[0]?.value||'';
-  const g=id? store.guidees.find(x=>x.id===id) : {id:uid(),nom:'',description:'',consultant_id:baseConsult,date_debut:todayStr(),date_fin:'' ,thematique_id:'autre'};
-  fgConsult.value=g?.consultant_id||baseConsult||'';
+  const optionValues=[...fgConsult.options].map(opt=>opt.value);
+  const preferred=defaultConsultantId && optionValues.includes(defaultConsultantId)
+    ? defaultConsultantId
+    : fgConsult.options[0]?.value||'';
+  const g=id? store.guidees.find(x=>x.id===id) : {id:uid(),nom:'',description:'',consultant_id:preferred,date_debut:todayStr(),date_fin:'' ,thematique_id:'autre'};
+  fgConsult.value=g?.consultant_id||preferred||'';
   fgNom.value=g?.nom||'';
   fgDesc.value=g?.description||'';
-  if(!fgDesc.value.trim()){
-    fgDesc.value=DEFAULT_GUIDEE_DESCRIPTION_TEMPLATE;
-    fgDesc.dispatchEvent(new Event('input',{bubbles:true}));
-  }
   const start=g?.date_debut || todayStr();
   fgDebut.value=start;
   const consultant=store.consultants.find(c=>c.id===(g?.consultant_id||fgConsult.value));
@@ -1944,7 +1973,7 @@ fcOpenAI?.addEventListener('click',async()=>{
   const currentText=fcDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
   const params=store?.params||DEFAULT_PARAMS;
-  const template=params.openai_consultant_prompt||DEFAULT_OPENAI_CONSULTANT_PROMPT;
+  const template=params.openai_prompts?.consultant || DEFAULT_OPENAI_PROMPTS.consultant;
   const consultantName=fcNom?.value.trim()||'';
   const missionTitle=fcTitre?.value.trim()||'';
   const prompt=fillPromptTemplate(template,{
@@ -1979,10 +2008,6 @@ if(fcTitre) fcTitre.value=c?.titre_mission||'';
 if(fcFin) fcFin.value=c?.date_fin||'';
 if(fcBoond) fcBoond.value=c?.boond_id||'';
 if(fcDesc) fcDesc.value=c?.description||'';
-if(fcDesc && !fcDesc.value.trim()){
-  fcDesc.value=DEFAULT_CONSULTANT_DESCRIPTION_TEMPLATE;
-  fcDesc.dispatchEvent(new Event('input',{bubbles:true}));
-}
 updateBoondLink(c?.boond_id||'');
 dlgC.showModal();
 }
@@ -1998,9 +2023,17 @@ const titreValue=(fcTitre?.value||'').trim();
 const data={ nom:nomValue, titre_mission:titreValue||undefined, date_fin:fcFin?.value||undefined, boond_id:fcBoond?.value.trim()||undefined, description:fcDesc.value.trim()||undefined };
 if(!currentConsultantId && !nomValue){ dlgC.close('cancel'); return; }
 if(!nomValue){ alert('Nom requis.'); return; }
-if(currentConsultantId){ Object.assign(store.consultants.find(x=>x.id===currentConsultantId),data,{updated_at:nowISO()}); }
-else{ store.consultants.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
+let createdConsultantId=null;
+if(currentConsultantId){
+  Object.assign(store.consultants.find(x=>x.id===currentConsultantId),data,{updated_at:nowISO()});
+}else{
+  createdConsultantId=uid();
+  store.consultants.push({id:createdConsultantId,...data,created_at:nowISO(),updated_at:nowISO()});
+}
 dlgC.close('ok'); save();
+if(createdConsultantId){
+  openGuideeModal(null,{defaultConsultantId:createdConsultantId});
+}
 };
 $$('#dlg-consultant .actions [value="del"]').onclick=(e)=>{ e.preventDefault(); if(!currentConsultantId){ dlgC.close(); return; } if(confirm('Supprimer ce consultant (et garder ses activités) ?')){ store.consultants=store.consultants.filter(c=>c.id!==currentConsultantId); dlgC.close('del'); save(); } };
 /* SYNC */
@@ -2296,7 +2329,6 @@ async function saveStoreToFirestore(reason='auto', diffOverride=null){
     remoteReady=true;
     syncIndicatorState='ok';
     lastSyncSuccess=Date.now();
-    updateSyncPreview();
     setSyncStatus(`Dernière sauvegarde : ${formatSyncDate(nowIso)}`,'success');
   }catch(err){
     console.error('Firestore save error:',err);
@@ -2352,7 +2384,6 @@ async function loadRemoteStore(options={}){
       ...rawMeta,
       updated_at:metaIso,
       updated_at_iso:metaIso,
-      github_repo:normalizeRepo(rawMeta.github_repo)||store.meta?.github_repo||DEFAULT_GITHUB_REPO,
       version:6.0
     };
     applyIncomingStore(remoteStore,'firestore',{alert:false});
@@ -2364,7 +2395,6 @@ async function loadRemoteStore(options={}){
     lastRemoteWriteIso=metaIso;
     lastSyncSuccess=Date.now();
     syncIndicatorState='ok';
-    updateSyncPreview();
     const message=metaIso?`Dernière lecture distante : ${formatSyncDate(metaIso)}`:'Synchronisation distante terminée.';
     setSyncStatus(message,'success');
   }catch(err){
@@ -2443,79 +2473,6 @@ function initFirebase(){
     setSyncStatus('Erreur d\'initialisation Firebase.','error');
     setAuthError('Impossible d\'initialiser Firebase.');
   }
-}
-const btnCopyDiff=$('btn-copy-diff');
-const btnCopyAll=$('btn-copy-all');
-const issueLink=$('link-create-issue');
-const githubRepoInput=$('p-github-repo');
-const ISSUE_TITLE='Mise à jour des données Sherpa';
-const ISSUE_HEADER='## Synchronisation Sherpa';
-function normalizeRepo(value){
-  return typeof value==='string'?value.trim():'';
-}
-function repoToPath(repo){
-  return repo.split('/').map(part=>encodeURIComponent(part.trim())).filter(Boolean).join('/');
-}
-function buildIssueBody(diffPayload){
-  return `${ISSUE_HEADER}\n\n\`\`\`json\n${diffPayload}\n\`\`\`\n`;
-}
-function updateIssueLink(repoOverride,diffOverride){
-  if(!issueLink) return;
-  const rawRepo=repoOverride!==undefined?repoOverride:githubRepoInput?.value;
-  const repoCandidate=normalizeRepo(rawRepo);
-  const repo=repoCandidate || getGithubRepo();
-  const diff=diffOverride || lastSessionDiff || {};
-  const payload=Object.keys(diff).length?JSON.stringify(diff,null,2):'{}';
-  if(!repo){
-    issueLink.href='#';
-    issueLink.setAttribute('aria-disabled','true');
-    return;
-  }
-  const repoPath=repoToPath(repo);
-  const issueBody=buildIssueBody(payload);
-  const url=`https://github.com/${repoPath}/issues/new?title=${encodeURIComponent(ISSUE_TITLE)}&body=${encodeURIComponent(issueBody)}`;
-  issueLink.href=url;
-  issueLink.removeAttribute('aria-disabled');
-}
-function updateSyncPreview(){
-  const diff=ensureSessionDiff();
-  updateIssueLink(undefined,diff);
-}
-btnCopyDiff?.addEventListener('click',async()=>{
-  const diff=ensureSessionDiff();
-  const payload=Object.keys(diff).length?JSON.stringify(diff,null,2):'{}';
-  try{
-    await navigator.clipboard.writeText(payload);
-    alert('Diff JSON copié ✅');
-  }catch(err){
-    console.error('Clipboard diff error:',err);
-    alert('Impossible de copier le diff ❌');
-  }
-});
-btnCopyAll?.addEventListener('click',async()=>{
-  const payload=JSON.stringify(store,null,2);
-  try{
-    await navigator.clipboard.writeText(payload);
-    alert('Données complètes copiées ✅');
-  }catch(err){
-    console.error('Clipboard full error:',err);
-    alert('Impossible de copier les données ❌');
-  }
-});
-if(githubRepoInput){
-  on(githubRepoInput,'input',()=>{
-    updateIssueLink(githubRepoInput.value);
-  });
-}
-if(issueLink){
-  on(issueLink,'click',evt=>{
-    const diff=ensureSessionDiff();
-    updateIssueLink(githubRepoInput?.value,diff);
-    if(issueLink.getAttribute('href')==='#'){
-      evt.preventDefault();
-      alert('Définissez un dépôt GitHub valide.');
-    }
-  });
 }
 passwordLoginForm?.addEventListener('submit',async evt=>{
   evt.preventDefault();
@@ -2641,7 +2598,7 @@ function renderActivityFiltersOptions(){
   refreshHashtagOptions();
   updateFilterHighlights();
 }
-function refreshAll(){ renderConsultantOptions(); renderActivityFiltersOptions(); renderActivities(); renderGuideeFilters(); renderGuideeTimeline(); renderParams(); dashboard(); updateSyncPreview(); }
+function refreshAll(){ renderConsultantOptions(); renderActivityFiltersOptions(); renderActivities(); renderGuideeFilters(); renderGuideeTimeline(); renderParams(); dashboard(); }
 /* Premier rendu */
 if(FIRESTORE_ENABLED){
   initFirebase();
