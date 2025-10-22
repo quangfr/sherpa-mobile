@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": 6,
-    "updated_at": "2025-10-21T14:09:05.036Z",
+    "updated_at": "2025-10-22T09:48:52.613Z",
     "github_repo": "quangfr/sherpa-mobile"
   },
   "params": {
@@ -14,16 +14,10 @@
     "objectif_recent_jours": 15,
     "objectif_bar_max_heures": 10,
     "hashtags_catalog": "#ProductBacklogPrioritization #ProductUserStories #ProductRoadmap #ProductKPIs #ProductVision #DataExploration #DataVisualization #DataModeling #DataStorytelling #DataGovernance #DesignUX #DesignPrototyping #DesignUserTesting #DesignThinking #DesignSystem #TeamLeadership #TeamCommunication #TeamFacilitation #TeamCollaboration #TeamAlignment #TechSQL #TechPowerBI #TechAutomation #TechDocumentation #TechIntegration #CustomerInsight #CustomerRelationship #CustomerValue #CustomerFeedback #CustomerExperience",
-    "openai_activity_prompts": {
-      "__DEFAULT": "Faire un résumé synthétique structuré en 3 lignes de ce {{activity_type}}, en qualifiant en début avec 1-3 hashtags parmi [{{hashtags_catalog}}. Le texte est le suivant : {{activity_description}}",
-      "ACTION_ST_BERNARD": "Faire un résumé synthétique structuré en 3 lignes de ce {{activity_type}}, en qualifiant en début avec 1-3 hashtags parmi [{{hashtags_catalog}}. Le texte est le suivant : {{activity_description}}",
-      "CORDEE": "Faire un résumé synthétique structuré en 3 lignes de ce {{activity_type}}, en qualifiant en début avec 1-3 hashtags parmi [{{hashtags_catalog}}. Le texte est le suivant : {{activity_description}}",
-      "NOTE": "Faire un résumé synthétique structuré en 3 lignes de ce {{activity_type}}, en qualifiant en début avec 1-3 hashtags parmi [{{hashtags_catalog}}. Le texte est le suivant : {{activity_description}}",
-      "VERBATIM": "Faire un résumé synthétique structuré en 3 lignes de ce {{activity_type}}, en qualifiant en début avec 1-3 hashtags parmi [{{hashtags_catalog}}. Le texte est le suivant : {{activity_description}}",
-      "AVIS": "Faire un résumé synthétique structuré en 3 lignes de ce {{activity_type}}, en qualifiant en début avec 1-3 hashtags parmi [{{hashtags_catalog}}. Le texte est le suivant : {{activity_description}}",
-      "ALERTE": "Faire un résumé synthétique structuré en 3 lignes de ce {{activity_type}}, en qualifiant en début avec 1-3 hashtags parmi [{{hashtags_catalog}}. Le texte est le suivant : {{activity_description}}"
-    },
-    "openai_activity_prompt": "Faire un résumé synthétique structuré en 3 lignes de ce {{activity_type}}, en qualifiant en début avec 1-3 hashtags parmi [{{hashtags_catalog}}. Le texte est le suivant : {{activity_description}}"
+    "openai_activity_prompt": "Je suis manager coach et j'assure le suivi des consultants PO.\nPeux-tu me générer à partir des infos suivantes une description de l'activité de manière plus structurée :\n- Activité : {{activity.title}} {{activity.description}}\n- Compréhension du contexte : {{guidee.title}} {{guidee.description}}\n- Consultant : {{consultant.title}} {{consultant.description}}\nUtilise les mots-clés des hashtags lorsqu'on parle de compétences ({{hashtags_catalog}}).\nRespecte strictement la structure correspondant au type d'activité détaillée ci-dessous.",
+    "sync_interval_minutes": 10,
+    "openai_guidee_prompt": "Transforme cette description de guidée en respectant strictement cette structure :\n🎯 Objectif : résultat visé ou compétence à renforcer\n🧩 Contexte : mission, situation ou besoin à l’origine\n🤝 Accompagnement prévu : format, fréquence, durée\n💡 Compétences : #Product #Team #Tech #Data #Customer\n🌱 Indicateurs : signes concrets de progression attendus\n💬 Résultat / bilan : constat en fin de cycle\nUtilise les données : Guidée {{guidee.title}} {{guidee.description}} | Consultant {{consultant.title}} {{consultant.description}}\nRéutilise les hashtags pertinents parmi {{hashtags_catalog}} et termine par des suggestions # et @ si adaptées.",
+    "openai_consultant_prompt": "Transforme cette description consultant en un portrait structuré et professionnel.\nRespecte strictement le format :\n💼 Mission actuelle : contexte, client, rôle principal\n🎯 Objectifs pro : ambitions à court/moyen terme\n💡 Compétences : #Product #Team #Tech #Data #Customer\n🌱 Forces : atouts distinctifs ou points d’appui\n⚠️ Points de veille : freins, besoins ou risques à accompagner\n💬 Style relationnel : posture, communication, énergie\nUtilise les informations suivantes : {{consultant.title}} {{consultant.description}}\nAjoute les hashtags pertinents parmi {{hashtags_catalog}} et termine par des suggestions # et @ si utiles."
   },
   "consultants": [
     {
@@ -491,7 +485,8 @@
       "heures": 1.5,
       "guidee_id": "f4b7bb49-7b37-4f66-9a87-55c1be2f3f97-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "6559c64c-9cd0-4bd4-b870-1c2e6ce3aeed",
@@ -502,7 +497,8 @@
       "heures": 2,
       "guidee_id": "8d1c5168-cbd0-4bcc-bb1c-a117b626c821-70cddb51-1299-48c6-86a0-0d64dc5915c3-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     },
     {
       "id": "80339255-07c6-402e-a366-f7e433763ba9",
@@ -513,7 +509,8 @@
       "heures": 1.5,
       "guidee_id": "6f165493-d629-41b6-bebe-6fb007898814-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     },
     {
       "id": "3b9cecb5-32bf-42c8-8237-5b32a9132ea1",
@@ -524,7 +521,8 @@
       "heures": 2.5,
       "guidee_id": "006bf5c3-d17e-49c1-9557-02ce60d38d66-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "f20e99a7-d2e8-487d-8614-4a1d6c6596bc",
@@ -535,7 +533,8 @@
       "heures": 2,
       "guidee_id": "e23dfc10-2708-4c53-86de-a760b9599870-70cddb51-1299-48c6-86a0-0d64dc5915c3-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "ecbba401-a2e0-44fc-8121-ff1658b89b86",
@@ -546,7 +545,8 @@
       "heures": 3,
       "guidee_id": "7cb1d4cb-6322-4059-8723-680aa1e106f5-f08d3d50-ce4b-4278-8f09-af72a3003c52-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "d90d7964-da8f-44e0-abcd-71844d5b1b2c",
@@ -557,7 +557,8 @@
       "heures": 2.5,
       "guidee_id": "a1231f46-2e6f-4fa6-be43-36c5745361c3-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "4839e45f-590f-469d-a0ed-2c09c3729f49",
@@ -568,7 +569,8 @@
       "heures": 2,
       "guidee_id": "4c962dd1-0c44-473e-99f8-2bb25f3e7210-70cddb51-1299-48c6-86a0-0d64dc5915c3-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "72ee0391-0b81-4889-bebf-ff14aae1225c",
@@ -579,7 +581,8 @@
       "heures": 1.5,
       "guidee_id": "398ad961-1cb4-4657-9291-86967dd71b01-d314fffb-4c1b-488f-b44a-d7bbb2e54425-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "6f821705-a76b-40f1-8a5e-10f7f4d3c95c",
@@ -590,7 +593,8 @@
       "heures": 3,
       "guidee_id": "63bad2d8-5131-4070-a59b-187f9435c41f-f08d3d50-ce4b-4278-8f09-af72a3003c52-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "305e8966-0b3f-4db0-85f1-fa1042c5c19b",
@@ -601,7 +605,8 @@
       "heures": 2,
       "guidee_id": "f4b7bb49-7b37-4f66-9a87-55c1be2f3f97-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "afda615a-5a37-4f3f-a4c0-8420b3d646b8",
@@ -612,7 +617,8 @@
       "heures": 2,
       "guidee_id": "f4d4a51b-1b3b-40ab-b1d1-1b91e14c8c82-ea199eb1-9394-47bc-98da-1a1d4615cc8a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Le Cardinal : modéliser avec clarté les structures fonctionnelles prioritaires."
     },
     {
       "id": "6833bd5a-50d6-4e9e-9c72-3f94a0de121a",
@@ -623,7 +629,8 @@
       "heures": 1.5,
       "guidee_id": "a86ab2aa-36e5-4bc5-89d7-5360a4d8512a-d314fffb-4c1b-488f-b44a-d7bbb2e54425-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Le Cardinal : modéliser avec clarté les structures fonctionnelles prioritaires."
     },
     {
       "id": "650a3df4-0278-4b59-ac02-03d8ba36d6d2",
@@ -633,7 +640,8 @@
       "description": "Alerte Soulgorithm : signal critique détecté sur la guidée.\nRisque : perdre la cohérence utilisateur entre cas d'usages IA.\nPlan d'actions : priorisation des expériences IA et plan de tests terrain.\nCadre de suivi : revue hebdomadaire des signaux IA et du backlog expérimental.",
       "guidee_id": "f4b7bb49-7b37-4f66-9a87-55c1be2f3f97-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée."
     },
     {
       "id": "6ea5bc34-bf6b-47b0-936b-5a0b7c8fa786",
@@ -643,7 +651,8 @@
       "description": "Avis coach Soulgorithm : progression sur la capacité à imaginer.\nPoints forts : vision IA alignée avec les irritants voyageurs.\nRecommandations : documenter les preuves d'impact et cadrer les risques algorithmiques.\nPartage : insights diffusés au sponsor innovation.",
       "guidee_id": "f4b7bb49-7b37-4f66-9a87-55c1be2f3f97-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Soulgorithm : progression sur la capacité à imaginer."
     },
     {
       "id": "873c79a6-ad7c-4011-aa5b-4b0abbacd004",
@@ -653,7 +662,8 @@
       "description": "Note de cadrage Soulgorithm : restitution de la séance pour imaginer.\nFocus : synthèse des hypothèses IA et des scénarios à explorer.\nDétails : storyboard cible, critères de succès et ressources nécessaires.\nSuivi : mise à jour automatique dans l'espace Soulgorithm.",
       "guidee_id": "f4b7bb49-7b37-4f66-9a87-55c1be2f3f97-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Soulgorithm : restitution de la séance pour imaginer."
     },
     {
       "id": "f8b1c759-e803-4468-9081-b52e9853505b",
@@ -664,7 +674,8 @@
       "heures": 2.5,
       "guidee_id": "8d1c5168-cbd0-4bcc-bb1c-a117b626c821-70cddb51-1299-48c6-86a0-0d64dc5915c3-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     },
     {
       "id": "781cb5ba-08df-4f57-8e54-77ff7c1c4e4d",
@@ -675,7 +686,8 @@
       "heures": 3,
       "guidee_id": "9e1c58b7-4785-46cb-aae4-d92adf74dcb3-f08d3d50-ce4b-4278-8f09-af72a3003c52-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Le Cardinal : modéliser avec clarté les structures fonctionnelles prioritaires."
     },
     {
       "id": "fc78fce8-dab2-485b-9971-d898251af11e",
@@ -685,7 +697,8 @@
       "description": "Avis coach Pôlène : progression sur la capacité à connecter.\nPoints forts : vision claire des points de contact data clients.\nRecommandations : sécuriser la qualité des flux et clarifier les contrats de service.\nPartage : compte-rendu diffusé aux équipes data et produit.",
       "guidee_id": "6f165493-d629-41b6-bebe-6fb007898814-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Pôlène : progression sur la capacité à connecter."
     },
     {
       "id": "565a0e7d-bdc4-4aaf-9563-3af25c4481d1",
@@ -695,7 +708,8 @@
       "description": "Alerte Pôlène : signal critique détecté sur la guidée.\nRisque : rupture de parcours liée à un flux non fiabilisé.\nPlan d'actions : revue des dépendances API et plan de mitigation avec les partenaires.\nCadre de suivi : suivi quotidien des intégrations critiques et tests de continuité.",
       "guidee_id": "8d1c5168-cbd0-4bcc-bb1c-a117b626c821-70cddb51-1299-48c6-86a0-0d64dc5915c3-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Pôlène : signal critique détecté sur la guidée."
     },
     {
       "id": "415d4ebd-5ce1-4d8f-85d1-57a28b44e666",
@@ -706,7 +720,8 @@
       "heures": 2,
       "guidee_id": "6f165493-d629-41b6-bebe-6fb007898814-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     },
     {
       "id": "5c79490f-adaa-4966-8ea8-92f2f954324b",
@@ -716,7 +731,8 @@
       "description": "Avis coach Pôlène : progression sur la capacité à connecter.\nPoints forts : vision claire des points de contact data clients.\nRecommandations : sécuriser la qualité des flux et clarifier les contrats de service.\nPartage : compte-rendu diffusé aux équipes data et produit.",
       "guidee_id": "8d1c5168-cbd0-4bcc-bb1c-a117b626c821-70cddb51-1299-48c6-86a0-0d64dc5915c3-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Pôlène : progression sur la capacité à connecter."
     },
     {
       "id": "0a14be84-0936-4d6c-b30e-cd82181f7ad9",
@@ -726,7 +742,8 @@
       "description": "Verbatim Goal Digger : « Nous savons enfin pourquoi ce sprint compte vraiment. »\nContexte : Retour collecté pendant le comité d'arbitrage.\nAnalyse : Ce signal valide la trajectoire de priorisation établie.\nPartage : insights intégrés au suivi Goal Digger.",
       "guidee_id": "e23dfc10-2708-4c53-86de-a760b9599870-70cddb51-1299-48c6-86a0-0d64dc5915c3-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Goal Digger : « Nous savons enfin pourquoi ce sprint compte vraiment. »"
     },
     {
       "id": "53ab9656-b3b0-4bac-8db7-5ec040c2600d",
@@ -737,7 +754,8 @@
       "heures": 2.5,
       "guidee_id": "0d54ec96-3bb8-4eea-812a-acc297c93e67-6d3286b4-39de-453d-accd-00ad3f66a1a5-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Gutenberg : documenter le projet au fil de l'eau et le rendre inspirant."
     },
     {
       "id": "c7a7ce9c-e077-452a-adc9-147de8ccff35",
@@ -747,7 +765,8 @@
       "description": "Note de cadrage Pôlène : restitution de la séance pour connecter.\nFocus : synthèse des flux clés et de leur exposition produit.\nDétails : diagramme d'écosystème, backlog d'événements et priorités techniques.\nSuivi : mise à jour dans la base Pôlène pour diffusion aux parties prenantes.",
       "guidee_id": "8d1c5168-cbd0-4bcc-bb1c-a117b626c821-70cddb51-1299-48c6-86a0-0d64dc5915c3-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Pôlène : restitution de la séance pour connecter."
     },
     {
       "id": "d457ddae-e83d-4520-bfa0-1117e21bc715",
@@ -757,7 +776,8 @@
       "description": "Avis coach Soulgorithm : progression sur la capacité à imaginer.\nPoints forts : vision IA alignée avec les irritants voyageurs.\nRecommandations : documenter les preuves d'impact et cadrer les risques algorithmiques.\nPartage : insights diffusés au sponsor innovation.",
       "guidee_id": "f4b7bb49-7b37-4f66-9a87-55c1be2f3f97-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Soulgorithm : progression sur la capacité à imaginer."
     },
     {
       "id": "2cdcf2f7-1c9c-414d-81e5-bad5c33ff2b9",
@@ -767,7 +787,8 @@
       "description": "Alerte Goal Digger : signal critique détecté sur la guidée.\nRisque : dispersion des efforts sur des objectifs secondaires.\nPlan d'actions : resynchronisation des jalons et re-cadrage des critères d'arbitrage.\nCadre de suivi : rituel hebdo de suivi des OKR et des arbitrages de backlog.",
       "guidee_id": "e23dfc10-2708-4c53-86de-a760b9599870-70cddb51-1299-48c6-86a0-0d64dc5915c3-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Goal Digger : signal critique détecté sur la guidée."
     },
     {
       "id": "926f7757-dfdd-4a04-87f0-2e1812af66a0",
@@ -777,7 +798,8 @@
       "description": "Avis coach Goal Digger : progression sur la capacité à prioriser.\nPoints forts : vision alignée des objectifs et métriques d'impact.\nRecommandations : maintenir un arbitrage mensuel sur la valeur livrée.\nPartage : synthèse envoyée aux pilotes de stream et au coach produit.",
       "guidee_id": "e23dfc10-2708-4c53-86de-a760b9599870-70cddb51-1299-48c6-86a0-0d64dc5915c3-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Goal Digger : progression sur la capacité à prioriser."
     },
     {
       "id": "94a8b68d-c0c8-4184-bf0f-4af98031a71b",
@@ -787,7 +809,8 @@
       "description": "Alerte Goal Digger : signal critique détecté sur la guidée.\nRisque : dispersion des efforts sur des objectifs secondaires.\nPlan d'actions : resynchronisation des jalons et re-cadrage des critères d'arbitrage.\nCadre de suivi : rituel hebdo de suivi des OKR et des arbitrages de backlog.",
       "guidee_id": "006bf5c3-d17e-49c1-9557-02ce60d38d66-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Goal Digger : signal critique détecté sur la guidée."
     },
     {
       "id": "6d9af315-f940-478e-bfd4-bd5bc909c920",
@@ -798,7 +821,8 @@
       "heures": 2,
       "guidee_id": "29e1902f-0314-410c-8e7e-c1c8926d7268-ea199eb1-9394-47bc-98da-1a1d4615cc8a-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Gutenberg : documenter le projet au fil de l'eau et le rendre inspirant."
     },
     {
       "id": "75130698-51df-4e5e-8349-e69a9d2ccf23",
@@ -808,7 +832,8 @@
       "description": "Note de cadrage Goal Digger : restitution de la séance pour prioriser.\nFocus : synthèse des objectifs, résultats clés et arbitrages.\nDétails : roadmap de valeur, engagements par équipe et dépendances critiques.\nSuivi : publication dans la boussole Goal Digger.",
       "guidee_id": "e23dfc10-2708-4c53-86de-a760b9599870-70cddb51-1299-48c6-86a0-0d64dc5915c3-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Goal Digger : restitution de la séance pour prioriser."
     },
     {
       "id": "5b26a593-04cd-4149-a99a-6fd897254c56",
@@ -818,7 +843,8 @@
       "description": "Avis coach Goal Digger : progression sur la capacité à prioriser.\nPoints forts : vision alignée des objectifs et métriques d'impact.\nRecommandations : maintenir un arbitrage mensuel sur la valeur livrée.\nPartage : synthèse envoyée aux pilotes de stream et au coach produit.",
       "guidee_id": "006bf5c3-d17e-49c1-9557-02ce60d38d66-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Goal Digger : progression sur la capacité à prioriser."
     },
     {
       "id": "d09ac5f4-abe4-48c2-9432-f95ddfe32a0a",
@@ -828,7 +854,8 @@
       "description": "Note de cadrage Goal Digger : restitution de la séance pour prioriser.\nFocus : synthèse des objectifs, résultats clés et arbitrages.\nDétails : roadmap de valeur, engagements par équipe et dépendances critiques.\nSuivi : publication dans la boussole Goal Digger.",
       "guidee_id": "006bf5c3-d17e-49c1-9557-02ce60d38d66-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Goal Digger : restitution de la séance pour prioriser."
     },
     {
       "id": "252b459c-3a26-4beb-bac4-bfc21d88a719",
@@ -839,7 +866,8 @@
       "heures": 3,
       "guidee_id": "006bf5c3-d17e-49c1-9557-02ce60d38d66-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "df13e3a7-c0d1-4e02-bd0e-ad6c1aa67745",
@@ -849,7 +877,8 @@
       "description": "Avis coach Protocop : progression sur la capacité à prototyper.\nPoints forts : vision tangible du parcours et des micro-interactions.\nRecommandations : capitaliser sur les retours terrain et prioriser les ajustements.\nPartage : prototype partagé dans la galerie Protocop.",
       "guidee_id": "a1231f46-2e6f-4fa6-be43-36c5745361c3-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Protocop : progression sur la capacité à prototyper."
     },
     {
       "id": "59db840b-e4d1-41c0-8ea8-9e259ea772c3",
@@ -859,7 +888,8 @@
       "description": "Alerte Protocop : signal critique détecté sur la guidée.\nRisque : écart entre prototype et capacité d'implémentation.\nPlan d'actions : réalignement UX/tech et plan de découpage incrémental.\nCadre de suivi : revue hebdomadaire des tests utilisateurs et des insights.",
       "guidee_id": "7cb1d4cb-6322-4059-8723-680aa1e106f5-f08d3d50-ce4b-4278-8f09-af72a3003c52-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Protocop : signal critique détecté sur la guidée."
     },
     {
       "id": "7fd51cbd-df50-4756-bf67-72f2ad8dc499",
@@ -869,7 +899,8 @@
       "description": "Note de cadrage Protocop : restitution de la séance pour prototyper.\nFocus : synthèse des hypothèses testées et des retours utilisateurs.\nDétails : storyboard interactif, backlog d'améliorations et métriques associées.\nSuivi : prochaine mise à jour prévue après les tests terrain.",
       "guidee_id": "a1231f46-2e6f-4fa6-be43-36c5745361c3-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Protocop : restitution de la séance pour prototyper."
     },
     {
       "id": "1dede35c-c42d-4f42-8bc9-0bead1df4e86",
@@ -879,7 +910,8 @@
       "description": "Avis coach Protocop : progression sur la capacité à prototyper.\nPoints forts : vision tangible du parcours et des micro-interactions.\nRecommandations : capitaliser sur les retours terrain et prioriser les ajustements.\nPartage : prototype partagé dans la galerie Protocop.",
       "guidee_id": "7cb1d4cb-6322-4059-8723-680aa1e106f5-f08d3d50-ce4b-4278-8f09-af72a3003c52-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Protocop : progression sur la capacité à prototyper."
     },
     {
       "id": "82d4bd98-7c9e-4060-8410-506e051ae554",
@@ -890,7 +922,8 @@
       "heures": 2.5,
       "guidee_id": "e23dfc10-2708-4c53-86de-a760b9599870-70cddb51-1299-48c6-86a0-0d64dc5915c3-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "88fb7953-5266-4294-8a0a-46ffce498b8d",
@@ -901,7 +934,8 @@
       "heures": 3,
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "30e3ed51-9e73-4af0-a81b-976a3de9e81c",
@@ -911,7 +945,8 @@
       "description": "Note de cadrage Protocop : restitution de la séance pour prototyper.\nFocus : synthèse des hypothèses testées et des retours utilisateurs.\nDétails : storyboard interactif, backlog d'améliorations et métriques associées.\nSuivi : prochaine mise à jour prévue après les tests terrain.",
       "guidee_id": "7cb1d4cb-6322-4059-8723-680aa1e106f5-f08d3d50-ce4b-4278-8f09-af72a3003c52-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Protocop : restitution de la séance pour prototyper."
     },
     {
       "id": "5ff2fd06-380e-4c05-bf39-1ee16cb298e1",
@@ -921,7 +956,8 @@
       "description": "Alerte Promptzilla : signal critique détecté sur la guidée.\nRisque : dérive de qualité sur les réponses générées.\nPlan d'actions : renforcement des scénarios de test et calibrage des modèles.\nCadre de suivi : revue quotidienne des métriques IA et ajustement des prompts.",
       "guidee_id": "63bad2d8-5131-4070-a59b-187f9435c41f-f08d3d50-ce4b-4278-8f09-af72a3003c52-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
     },
     {
       "id": "8b182e04-a90d-42b3-9b3a-a41831d69956",
@@ -931,7 +967,8 @@
       "description": "Verbatim Le Cardinal : « Ce schéma clarifie enfin qui est responsable de chaque étape. »\nContexte : Retour partagé par l'équipe technique lors de la revue modèle.\nAnalyse : Ces enseignements alimentent la stratégie de migration de données.\nPartage : insights intégrés au suivi Le Cardinal.",
       "guidee_id": "a86ab2aa-36e5-4bc5-89d7-5360a4d8512a-d314fffb-4c1b-488f-b44a-d7bbb2e54425-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Le Cardinal : « Ce schéma clarifie enfin qui est responsable de chaque étape. »"
     },
     {
       "id": "8db3051b-50d3-4b57-8916-e4e94b08d4b3",
@@ -941,7 +978,8 @@
       "description": "Avis coach Promptzilla : progression sur la capacité à invoquer.\nPoints forts : cadre de prompting robuste et réplicable.\nRecommandations : documenter les variations efficaces et préparer le monitoring.\nPartage : retours partagés dans la bibliothèque Promptzilla.",
       "guidee_id": "63bad2d8-5131-4070-a59b-187f9435c41f-f08d3d50-ce4b-4278-8f09-af72a3003c52-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Promptzilla : progression sur la capacité à invoquer."
     },
     {
       "id": "e1a28e75-9c65-4c7c-9054-19c6fe7e6395",
@@ -951,7 +989,8 @@
       "description": "Alerte Promptzilla : signal critique détecté sur la guidée.\nRisque : dérive de qualité sur les réponses générées.\nPlan d'actions : renforcement des scénarios de test et calibrage des modèles.\nCadre de suivi : revue quotidienne des métriques IA et ajustement des prompts.",
       "guidee_id": "398ad961-1cb4-4657-9291-86967dd71b01-d314fffb-4c1b-488f-b44a-d7bbb2e54425-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
     },
     {
       "id": "5e427d76-c07f-426f-8670-29e40ec633d0",
@@ -962,7 +1001,8 @@
       "heures": 2.5,
       "guidee_id": "1f45073e-71ed-4526-a5e0-a37e7cb3a604-6d3286b4-39de-453d-accd-00ad3f66a1a5-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "60151fd3-83b2-422b-8eff-0df9aae9960a",
@@ -972,7 +1012,8 @@
       "description": "Note de cadrage Promptzilla : restitution de la séance pour invoquer.\nFocus : synthèse des cas d'usage IA et des prompts de référence.\nDétails : tableau de variants, critères d'évaluation et responsabilités.\nSuivi : mises à jour consignées dans le laboratoire Promptzilla.",
       "guidee_id": "63bad2d8-5131-4070-a59b-187f9435c41f-f08d3d50-ce4b-4278-8f09-af72a3003c52-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Promptzilla : restitution de la séance pour invoquer."
     },
     {
       "id": "c2cdb5e0-a084-45bc-97b7-a4eb6f377fa5",
@@ -982,7 +1023,8 @@
       "description": "Avis coach Promptzilla : progression sur la capacité à invoquer.\nPoints forts : cadre de prompting robuste et réplicable.\nRecommandations : documenter les variations efficaces et préparer le monitoring.\nPartage : retours partagés dans la bibliothèque Promptzilla.",
       "guidee_id": "398ad961-1cb4-4657-9291-86967dd71b01-d314fffb-4c1b-488f-b44a-d7bbb2e54425-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Promptzilla : progression sur la capacité à invoquer."
     },
     {
       "id": "1a46f980-89b3-48d4-b264-06935e66bafb",
@@ -992,7 +1034,8 @@
       "description": "Note de cadrage Promptzilla : restitution de la séance pour invoquer.\nFocus : synthèse des cas d'usage IA et des prompts de référence.\nDétails : tableau de variants, critères d'évaluation et responsabilités.\nSuivi : mises à jour consignées dans le laboratoire Promptzilla.",
       "guidee_id": "398ad961-1cb4-4657-9291-86967dd71b01-d314fffb-4c1b-488f-b44a-d7bbb2e54425-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Promptzilla : restitution de la séance pour invoquer."
     },
     {
       "id": "e9409789-b317-4cf9-a899-216f7e98b489",
@@ -1002,7 +1045,8 @@
       "description": "Avis coach Le Cardinal : progression sur la capacité à modéliser.\nPoints forts : structure de données lisible et orientée impact.\nRecommandations : formaliser les cas limites et documenter les synchronisations.\nPartage : modèle mis à disposition sur l'espace Confluence central.",
       "guidee_id": "9e1c58b7-4785-46cb-aae4-d92adf74dcb3-f08d3d50-ce4b-4278-8f09-af72a3003c52-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Le Cardinal : progression sur la capacité à modéliser."
     },
     {
       "id": "6bd1185f-0818-43e5-a04d-20a2d97218d8",
@@ -1013,7 +1057,8 @@
       "heures": 1.5,
       "guidee_id": "7cb1d4cb-6322-4059-8723-680aa1e106f5-f08d3d50-ce4b-4278-8f09-af72a3003c52-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "31ab27aa-a0d0-4683-8a5b-7ac4b3b187ef",
@@ -1024,7 +1069,8 @@
       "heures": 2,
       "guidee_id": "7077d67d-ceea-482f-ae2d-45549f471736-ea199eb1-9394-47bc-98da-1a1d4615cc8a-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "c986cf17-0ad5-4ce9-8ec8-47d57cf245db",
@@ -1034,7 +1080,8 @@
       "description": "Avis coach Le Cardinal : progression sur la capacité à modéliser.\nPoints forts : structure de données lisible et orientée impact.\nRecommandations : formaliser les cas limites et documenter les synchronisations.\nPartage : modèle mis à disposition sur l'espace Confluence central.",
       "guidee_id": "a86ab2aa-36e5-4bc5-89d7-5360a4d8512a-d314fffb-4c1b-488f-b44a-d7bbb2e54425-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Le Cardinal : progression sur la capacité à modéliser."
     },
     {
       "id": "5f359b30-028d-44f4-a7ed-042829b58b33",
@@ -1044,7 +1091,8 @@
       "description": "Alerte Le Cardinal : signal critique détecté sur la guidée.\nRisque : ambigüité sur les liens entre entités clés.\nPlan d'actions : revue des règles de gestion et cadrage des besoins de migration.\nCadre de suivi : checkpoints hebdo sur la mise à jour des schémas fonctionnels.",
       "guidee_id": "f4d4a51b-1b3b-40ab-b1d1-1b91e14c8c82-ea199eb1-9394-47bc-98da-1a1d4615cc8a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Le Cardinal : signal critique détecté sur la guidée."
     },
     {
       "id": "50fc664d-420f-4fdd-9e58-f1bcbf474ba3",
@@ -1054,7 +1102,8 @@
       "description": "Avis coach Le Cardinal : progression sur la capacité à modéliser.\nPoints forts : structure de données lisible et orientée impact.\nRecommandations : formaliser les cas limites et documenter les synchronisations.\nPartage : modèle mis à disposition sur l'espace Confluence central.",
       "guidee_id": "f4d4a51b-1b3b-40ab-b1d1-1b91e14c8c82-ea199eb1-9394-47bc-98da-1a1d4615cc8a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Le Cardinal : progression sur la capacité à modéliser."
     },
     {
       "id": "adb67dfd-276f-453b-8f6d-7a347650f65b",
@@ -1065,7 +1114,8 @@
       "heures": 3,
       "guidee_id": "a1231f46-2e6f-4fa6-be43-36c5745361c3-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "3e53e6aa-4e93-49f6-8d94-e451a1dd5d84",
@@ -1075,7 +1125,8 @@
       "description": "Note de cadrage Le Cardinal : restitution de la séance pour modéliser.\nFocus : synthèse des entités, attributs et relations critiques.\nDétails : diagramme métier versionné et impacts sur les produits associés.\nSuivi : mise à jour du glossaire Le Cardinal.",
       "guidee_id": "f4d4a51b-1b3b-40ab-b1d1-1b91e14c8c82-ea199eb1-9394-47bc-98da-1a1d4615cc8a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Le Cardinal : restitution de la séance pour modéliser."
     },
     {
       "id": "36ab22e5-3ce9-4a09-8dbf-b568a207cc90",
@@ -1086,7 +1137,8 @@
       "heures": 1.5,
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     },
     {
       "id": "64d32edf-8857-4195-af65-c0050ae8fd99",
@@ -1096,7 +1148,8 @@
       "description": "Alerte Gutenberg : signal critique détecté sur la guidée.\nRisque : perte de mémoire projet sur les décisions clés.\nPlan d'actions : plan de documentation continue et rituels de revue.\nCadre de suivi : revue hebdomadaire des contenus et mise à jour des sources.",
       "guidee_id": "29e1902f-0314-410c-8e7e-c1c8926d7268-ea199eb1-9394-47bc-98da-1a1d4615cc8a-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Gutenberg : signal critique détecté sur la guidée."
     },
     {
       "id": "d1d80787-f028-4f84-a6ec-12c30451f783",
@@ -1106,7 +1159,8 @@
       "description": "Avis coach Gutenberg : progression sur la capacité à documenter.\nPoints forts : histoire produit vivante et accessible.\nRecommandations : maintenir la fraîcheur des contenus et clarifier les points d'entrée.\nPartage : newsletter projet envoyée aux contributeurs.",
       "guidee_id": "29e1902f-0314-410c-8e7e-c1c8926d7268-ea199eb1-9394-47bc-98da-1a1d4615cc8a-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Gutenberg : progression sur la capacité à documenter."
     },
     {
       "id": "18a791f4-684c-4894-b7a5-1908f4dea2ec",
@@ -1116,7 +1170,8 @@
       "description": "Alerte Gutenberg : signal critique détecté sur la guidée.\nRisque : perte de mémoire projet sur les décisions clés.\nPlan d'actions : plan de documentation continue et rituels de revue.\nCadre de suivi : revue hebdomadaire des contenus et mise à jour des sources.",
       "guidee_id": "0d54ec96-3bb8-4eea-812a-acc297c93e67-6d3286b4-39de-453d-accd-00ad3f66a1a5-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Gutenberg : signal critique détecté sur la guidée."
     },
     {
       "id": "14b65351-a2ef-42f3-a9c0-cbc3420a7c43",
@@ -1127,7 +1182,8 @@
       "heures": 2.5,
       "guidee_id": "f4b7bb49-7b37-4f66-9a87-55c1be2f3f97-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "d11809e9-2b9a-4c2a-939e-438377ab9939",
@@ -1138,7 +1194,8 @@
       "heures": 2.5,
       "guidee_id": "4c962dd1-0c44-473e-99f8-2bb25f3e7210-70cddb51-1299-48c6-86a0-0d64dc5915c3-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "8c41cafe-e6c3-4676-a600-2c9e456dd2fe",
@@ -1148,7 +1205,8 @@
       "description": "Note de cadrage Gutenberg : restitution de la séance pour documenter.\nFocus : synthèse éditoriale des décisions et des insights.\nDétails : plan de publication, liens ressources et backlog de contenus.\nSuivi : mise à jour dans l'atelier Gutenberg.",
       "guidee_id": "29e1902f-0314-410c-8e7e-c1c8926d7268-ea199eb1-9394-47bc-98da-1a1d4615cc8a-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Gutenberg : restitution de la séance pour documenter."
     },
     {
       "id": "6e7e0648-ff79-408b-b1b4-a2960e2de0fd",
@@ -1158,7 +1216,8 @@
       "description": "Avis coach Gutenberg : progression sur la capacité à documenter.\nPoints forts : histoire produit vivante et accessible.\nRecommandations : maintenir la fraîcheur des contenus et clarifier les points d'entrée.\nPartage : newsletter projet envoyée aux contributeurs.",
       "guidee_id": "0d54ec96-3bb8-4eea-812a-acc297c93e67-6d3286b4-39de-453d-accd-00ad3f66a1a5-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Gutenberg : progression sur la capacité à documenter."
     },
     {
       "id": "f4aa464e-fa1d-4731-99ad-5d6ca32e1d89",
@@ -1169,7 +1228,8 @@
       "heures": 3,
       "guidee_id": "6cc8a72d-aac0-42e9-a179-5974255eb53d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     },
     {
       "id": "3d2cdc0c-2588-4417-b105-18b4339917e1",
@@ -1179,7 +1239,8 @@
       "description": "Verbatim Pôlène : « Quand la donnée arrive à temps, la promesse service est évidente. »\nContexte : Observation collectée auprès des opérateurs support.\nAnalyse : Ce besoin guide le plan de fiabilisation des flux critiques.\nPartage : insights intégrés au suivi Pôlène.",
       "guidee_id": "6cc8a72d-aac0-42e9-a179-5974255eb53d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Pôlène : « Quand la donnée arrive à temps, la promesse service est évidente. »"
     },
     {
       "id": "b474b6a2-3ecc-4e31-a89b-82048fcc4698",
@@ -1189,7 +1250,8 @@
       "description": "Note de cadrage Gutenberg : restitution de la séance pour documenter.\nFocus : synthèse éditoriale des décisions et des insights.\nDétails : plan de publication, liens ressources et backlog de contenus.\nSuivi : mise à jour dans l'atelier Gutenberg.",
       "guidee_id": "0d54ec96-3bb8-4eea-812a-acc297c93e67-6d3286b4-39de-453d-accd-00ad3f66a1a5-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Gutenberg : restitution de la séance pour documenter."
     },
     {
       "id": "d29262c5-3e94-4241-8b57-c862fc300991",
@@ -1200,7 +1262,8 @@
       "heures": 2,
       "guidee_id": "398ad961-1cb4-4657-9291-86967dd71b01-d314fffb-4c1b-488f-b44a-d7bbb2e54425-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "f4928849-cec3-4dd3-8fe7-f09e0e48e976",
@@ -1210,7 +1273,8 @@
       "description": "Avis coach Soulgorithm : progression sur la capacité à imaginer.\nPoints forts : vision IA alignée avec les irritants voyageurs.\nRecommandations : documenter les preuves d'impact et cadrer les risques algorithmiques.\nPartage : insights diffusés au sponsor innovation.",
       "guidee_id": "1f45073e-71ed-4526-a5e0-a37e7cb3a604-6d3286b4-39de-453d-accd-00ad3f66a1a5-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Soulgorithm : progression sur la capacité à imaginer."
     },
     {
       "id": "fbb91ecb-0889-4b6c-8a53-0e84386512b9",
@@ -1220,7 +1284,8 @@
       "description": "Alerte Soulgorithm : signal critique détecté sur la guidée.\nRisque : perdre la cohérence utilisateur entre cas d'usages IA.\nPlan d'actions : priorisation des expériences IA et plan de tests terrain.\nCadre de suivi : revue hebdomadaire des signaux IA et du backlog expérimental.",
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée."
     },
     {
       "id": "0eefece4-28e1-4748-98b2-bf29133f518c",
@@ -1230,7 +1295,8 @@
       "description": "Note de cadrage Soulgorithm : restitution de la séance pour imaginer.\nFocus : synthèse des hypothèses IA et des scénarios à explorer.\nDétails : storyboard cible, critères de succès et ressources nécessaires.\nSuivi : mise à jour automatique dans l'espace Soulgorithm.",
       "guidee_id": "1f45073e-71ed-4526-a5e0-a37e7cb3a604-6d3286b4-39de-453d-accd-00ad3f66a1a5-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Soulgorithm : restitution de la séance pour imaginer."
     },
     {
       "id": "93db2593-be19-4caa-baef-86504a5f2a83",
@@ -1240,7 +1306,8 @@
       "description": "Avis coach Soulgorithm : progression sur la capacité à imaginer.\nPoints forts : vision IA alignée avec les irritants voyageurs.\nRecommandations : documenter les preuves d'impact et cadrer les risques algorithmiques.\nPartage : insights diffusés au sponsor innovation.",
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Soulgorithm : progression sur la capacité à imaginer."
     },
     {
       "id": "a48fc61a-7a76-471f-a0e0-75ba2fdff873",
@@ -1250,7 +1317,8 @@
       "description": "Note de cadrage Soulgorithm : restitution de la séance pour imaginer.\nFocus : synthèse des hypothèses IA et des scénarios à explorer.\nDétails : storyboard cible, critères de succès et ressources nécessaires.\nSuivi : mise à jour automatique dans l'espace Soulgorithm.",
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Soulgorithm : restitution de la séance pour imaginer."
     },
     {
       "id": "4451bca4-d88e-4372-b5d9-30419f6b6969",
@@ -1261,7 +1329,8 @@
       "heures": 1.5,
       "guidee_id": "63bad2d8-5131-4070-a59b-187f9435c41f-f08d3d50-ce4b-4278-8f09-af72a3003c52-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "3c7b50de-dd1b-4d83-b2ee-2d9f16218a06",
@@ -1271,7 +1340,8 @@
       "description": "Avis coach Gutenberg : progression sur la capacité à documenter.\nPoints forts : histoire produit vivante et accessible.\nRecommandations : maintenir la fraîcheur des contenus et clarifier les points d'entrée.\nPartage : newsletter projet envoyée aux contributeurs.",
       "guidee_id": "0d54ec96-3bb8-4eea-812a-acc297c93e67-6d3286b4-39de-453d-accd-00ad3f66a1a5-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Gutenberg : progression sur la capacité à documenter."
     },
     {
       "id": "cbe969e9-14e3-4a9e-89c2-7fba4c2a34e0",
@@ -1281,7 +1351,8 @@
       "description": "Alerte Pôlène : signal critique détecté sur la guidée.\nRisque : rupture de parcours liée à un flux non fiabilisé.\nPlan d'actions : revue des dépendances API et plan de mitigation avec les partenaires.\nCadre de suivi : suivi quotidien des intégrations critiques et tests de continuité.",
       "guidee_id": "6cc8a72d-aac0-42e9-a179-5974255eb53d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Pôlène : signal critique détecté sur la guidée."
     },
     {
       "id": "b50faa8a-419a-4329-9da3-a753605e0a5d",
@@ -1293,7 +1364,8 @@
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T14:44:38.857Z",
-      "_status": "updated"
+      "_status": "updated",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "25da637f-0657-488b-bfbd-5628cddec818",
@@ -1303,7 +1375,8 @@
       "description": "Avis coach Pôlène : progression sur la capacité à connecter.\nPoints forts : vision claire des points de contact data clients.\nRecommandations : sécuriser la qualité des flux et clarifier les contrats de service.\nPartage : compte-rendu diffusé aux équipes data et produit.",
       "guidee_id": "6cc8a72d-aac0-42e9-a179-5974255eb53d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Pôlène : progression sur la capacité à connecter."
     },
     {
       "id": "8c4b0143-0979-4f89-abb2-d2d145e274e3",
@@ -1313,7 +1386,8 @@
       "description": "Alerte Pôlène : signal critique détecté sur la guidée.\nRisque : rupture de parcours liée à un flux non fiabilisé.\nPlan d'actions : revue des dépendances API et plan de mitigation avec les partenaires.\nCadre de suivi : suivi quotidien des intégrations critiques et tests de continuité.",
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Pôlène : signal critique détecté sur la guidée."
     },
     {
       "id": "14b5cd09-4a94-45c2-b212-608ff1d057e5",
@@ -1323,7 +1397,8 @@
       "description": "Note de cadrage Pôlène : restitution de la séance pour connecter.\nFocus : synthèse des flux clés et de leur exposition produit.\nDétails : diagramme d'écosystème, backlog d'événements et priorités techniques.\nSuivi : mise à jour dans la base Pôlène pour diffusion aux parties prenantes.",
       "guidee_id": "6cc8a72d-aac0-42e9-a179-5974255eb53d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Pôlène : restitution de la séance pour connecter."
     },
     {
       "id": "4269c8ac-befc-44d5-9e86-8a3aa32f842b",
@@ -1333,7 +1408,8 @@
       "description": "Avis coach Pôlène : progression sur la capacité à connecter.\nPoints forts : vision claire des points de contact data clients.\nRecommandations : sécuriser la qualité des flux et clarifier les contrats de service.\nPartage : compte-rendu diffusé aux équipes data et produit.",
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Pôlène : progression sur la capacité à connecter."
     },
     {
       "id": "3ff29b0a-3b1c-4ed9-be82-fb74613c7600",
@@ -1344,7 +1420,8 @@
       "heures": 3,
       "guidee_id": "8d1c5168-cbd0-4bcc-bb1c-a117b626c821-70cddb51-1299-48c6-86a0-0d64dc5915c3-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     },
     {
       "id": "6a3064fc-a2ed-477d-a78a-f52d026fff3d",
@@ -1355,7 +1432,8 @@
       "heures": 1.5,
       "guidee_id": "80c5f5a4-2637-485e-bccb-368436581d0b-befe8589-be70-4ff3-a27b-54b8a7d277a0-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "f278d8b7-3945-4d8e-ac8d-70b31e192606",
@@ -1365,7 +1443,8 @@
       "description": "Note de cadrage Pôlène : restitution de la séance pour connecter.\nFocus : synthèse des flux clés et de leur exposition produit.\nDétails : diagramme d'écosystème, backlog d'événements et priorités techniques.\nSuivi : mise à jour dans la base Pôlène pour diffusion aux parties prenantes.",
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Pôlène : restitution de la séance pour connecter."
     },
     {
       "id": "72a36d18-2dbf-4534-8111-7294d19c1f7b",
@@ -1375,7 +1454,8 @@
       "description": "Avis coach Goal Digger : progression sur la capacité à prioriser.\nPoints forts : vision alignée des objectifs et métriques d'impact.\nRecommandations : maintenir un arbitrage mensuel sur la valeur livrée.\nPartage : synthèse envoyée aux pilotes de stream et au coach produit.",
       "guidee_id": "80c5f5a4-2637-485e-bccb-368436581d0b-befe8589-be70-4ff3-a27b-54b8a7d277a0-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Goal Digger : progression sur la capacité à prioriser."
     },
     {
       "id": "4067fc4d-6b6b-4239-9a68-ad159020be10",
@@ -1387,7 +1467,8 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T14:44:56.205Z",
       "heures": 1.5,
-      "_status": "updated"
+      "_status": "updated",
+      "title": "Alerte Goal Digger : signal critique détecté sur la guidée."
     },
     {
       "id": "db23c3ce-96ce-4d6d-b6ff-dd8f939c68dd",
@@ -1397,7 +1478,8 @@
       "description": "Verbatim Promptzilla : « Ce prompt réduit de moitié notre temps de traitement. »\nContexte : Retour partagé par l'équipe support automatisation.\nAnalyse : Ces éléments nourrissent la stratégie d'industrialisation IA.\nPartage : insights intégrés au suivi Promptzilla.",
       "guidee_id": "184a44f1-fb24-415b-86ab-f65fc618d7c7-37792a47-987e-429a-a969-b5e6d3450308-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Promptzilla : « Ce prompt réduit de moitié notre temps de traitement. »"
     },
     {
       "id": "db743443-656f-4d63-b49d-1487348864ca",
@@ -1408,7 +1490,8 @@
       "heures": 2.5,
       "guidee_id": "f4d4a51b-1b3b-40ab-b1d1-1b91e14c8c82-ea199eb1-9394-47bc-98da-1a1d4615cc8a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Le Cardinal : modéliser avec clarté les structures fonctionnelles prioritaires."
     },
     {
       "id": "8842aac9-e4f6-467b-8aed-610b49107eff",
@@ -1419,7 +1502,8 @@
       "heures": 3,
       "guidee_id": "aaac168c-abeb-4bbf-a075-74c6b36a7d7d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "59337c46-40ec-494c-976e-9a2a9b1e9b5a",
@@ -1429,7 +1513,8 @@
       "description": "Note de cadrage Goal Digger : restitution de la séance pour prioriser.\nFocus : synthèse des objectifs, résultats clés et arbitrages.\nDétails : roadmap de valeur, engagements par équipe et dépendances critiques.\nSuivi : publication dans la boussole Goal Digger.",
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Goal Digger : restitution de la séance pour prioriser."
     },
     {
       "id": "005afa10-9352-48d9-b255-9fb212121111",
@@ -1439,7 +1524,8 @@
       "description": "Alerte Protocop : signal critique détecté sur la guidée.\nRisque : écart entre prototype et capacité d'implémentation.\nPlan d'actions : réalignement UX/tech et plan de découpage incrémental.\nCadre de suivi : revue hebdomadaire des tests utilisateurs et des insights.",
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Protocop : signal critique détecté sur la guidée."
     },
     {
       "id": "b88806bb-cb2e-48c3-a7c2-734bb0b8ae73",
@@ -1450,7 +1536,8 @@
       "heures": 2,
       "guidee_id": "a86ab2aa-36e5-4bc5-89d7-5360a4d8512a-d314fffb-4c1b-488f-b44a-d7bbb2e54425-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Le Cardinal : modéliser avec clarté les structures fonctionnelles prioritaires."
     },
     {
       "id": "13dad5a7-cf42-4fb3-98ca-91bbd6fe3811",
@@ -1461,7 +1548,8 @@
       "heures": 2.5,
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "e7869fa8-1a9d-4360-b1bd-0d2afab3d5df",
@@ -1471,7 +1559,8 @@
       "description": "Avis coach Protocop : progression sur la capacité à prototyper.\nPoints forts : vision tangible du parcours et des micro-interactions.\nRecommandations : capitaliser sur les retours terrain et prioriser les ajustements.\nPartage : prototype partagé dans la galerie Protocop.",
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Protocop : progression sur la capacité à prototyper."
     },
     {
       "id": "cba87478-3f69-4a0a-8d5b-1f4f7707c174",
@@ -1481,7 +1570,8 @@
       "description": "Alerte Protocop : signal critique détecté sur la guidée.\nRisque : écart entre prototype et capacité d'implémentation.\nPlan d'actions : réalignement UX/tech et plan de découpage incrémental.\nCadre de suivi : revue hebdomadaire des tests utilisateurs et des insights.",
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Protocop : signal critique détecté sur la guidée."
     },
     {
       "id": "06ebc357-e89b-425b-af49-d1d232c3c461",
@@ -1491,7 +1581,8 @@
       "description": "Note de cadrage Protocop : restitution de la séance pour prototyper.\nFocus : synthèse des hypothèses testées et des retours utilisateurs.\nDétails : storyboard interactif, backlog d'améliorations et métriques associées.\nSuivi : prochaine mise à jour prévue après les tests terrain.",
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Protocop : restitution de la séance pour prototyper."
     },
     {
       "id": "28105d05-9640-4b4a-9508-33df91c832fe",
@@ -1501,7 +1592,8 @@
       "description": "Avis coach Protocop : progression sur la capacité à prototyper.\nPoints forts : vision tangible du parcours et des micro-interactions.\nRecommandations : capitaliser sur les retours terrain et prioriser les ajustements.\nPartage : prototype partagé dans la galerie Protocop.",
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Protocop : progression sur la capacité à prototyper."
     },
     {
       "id": "81fe8e1d-d031-46d4-aedd-05b57ee5ad0c",
@@ -1512,7 +1604,8 @@
       "heures": 1.5,
       "guidee_id": "006bf5c3-d17e-49c1-9557-02ce60d38d66-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "d8822794-78f5-4728-8f91-81866b667bc7",
@@ -1523,7 +1616,8 @@
       "heures": 1.5,
       "guidee_id": "9e1c58b7-4785-46cb-aae4-d92adf74dcb3-f08d3d50-ce4b-4278-8f09-af72a3003c52-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Le Cardinal : modéliser avec clarté les structures fonctionnelles prioritaires."
     },
     {
       "id": "a5771961-3bdf-42a0-8b02-82898369aa85",
@@ -1534,7 +1628,8 @@
       "heures": 2,
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "137bddb8-007d-4b63-a3b6-21899c9fca53",
@@ -1544,7 +1639,8 @@
       "description": "Note de cadrage Protocop : restitution de la séance pour prototyper.\nFocus : synthèse des hypothèses testées et des retours utilisateurs.\nDétails : storyboard interactif, backlog d'améliorations et métriques associées.\nSuivi : prochaine mise à jour prévue après les tests terrain.",
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Protocop : restitution de la séance pour prototyper."
     },
     {
       "id": "eea93140-4191-4074-9fd9-8d4aff8be951",
@@ -1554,7 +1650,8 @@
       "description": "Avis coach Promptzilla : progression sur la capacité à invoquer.\nPoints forts : cadre de prompting robuste et réplicable.\nRecommandations : documenter les variations efficaces et préparer le monitoring.\nPartage : retours partagés dans la bibliothèque Promptzilla.",
       "guidee_id": "773ec433-a476-48d7-a57d-bb9f10740f25-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Promptzilla : progression sur la capacité à invoquer."
     },
     {
       "id": "ef397b0e-29a1-4006-9eaf-e30e7e344244",
@@ -1564,7 +1661,8 @@
       "description": "Avis coach Promptzilla : progression sur la capacité à invoquer.\nPoints forts : cadre de prompting robuste et réplicable.\nRecommandations : documenter les variations efficaces et préparer le monitoring.\nPartage : retours partagés dans la bibliothèque Promptzilla.",
       "guidee_id": "184a44f1-fb24-415b-86ab-f65fc618d7c7-37792a47-987e-429a-a969-b5e6d3450308-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Promptzilla : progression sur la capacité à invoquer."
     },
     {
       "id": "a48c63b3-6bc5-4a8b-9e6a-4bbcf7ad97b2",
@@ -1574,7 +1672,8 @@
       "description": "Alerte Promptzilla : signal critique détecté sur la guidée.\nRisque : dérive de qualité sur les réponses générées.\nPlan d'actions : renforcement des scénarios de test et calibrage des modèles.\nCadre de suivi : revue quotidienne des métriques IA et ajustement des prompts.",
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
     },
     {
       "id": "6ec6d65d-8e82-4eac-bc31-dbac22e5ab9e",
@@ -1585,7 +1684,8 @@
       "heures": 3,
       "guidee_id": "0d54ec96-3bb8-4eea-812a-acc297c93e67-6d3286b4-39de-453d-accd-00ad3f66a1a5-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Gutenberg : documenter le projet au fil de l'eau et le rendre inspirant."
     },
     {
       "id": "d3d918b9-96c4-4e29-a1ce-f3e4193908d8",
@@ -1595,7 +1695,8 @@
       "description": "Note de cadrage Promptzilla : restitution de la séance pour invoquer.\nFocus : synthèse des cas d'usage IA et des prompts de référence.\nDétails : tableau de variants, critères d'évaluation et responsabilités.\nSuivi : mises à jour consignées dans le laboratoire Promptzilla.",
       "guidee_id": "184a44f1-fb24-415b-86ab-f65fc618d7c7-37792a47-987e-429a-a969-b5e6d3450308-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Promptzilla : restitution de la séance pour invoquer."
     },
     {
       "id": "0a03fa79-8e6d-4b3f-80ed-330685d17342",
@@ -1605,7 +1706,8 @@
       "description": "Avis coach Promptzilla : progression sur la capacité à invoquer.\nPoints forts : cadre de prompting robuste et réplicable.\nRecommandations : documenter les variations efficaces et préparer le monitoring.\nPartage : retours partagés dans la bibliothèque Promptzilla.",
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Promptzilla : progression sur la capacité à invoquer."
     },
     {
       "id": "8f0ba1ff-43dc-4953-af95-92cc852284d0",
@@ -1615,7 +1717,8 @@
       "description": "Note de cadrage Promptzilla : restitution de la séance pour invoquer.\nFocus : synthèse des cas d'usage IA et des prompts de référence.\nDétails : tableau de variants, critères d'évaluation et responsabilités.\nSuivi : mises à jour consignées dans le laboratoire Promptzilla.",
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Promptzilla : restitution de la séance pour invoquer."
     },
     {
       "id": "161ef588-3d01-4c22-b72e-f2c03210dfe4",
@@ -1625,7 +1728,8 @@
       "description": "Alerte Le Cardinal : signal critique détecté sur la guidée.\nRisque : ambigüité sur les liens entre entités clés.\nPlan d'actions : revue des règles de gestion et cadrage des besoins de migration.\nCadre de suivi : checkpoints hebdo sur la mise à jour des schémas fonctionnels.",
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Le Cardinal : signal critique détecté sur la guidée."
     },
     {
       "id": "c5628f81-9e44-4c3a-98f8-cf24ffd4dbbd",
@@ -1636,7 +1740,8 @@
       "heures": 2.5,
       "guidee_id": "29e1902f-0314-410c-8e7e-c1c8926d7268-ea199eb1-9394-47bc-98da-1a1d4615cc8a-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Gutenberg : documenter le projet au fil de l'eau et le rendre inspirant."
     },
     {
       "id": "3f456334-37cd-4fe2-9ff6-f5ffda60bfb0",
@@ -1646,7 +1751,8 @@
       "description": "Avis coach Le Cardinal : progression sur la capacité à modéliser.\nPoints forts : structure de données lisible et orientée impact.\nRecommandations : formaliser les cas limites et documenter les synchronisations.\nPartage : modèle mis à disposition sur l'espace Confluence central.",
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Le Cardinal : progression sur la capacité à modéliser."
     },
     {
       "id": "852bae9a-3c3b-45b1-ba56-6767517aea72",
@@ -1657,7 +1763,8 @@
       "heures": 3,
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "3137835d-02c6-4e73-9d5a-d6dacdcec4d0",
@@ -1667,7 +1774,8 @@
       "description": "Note de cadrage Le Cardinal : restitution de la séance pour modéliser.\nFocus : synthèse des entités, attributs et relations critiques.\nDétails : diagramme métier versionné et impacts sur les produits associés.\nSuivi : mise à jour du glossaire Le Cardinal.",
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Le Cardinal : restitution de la séance pour modéliser."
     },
     {
       "id": "e5ff2f85-356a-4be8-b41b-1fce714fbe1c",
@@ -1678,7 +1786,8 @@
       "heures": 2,
       "guidee_id": "7cb1d4cb-6322-4059-8723-680aa1e106f5-f08d3d50-ce4b-4278-8f09-af72a3003c52-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "8310cd71-9da2-4da9-90e8-1746b4f06f2e",
@@ -1689,7 +1798,8 @@
       "heures": 2.5,
       "guidee_id": "184a44f1-fb24-415b-86ab-f65fc618d7c7-37792a47-987e-429a-a969-b5e6d3450308-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "7519a1d9-f9c0-4e9b-95b4-fd889130bb8f",
@@ -1700,7 +1810,8 @@
       "heures": 1.5,
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "8a84fbfd-9535-4563-880c-bf4426599b8d",
@@ -1711,7 +1822,8 @@
       "heures": 2,
       "guidee_id": "773ec433-a476-48d7-a57d-bb9f10740f25-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "2ac631cb-19bf-4088-acb4-cb04de87868e",
@@ -1723,7 +1835,8 @@
       "guidee_id": "4c962dd1-0c44-473e-99f8-2bb25f3e7210-70cddb51-1299-48c6-86a0-0d64dc5915c3-2",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T12:11:20.017Z",
-      "_status": "updated"
+      "_status": "updated",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "2ee5996b-7534-40af-b2bd-997f018b1a6d",
@@ -1734,7 +1847,8 @@
       "heures": 3,
       "guidee_id": "1f45073e-71ed-4526-a5e0-a37e7cb3a604-6d3286b4-39de-453d-accd-00ad3f66a1a5-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "6e4f3a10-3c48-4491-a753-971afb1f57e6",
@@ -1745,7 +1859,8 @@
       "heures": 2.5,
       "guidee_id": "398ad961-1cb4-4657-9291-86967dd71b01-d314fffb-4c1b-488f-b44a-d7bbb2e54425-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "a57f9940-8516-473f-8144-772724491794",
@@ -1756,7 +1871,8 @@
       "heures": 2.5,
       "guidee_id": "7077d67d-ceea-482f-ae2d-45549f471736-ea199eb1-9394-47bc-98da-1a1d4615cc8a-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "89eb0ff4-2b90-408b-95ba-85c44236af25",
@@ -1767,7 +1883,8 @@
       "heures": 3,
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Le Cardinal : modéliser avec clarté les structures fonctionnelles prioritaires."
     },
     {
       "id": "7068b246-8091-4669-ade5-21bacbf63fb2",
@@ -1778,7 +1895,8 @@
       "heures": 2,
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     },
     {
       "id": "3c824cae-fd82-4208-a8a6-9a44e46c0708",
@@ -1789,7 +1907,8 @@
       "heures": 1.5,
       "guidee_id": "6cc8a72d-aac0-42e9-a179-5974255eb53d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     },
     {
       "id": "c8576602-b215-4968-b6d6-5f3f4517f806",
@@ -1800,7 +1919,8 @@
       "heures": 3,
       "guidee_id": "f4d4a51b-1b3b-40ab-b1d1-1b91e14c8c82-ea199eb1-9394-47bc-98da-1a1d4615cc8a-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Le Cardinal : modéliser avec clarté les structures fonctionnelles prioritaires."
     },
     {
       "id": "f45137b8-f220-4f6a-a92c-5b2af8b05f3a",
@@ -1812,7 +1932,8 @@
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T12:32:32.423Z",
-      "_status": "updated"
+      "_status": "updated",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "4bc30bba-4af0-4451-9757-7eb381a02864",
@@ -1823,7 +1944,8 @@
       "heures": 3,
       "guidee_id": "59054324-735c-46e7-bc88-5d509d9b236c-347a8e7d-f5e5-4681-96f7-77f790557d09-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Gutenberg : documenter le projet au fil de l'eau et le rendre inspirant."
     },
     {
       "id": "1644738c-e03e-4eb8-b29c-2b4cd25f174f",
@@ -1834,7 +1956,8 @@
       "heures": 2,
       "guidee_id": "9e1c58b7-4785-46cb-aae4-d92adf74dcb3-f08d3d50-ce4b-4278-8f09-af72a3003c52-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Le Cardinal : modéliser avec clarté les structures fonctionnelles prioritaires."
     },
     {
       "id": "3c553d84-f29f-41a5-be29-8e9c86276391",
@@ -1845,7 +1968,8 @@
       "heures": 2,
       "guidee_id": "80c5f5a4-2637-485e-bccb-368436581d0b-befe8589-be70-4ff3-a27b-54b8a7d277a0-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "253293f4-f184-43fa-a986-4426f5f533d5",
@@ -1856,7 +1980,8 @@
       "heures": 1.5,
       "guidee_id": "0d54ec96-3bb8-4eea-812a-acc297c93e67-6d3286b4-39de-453d-accd-00ad3f66a1a5-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Gutenberg : documenter le projet au fil de l'eau et le rendre inspirant."
     },
     {
       "id": "51f57467-7438-4693-933a-c1f7f6d4784a",
@@ -1867,7 +1992,8 @@
       "heures": 1.5,
       "guidee_id": "aaac168c-abeb-4bbf-a075-74c6b36a7d7d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "9db0d2a0-fd24-4752-9e0d-2b42d25ac13f",
@@ -1878,7 +2004,8 @@
       "heures": 3,
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "be44a622-0a1b-4128-8a7c-9c939c8e123c",
@@ -1889,7 +2016,8 @@
       "heures": 2.5,
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "45482154-5af4-4aee-be48-87e7a23460ff",
@@ -1900,7 +2028,8 @@
       "heures": 2,
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "80e0f99c-a2ad-4860-9b30-9c850fee9275",
@@ -1911,7 +2040,8 @@
       "heures": 1.5,
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "b02e0a56-57a9-44ac-971a-25f51cdc3baf",
@@ -1922,7 +2052,8 @@
       "heures": 3,
       "guidee_id": "7077d67d-ceea-482f-ae2d-45549f471736-ea199eb1-9394-47bc-98da-1a1d4615cc8a-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Soulgorithm : co-imaginer des scénarios IA à forte valeur utilisateur."
     },
     {
       "id": "921b2b23-ef98-4a38-a67c-ea4a94a056eb",
@@ -1933,7 +2064,8 @@
       "heures": 3,
       "guidee_id": "184a44f1-fb24-415b-86ab-f65fc618d7c7-37792a47-987e-429a-a969-b5e6d3450308-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "c9cdd54a-cd45-48ac-ae69-8cbfcc382259",
@@ -1944,7 +2076,8 @@
       "heures": 2.5,
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     },
     {
       "id": "3dc5c528-7d5e-4d7f-ab45-4fd1cde9d138",
@@ -1955,7 +2088,8 @@
       "heures": 2.5,
       "guidee_id": "773ec433-a476-48d7-a57d-bb9f10740f25-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "7ecfe64b-4c22-47eb-bc46-de4def2caa00",
@@ -1966,7 +2100,8 @@
       "heures": 1.5,
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Le Cardinal : modéliser avec clarté les structures fonctionnelles prioritaires."
     },
     {
       "id": "ce1907f1-f6bd-430e-8cab-58b508f2870d",
@@ -1977,7 +2112,8 @@
       "heures": 3,
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "946a3df8-c0b3-4ce8-a4a5-5f6d03f7aa8f",
@@ -1988,7 +2124,8 @@
       "heures": 2,
       "guidee_id": "aaac168c-abeb-4bbf-a075-74c6b36a7d7d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Goal Digger : creuser les objectifs pour prioriser la roadmap d'impact."
     },
     {
       "id": "4ed2a03b-631b-457a-ac63-71193e53d54e",
@@ -2000,7 +2137,8 @@
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T12:38:24.597Z",
-      "_status": "updated"
+      "_status": "updated",
+      "title": "Atelier Protocop : prototyper vite et bien pour donner corps aux idées."
     },
     {
       "id": "6278b236-b6ec-4d4d-9784-4494d01b661f",
@@ -2012,7 +2150,8 @@
       "guidee_id": "59054324-735c-46e7-bc88-5d509d9b236c-347a8e7d-f5e5-4681-96f7-77f790557d09-2",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T12:32:43.246Z",
-      "_status": "updated"
+      "_status": "updated",
+      "title": "Atelier Gutenberg : documenter le projet au fil de l'eau et le rendre inspirant."
     },
     {
       "id": "78e8b585-d524-4216-83f9-5b9b2fb8cfa3",
@@ -2023,7 +2162,8 @@
       "heures": null,
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "57aab446-c17a-43d3-ba02-aed6c34429be",
@@ -2033,7 +2173,8 @@
       "description": "Note de cadrage Protocop : restitution de la séance pour prototyper.\nFocus : synthèse des hypothèses testées et des retours utilisateurs.\nDétails : storyboard interactif, backlog d'améliorations et métriques associées.\nSuivi : prochaine mise à jour prévue après les tests terrain.",
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Protocop : restitution de la séance pour prototyper."
     },
     {
       "id": "e6bc3a6b-8145-4c34-aa31-54bcec7f46e5",
@@ -2043,7 +2184,8 @@
       "description": "Avis coach Protocop : progression sur la capacité à prototyper.\nPoints forts : vision tangible du parcours et des micro-interactions.\nRecommandations : capitaliser sur les retours terrain et prioriser les ajustements.\nPartage : prototype partagé dans la galerie Protocop.",
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Protocop : progression sur la capacité à prototyper."
     },
     {
       "id": "6a9cadeb-85a5-4b84-8555-f33546a727e5",
@@ -2053,7 +2195,8 @@
       "description": "Avis coach Soulgorithm : progression sur la capacité à imaginer.\nPoints forts : vision IA alignée avec les irritants voyageurs.\nRecommandations : documenter les preuves d'impact et cadrer les risques algorithmiques.\nPartage : insights diffusés au sponsor innovation.",
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Soulgorithm : progression sur la capacité à imaginer."
     },
     {
       "id": "b203e1c4-14f3-4cf1-b534-b27ca14537b5",
@@ -2063,7 +2206,8 @@
       "description": "Verbatim Protocop : « Le prototype nous donne envie de passer à la prod. »\nContexte : Mot partagé par un utilisateur clé lors du test rapide.\nAnalyse : Ces retours alimentent la feuille de route des évolutions priorisées.\nPartage : insights intégrés au suivi Protocop.",
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Protocop : « Le prototype nous donne envie de passer à la prod. »"
     },
     {
       "id": "4f2239f2-fef8-455d-ba03-2b9914b85c4f",
@@ -2073,7 +2217,8 @@
       "description": "Alerte Protocop : signal critique détecté sur la guidée.\nRisque : écart entre prototype et capacité d'implémentation.\nPlan d'actions : réalignement UX/tech et plan de découpage incrémental.\nCadre de suivi : revue hebdomadaire des tests utilisateurs et des insights.",
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Protocop : signal critique détecté sur la guidée."
     },
     {
       "id": "ea6b71c7-aa65-4bee-a246-212e11a0c18c",
@@ -2083,7 +2228,8 @@
       "description": "Verbatim Soulgorithm : « L'IA doit m'aider exactement au moment où je décide de réserver. »\nContexte : Point de vue récurrent des usagers testés pendant l'atelier IA.\nAnalyse : Ces signaux nourrissent les prochains tests d'acceptabilité.\nPartage : insights intégrés au suivi Soulgorithm.",
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Soulgorithm : « L'IA doit m'aider exactement au moment où je décide de réserver. »"
     },
     {
       "id": "4629eac2-0d77-4103-9363-d4093860cda7",
@@ -2093,7 +2239,8 @@
       "description": "Note de cadrage Protocop : restitution de la séance pour prototyper.\nFocus : synthèse des hypothèses testées et des retours utilisateurs.\nDétails : storyboard interactif, backlog d'améliorations et métriques associées.\nSuivi : prochaine mise à jour prévue après les tests terrain.",
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Protocop : restitution de la séance pour prototyper."
     },
     {
       "id": "4581ae08-e819-4e97-824d-256b7427b7c7",
@@ -2103,7 +2250,8 @@
       "description": "Verbatim Soulgorithm : « L'IA doit m'aider exactement au moment où je décide de réserver. »\nContexte : Point de vue récurrent des usagers testés pendant l'atelier IA.\nAnalyse : Ces signaux nourrissent les prochains tests d'acceptabilité.\nPartage : insights intégrés au suivi Soulgorithm.",
       "guidee_id": "7077d67d-ceea-482f-ae2d-45549f471736-ea199eb1-9394-47bc-98da-1a1d4615cc8a-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Soulgorithm : « L'IA doit m'aider exactement au moment où je décide de réserver. »"
     },
     {
       "id": "d2cddfaa-a500-426a-bf48-302a1ea533e6",
@@ -2113,7 +2261,8 @@
       "description": "Verbatim Promptzilla : « Ce prompt réduit de moitié notre temps de traitement. »\nContexte : Retour partagé par l'équipe support automatisation.\nAnalyse : Ces éléments nourrissent la stratégie d'industrialisation IA.\nPartage : insights intégrés au suivi Promptzilla.",
       "guidee_id": "184a44f1-fb24-415b-86ab-f65fc618d7c7-37792a47-987e-429a-a969-b5e6d3450308-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Promptzilla : « Ce prompt réduit de moitié notre temps de traitement. »"
     },
     {
       "id": "aa693aff-c3c2-47aa-ab6c-ff5a68e0b6ee",
@@ -2124,7 +2273,8 @@
       "heures": null,
       "guidee_id": "773ec433-a476-48d7-a57d-bb9f10740f25-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Promptzilla : invoquer l'IA avec précision et créativité."
     },
     {
       "id": "af661a80-e179-483e-bb66-eca5d33d1b5c",
@@ -2134,7 +2284,8 @@
       "description": "Alerte Soulgorithm : signal critique détecté sur la guidée.\nRisque : perdre la cohérence utilisateur entre cas d'usages IA.\nPlan d'actions : priorisation des expériences IA et plan de tests terrain.\nCadre de suivi : revue hebdomadaire des signaux IA et du backlog expérimental.",
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée."
     },
     {
       "id": "88fc28e1-e139-46cb-b6fe-331bbacdef5f",
@@ -2144,7 +2295,8 @@
       "description": "Verbatim Pôlène : « Quand la donnée arrive à temps, la promesse service est évidente. »\nContexte : Observation collectée auprès des opérateurs support.\nAnalyse : Ce besoin guide le plan de fiabilisation des flux critiques.\nPartage : insights intégrés au suivi Pôlène.",
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Pôlène : « Quand la donnée arrive à temps, la promesse service est évidente. »"
     },
     {
       "id": "f001759a-657b-4113-a7a6-e54220d6cc8c",
@@ -2154,7 +2306,8 @@
       "description": "Note de cadrage Soulgorithm : restitution de la séance pour imaginer.\nFocus : synthèse des hypothèses IA et des scénarios à explorer.\nDétails : storyboard cible, critères de succès et ressources nécessaires.\nSuivi : mise à jour automatique dans l'espace Soulgorithm.",
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Soulgorithm : restitution de la séance pour imaginer."
     },
     {
       "id": "06f73635-b52e-48e1-8116-1a991a8cdc39",
@@ -2164,7 +2317,8 @@
       "description": "Verbatim Le Cardinal : « Ce schéma clarifie enfin qui est responsable de chaque étape. »\nContexte : Retour partagé par l'équipe technique lors de la revue modèle.\nAnalyse : Ces enseignements alimentent la stratégie de migration de données.\nPartage : insights intégrés au suivi Le Cardinal.",
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Le Cardinal : « Ce schéma clarifie enfin qui est responsable de chaque étape. »"
     },
     {
       "id": "db0a2f62-a5b9-49c8-883f-61fa8afc074a",
@@ -2174,7 +2328,8 @@
       "description": "Avis coach Soulgorithm : progression sur la capacité à imaginer.\nPoints forts : vision IA alignée avec les irritants voyageurs.\nRecommandations : documenter les preuves d'impact et cadrer les risques algorithmiques.\nPartage : insights diffusés au sponsor innovation.",
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Soulgorithm : progression sur la capacité à imaginer."
     },
     {
       "id": "d8fab6dc-137d-4626-8964-1687b1026503",
@@ -2184,7 +2339,8 @@
       "description": "Alerte Soulgorithm : signal critique détecté sur la guidée.\nRisque : perdre la cohérence utilisateur entre cas d'usages IA.\nPlan d'actions : priorisation des expériences IA et plan de tests terrain.\nCadre de suivi : revue hebdomadaire des signaux IA et du backlog expérimental.",
       "guidee_id": "7077d67d-ceea-482f-ae2d-45549f471736-ea199eb1-9394-47bc-98da-1a1d4615cc8a-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée."
     },
     {
       "id": "45a454c7-5772-42de-b502-85d6751830c3",
@@ -2194,7 +2350,8 @@
       "description": "Alerte Promptzilla : signal critique détecté sur la guidée.\nRisque : dérive de qualité sur les réponses générées.\nPlan d'actions : renforcement des scénarios de test et calibrage des modèles.\nCadre de suivi : revue quotidienne des métriques IA et ajustement des prompts.",
       "guidee_id": "184a44f1-fb24-415b-86ab-f65fc618d7c7-37792a47-987e-429a-a969-b5e6d3450308-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
     },
     {
       "id": "ae1a46ee-cb10-46e0-8c91-d3b7a4f8b4e0",
@@ -2204,7 +2361,8 @@
       "description": "Verbatim Goal Digger : « Nous savons enfin pourquoi ce sprint compte vraiment. »\nContexte : Retour collecté pendant le comité d'arbitrage.\nAnalyse : Ce signal valide la trajectoire de priorisation établie.\nPartage : insights intégrés au suivi Goal Digger.",
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Goal Digger : « Nous savons enfin pourquoi ce sprint compte vraiment. »"
     },
     {
       "id": "bb17ac69-d6eb-4e68-aa59-f1463cce6232",
@@ -2214,7 +2372,8 @@
       "description": "Alerte Pôlène : signal critique détecté sur la guidée.\nRisque : rupture de parcours liée à un flux non fiabilisé.\nPlan d'actions : revue des dépendances API et plan de mitigation avec les partenaires.\nCadre de suivi : suivi quotidien des intégrations critiques et tests de continuité.",
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Pôlène : signal critique détecté sur la guidée."
     },
     {
       "id": "3a3b1a25-4cc7-4043-ae3b-c7557208dc53",
@@ -2224,7 +2383,8 @@
       "description": "Verbatim Goal Digger : « Nous savons enfin pourquoi ce sprint compte vraiment. »\nContexte : Retour collecté pendant le comité d'arbitrage.\nAnalyse : Ce signal valide la trajectoire de priorisation établie.\nPartage : insights intégrés au suivi Goal Digger.",
       "guidee_id": "aaac168c-abeb-4bbf-a075-74c6b36a7d7d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Goal Digger : « Nous savons enfin pourquoi ce sprint compte vraiment. »"
     },
     {
       "id": "8ad906fb-ed81-4d0b-b6a6-66842493035e",
@@ -2234,7 +2394,8 @@
       "description": "Verbatim Protocop : « Le prototype nous donne envie de passer à la prod. »\nContexte : Mot partagé par un utilisateur clé lors du test rapide.\nAnalyse : Ces retours alimentent la feuille de route des évolutions priorisées.\nPartage : insights intégrés au suivi Protocop.",
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Protocop : « Le prototype nous donne envie de passer à la prod. »"
     },
     {
       "id": "39407376-69c8-42d2-a337-795423090912",
@@ -2244,7 +2405,8 @@
       "description": "Note de cadrage Soulgorithm : restitution de la séance pour imaginer.\nFocus : synthèse des hypothèses IA et des scénarios à explorer.\nDétails : storyboard cible, critères de succès et ressources nécessaires.\nSuivi : mise à jour automatique dans l'espace Soulgorithm.",
       "guidee_id": "7077d67d-ceea-482f-ae2d-45549f471736-ea199eb1-9394-47bc-98da-1a1d4615cc8a-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Soulgorithm : restitution de la séance pour imaginer."
     },
     {
       "id": "75a0f1bb-ff99-43df-914d-3b74d02dc15a",
@@ -2254,7 +2416,8 @@
       "description": "Note de cadrage Promptzilla : restitution de la séance pour invoquer.\nFocus : synthèse des cas d'usage IA et des prompts de référence.\nDétails : tableau de variants, critères d'évaluation et responsabilités.\nSuivi : mises à jour consignées dans le laboratoire Promptzilla.",
       "guidee_id": "184a44f1-fb24-415b-86ab-f65fc618d7c7-37792a47-987e-429a-a969-b5e6d3450308-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Promptzilla : restitution de la séance pour invoquer."
     },
     {
       "id": "62b8b97e-1d3e-40d1-8e55-44d587f2efb7",
@@ -2264,7 +2427,8 @@
       "description": "Alerte Le Cardinal : signal critique détecté sur la guidée.\nRisque : ambigüité sur les liens entre entités clés.\nPlan d'actions : revue des règles de gestion et cadrage des besoins de migration.\nCadre de suivi : checkpoints hebdo sur la mise à jour des schémas fonctionnels.",
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Le Cardinal : signal critique détecté sur la guidée."
     },
     {
       "id": "ecdcd280-d480-4d6b-8e00-dbc4eb034885",
@@ -2274,7 +2438,8 @@
       "description": "Verbatim Promptzilla : « Ce prompt réduit de moitié notre temps de traitement. »\nContexte : Retour partagé par l'équipe support automatisation.\nAnalyse : Ces éléments nourrissent la stratégie d'industrialisation IA.\nPartage : insights intégrés au suivi Promptzilla.",
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Promptzilla : « Ce prompt réduit de moitié notre temps de traitement. »"
     },
     {
       "id": "4c8c63cf-b87f-4f3c-ae78-a052dd33cb68",
@@ -2284,7 +2449,8 @@
       "description": "Note de cadrage Pôlène : restitution de la séance pour connecter.\nFocus : synthèse des flux clés et de leur exposition produit.\nDétails : diagramme d'écosystème, backlog d'événements et priorités techniques.\nSuivi : mise à jour dans la base Pôlène pour diffusion aux parties prenantes.",
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Pôlène : restitution de la séance pour connecter."
     },
     {
       "id": "5b094c4e-c3d3-4e80-8687-b5abf65478fa",
@@ -2294,7 +2460,8 @@
       "description": "Avis coach Soulgorithm : progression sur la capacité à imaginer.\nPoints forts : vision IA alignée avec les irritants voyageurs.\nRecommandations : documenter les preuves d'impact et cadrer les risques algorithmiques.\nPartage : insights diffusés au sponsor innovation.",
       "guidee_id": "7077d67d-ceea-482f-ae2d-45549f471736-ea199eb1-9394-47bc-98da-1a1d4615cc8a-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Soulgorithm : progression sur la capacité à imaginer."
     },
     {
       "id": "204ecd61-5794-40e3-b540-55e5891744ca",
@@ -2304,7 +2471,8 @@
       "description": "Avis coach Promptzilla : progression sur la capacité à invoquer.\nPoints forts : cadre de prompting robuste et réplicable.\nRecommandations : documenter les variations efficaces et préparer le monitoring.\nPartage : retours partagés dans la bibliothèque Promptzilla.",
       "guidee_id": "184a44f1-fb24-415b-86ab-f65fc618d7c7-37792a47-987e-429a-a969-b5e6d3450308-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Promptzilla : progression sur la capacité à invoquer."
     },
     {
       "id": "47264de1-3d78-4895-aac7-25efe4a31dd7",
@@ -2314,7 +2482,8 @@
       "description": "Alerte Goal Digger : signal critique détecté sur la guidée.\nRisque : dispersion des efforts sur des objectifs secondaires.\nPlan d'actions : resynchronisation des jalons et re-cadrage des critères d'arbitrage.\nCadre de suivi : rituel hebdo de suivi des OKR et des arbitrages de backlog.",
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Goal Digger : signal critique détecté sur la guidée."
     },
     {
       "id": "cb830fea-5691-4021-a8da-1f5e98830a6d",
@@ -2324,7 +2493,8 @@
       "description": "Verbatim Promptzilla : « Ce prompt réduit de moitié notre temps de traitement. »\nContexte : Retour partagé par l'équipe support automatisation.\nAnalyse : Ces éléments nourrissent la stratégie d'industrialisation IA.\nPartage : insights intégrés au suivi Promptzilla.",
       "guidee_id": "773ec433-a476-48d7-a57d-bb9f10740f25-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Promptzilla : « Ce prompt réduit de moitié notre temps de traitement. »"
     },
     {
       "id": "0906e7bd-6171-427f-a6d0-fc0982cd42ec",
@@ -2334,7 +2504,8 @@
       "description": "Avis coach Pôlène : progression sur la capacité à connecter.\nPoints forts : vision claire des points de contact data clients.\nRecommandations : sécuriser la qualité des flux et clarifier les contrats de service.\nPartage : compte-rendu diffusé aux équipes data et produit.",
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Pôlène : progression sur la capacité à connecter."
     },
     {
       "id": "8f1a32c0-d59a-4170-b9fd-e265a5ff4d65",
@@ -2344,7 +2515,8 @@
       "description": "Alerte Goal Digger : signal critique détecté sur la guidée.\nRisque : dispersion des efforts sur des objectifs secondaires.\nPlan d'actions : resynchronisation des jalons et re-cadrage des critères d'arbitrage.\nCadre de suivi : rituel hebdo de suivi des OKR et des arbitrages de backlog.",
       "guidee_id": "aaac168c-abeb-4bbf-a075-74c6b36a7d7d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Goal Digger : signal critique détecté sur la guidée."
     },
     {
       "id": "c68b7b07-a109-43c7-b875-e90e45aa5083",
@@ -2354,7 +2526,8 @@
       "description": "Note de cadrage Le Cardinal : restitution de la séance pour modéliser.\nFocus : synthèse des entités, attributs et relations critiques.\nDétails : diagramme métier versionné et impacts sur les produits associés.\nSuivi : mise à jour du glossaire Le Cardinal.",
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Le Cardinal : restitution de la séance pour modéliser."
     },
     {
       "id": "fd3d434a-d540-4a34-a4ec-edf718cc6e4f",
@@ -2364,7 +2537,8 @@
       "description": "Alerte Protocop : signal critique détecté sur la guidée.\nRisque : écart entre prototype et capacité d'implémentation.\nPlan d'actions : réalignement UX/tech et plan de découpage incrémental.\nCadre de suivi : revue hebdomadaire des tests utilisateurs et des insights.",
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Protocop : signal critique détecté sur la guidée."
     },
     {
       "id": "36c074bf-eb38-4bae-8157-ef4f4e4a885f",
@@ -2374,7 +2548,8 @@
       "description": "Verbatim Gutenberg : « La doc raconte enfin ce qu'on vit sur le terrain. »\nContexte : Témoignage d'une nouvelle recrue lors du point d'onboarding.\nAnalyse : Ces retours confirment la pertinence du format éditorial choisi.\nPartage : insights intégrés au suivi Gutenberg.",
       "guidee_id": "59054324-735c-46e7-bc88-5d509d9b236c-347a8e7d-f5e5-4681-96f7-77f790557d09-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Verbatim Gutenberg : « La doc raconte enfin ce qu'on vit sur le terrain. »"
     },
     {
       "id": "84f0360f-f5a3-4734-83fb-02f1260bceb1",
@@ -2384,7 +2559,8 @@
       "description": "Note de cadrage Goal Digger : restitution de la séance pour prioriser.\nFocus : synthèse des objectifs, résultats clés et arbitrages.\nDétails : roadmap de valeur, engagements par équipe et dépendances critiques.\nSuivi : publication dans la boussole Goal Digger.",
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Goal Digger : restitution de la séance pour prioriser."
     },
     {
       "id": "f8f53566-672c-40bc-ba0c-e97c0bc50f73",
@@ -2394,7 +2570,8 @@
       "description": "Avis coach Le Cardinal : progression sur la capacité à modéliser.\nPoints forts : structure de données lisible et orientée impact.\nRecommandations : formaliser les cas limites et documenter les synchronisations.\nPartage : modèle mis à disposition sur l'espace Confluence central.",
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Le Cardinal : progression sur la capacité à modéliser."
     },
     {
       "id": "9027e0ef-a710-4f4c-bdd7-8644aa2affec",
@@ -2404,7 +2581,8 @@
       "description": "Alerte Promptzilla : signal critique détecté sur la guidée.\nRisque : dérive de qualité sur les réponses générées.\nPlan d'actions : renforcement des scénarios de test et calibrage des modèles.\nCadre de suivi : revue quotidienne des métriques IA et ajustement des prompts.",
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
     },
     {
       "id": "2adea123-c61d-4413-9031-4d6a9cb34e42",
@@ -2414,7 +2592,8 @@
       "description": "Note de cadrage Goal Digger : restitution de la séance pour prioriser.\nFocus : synthèse des objectifs, résultats clés et arbitrages.\nDétails : roadmap de valeur, engagements par équipe et dépendances critiques.\nSuivi : publication dans la boussole Goal Digger.",
       "guidee_id": "aaac168c-abeb-4bbf-a075-74c6b36a7d7d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Goal Digger : restitution de la séance pour prioriser."
     },
     {
       "id": "781eeef1-5f44-44e7-b34d-82020de19ff6",
@@ -2424,7 +2603,8 @@
       "description": "Avis coach Goal Digger : progression sur la capacité à prioriser.\nPoints forts : vision alignée des objectifs et métriques d'impact.\nRecommandations : maintenir un arbitrage mensuel sur la valeur livrée.\nPartage : synthèse envoyée aux pilotes de stream et au coach produit.",
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Goal Digger : progression sur la capacité à prioriser."
     },
     {
       "id": "fc2fd7d4-af29-43a5-98ba-e145e502392b",
@@ -2434,7 +2614,8 @@
       "description": "Alerte Promptzilla : signal critique détecté sur la guidée.\nRisque : dérive de qualité sur les réponses générées.\nPlan d'actions : renforcement des scénarios de test et calibrage des modèles.\nCadre de suivi : revue quotidienne des métriques IA et ajustement des prompts.",
       "guidee_id": "773ec433-a476-48d7-a57d-bb9f10740f25-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
     },
     {
       "id": "486ca1e3-9af2-4b03-bc11-e4903581991d",
@@ -2444,7 +2625,8 @@
       "description": "Note de cadrage Protocop : restitution de la séance pour prototyper.\nFocus : synthèse des hypothèses testées et des retours utilisateurs.\nDétails : storyboard interactif, backlog d'améliorations et métriques associées.\nSuivi : prochaine mise à jour prévue après les tests terrain.",
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Protocop : restitution de la séance pour prototyper."
     },
     {
       "id": "6a064ff5-5e78-4171-ac42-45d167aef2a2",
@@ -2455,7 +2637,8 @@
       "heures": null,
       "guidee_id": "59054324-735c-46e7-bc88-5d509d9b236c-347a8e7d-f5e5-4681-96f7-77f790557d09-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Atelier Gutenberg : documenter le projet au fil de l'eau et le rendre inspirant."
     },
     {
       "id": "d428c331-26b5-44cb-b0a5-83ca337cf255",
@@ -2465,7 +2648,8 @@
       "description": "Avis coach Goal Digger : progression sur la capacité à prioriser.\nPoints forts : vision alignée des objectifs et métriques d'impact.\nRecommandations : maintenir un arbitrage mensuel sur la valeur livrée.\nPartage : synthèse envoyée aux pilotes de stream et au coach produit.",
       "guidee_id": "aaac168c-abeb-4bbf-a075-74c6b36a7d7d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Goal Digger : progression sur la capacité à prioriser."
     },
     {
       "id": "57b4b05a-cd59-4f43-8f6a-b58671906d3c",
@@ -2475,7 +2659,8 @@
       "description": "Note de cadrage Promptzilla : restitution de la séance pour invoquer.\nFocus : synthèse des cas d'usage IA et des prompts de référence.\nDétails : tableau de variants, critères d'évaluation et responsabilités.\nSuivi : mises à jour consignées dans le laboratoire Promptzilla.",
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Promptzilla : restitution de la séance pour invoquer."
     },
     {
       "id": "bb3cbdc4-5628-4f53-acd3-0de5d6a16528",
@@ -2485,7 +2670,8 @@
       "description": "Avis coach Protocop : progression sur la capacité à prototyper.\nPoints forts : vision tangible du parcours et des micro-interactions.\nRecommandations : capitaliser sur les retours terrain et prioriser les ajustements.\nPartage : prototype partagé dans la galerie Protocop.",
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Protocop : progression sur la capacité à prototyper."
     },
     {
       "id": "cd9254f6-9135-480d-a644-51a450446707",
@@ -2495,7 +2681,8 @@
       "description": "Alerte Gutenberg : signal critique détecté sur la guidée.\nRisque : perte de mémoire projet sur les décisions clés.\nPlan d'actions : plan de documentation continue et rituels de revue.\nCadre de suivi : revue hebdomadaire des contenus et mise à jour des sources.",
       "guidee_id": "59054324-735c-46e7-bc88-5d509d9b236c-347a8e7d-f5e5-4681-96f7-77f790557d09-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Alerte Gutenberg : signal critique détecté sur la guidée."
     },
     {
       "id": "5543d9a7-a514-4f49-8f6e-d743679b5d0e",
@@ -2505,7 +2692,8 @@
       "description": "Note de cadrage Promptzilla : restitution de la séance pour invoquer.\nFocus : synthèse des cas d'usage IA et des prompts de référence.\nDétails : tableau de variants, critères d'évaluation et responsabilités.\nSuivi : mises à jour consignées dans le laboratoire Promptzilla.",
       "guidee_id": "773ec433-a476-48d7-a57d-bb9f10740f25-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Promptzilla : restitution de la séance pour invoquer."
     },
     {
       "id": "e064be45-f939-4fe1-98b5-c4096c230fb4",
@@ -2515,7 +2703,8 @@
       "description": "Avis coach Promptzilla : progression sur la capacité à invoquer.\nPoints forts : cadre de prompting robuste et réplicable.\nRecommandations : documenter les variations efficaces et préparer le monitoring.\nPartage : retours partagés dans la bibliothèque Promptzilla.",
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Promptzilla : progression sur la capacité à invoquer."
     },
     {
       "id": "8a1eda32-4c29-4eba-853d-bf0a10133a86",
@@ -2525,7 +2714,8 @@
       "description": "Avis coach Promptzilla : progression sur la capacité à invoquer.\nPoints forts : cadre de prompting robuste et réplicable.\nRecommandations : documenter les variations efficaces et préparer le monitoring.\nPartage : retours partagés dans la bibliothèque Promptzilla.",
       "guidee_id": "773ec433-a476-48d7-a57d-bb9f10740f25-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Promptzilla : progression sur la capacité à invoquer."
     },
     {
       "id": "94745c45-8a93-4c6d-9bb0-b30274d14c82",
@@ -2535,7 +2725,8 @@
       "description": "Note de cadrage Gutenberg : restitution de la séance pour documenter.\nFocus : synthèse éditoriale des décisions et des insights.\nDétails : plan de publication, liens ressources et backlog de contenus.\nSuivi : mise à jour dans l'atelier Gutenberg.",
       "guidee_id": "59054324-735c-46e7-bc88-5d509d9b236c-347a8e7d-f5e5-4681-96f7-77f790557d09-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Note de cadrage Gutenberg : restitution de la séance pour documenter."
     },
     {
       "id": "04175c72-8398-442d-af85-33ba5c5a232e",
@@ -2545,7 +2736,8 @@
       "description": "Avis coach Gutenberg : progression sur la capacité à documenter.\nPoints forts : histoire produit vivante et accessible.\nRecommandations : maintenir la fraîcheur des contenus et clarifier les points d'entrée.\nPartage : newsletter projet envoyée aux contributeurs.",
       "guidee_id": "59054324-735c-46e7-bc88-5d509d9b236c-347a8e7d-f5e5-4681-96f7-77f790557d09-2",
       "created_at": "2025-10-21T08:47:54Z",
-      "updated_at": "2025-10-21T08:47:54Z"
+      "updated_at": "2025-10-21T08:47:54Z",
+      "title": "Avis coach Gutenberg : progression sur la capacité à documenter."
     },
     {
       "id": "6cda20a8-0ae9-4ac1-8cd2-567bd54b5682",
@@ -2557,7 +2749,8 @@
       "guidee_id": "8d1c5168-cbd0-4bcc-bb1c-a117b626c821-70cddb51-1299-48c6-86a0-0d64dc5915c3-0",
       "created_at": "2025-10-21T12:10:56.983Z",
       "updated_at": "2025-10-21T12:32:17.884Z",
-      "_status": "updated"
+      "_status": "updated",
+      "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
     }
   ],
   "thematiques": [
