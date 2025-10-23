@@ -1999,8 +1999,9 @@ function renderReporting(){
       const beneficiaries=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
       const participants=buildParticipants(a.consultant_id,consultant?.nom||'',beneficiaries);
       const descriptionPlain=formatReportPlainText(a.description);
-      const descriptionLines=descriptionPlain==='—'?[]:descriptionPlain.split('
-').map(line=>line.trim()).filter(Boolean);
+      const descriptionLines=descriptionPlain==='—'
+        ? []
+        : descriptionPlain.split('\n').map(line=>line.trim()).filter(Boolean);
       const guidee=guideeById(a.guidee_id);
       return {
         participants,
@@ -2029,8 +2030,9 @@ function renderReporting(){
       const beneficiaries=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
       const participants=buildParticipants(a.consultant_id,consultant?.nom||'',beneficiaries);
       const descriptionPlain=formatReportPlainText(a.description);
-      const descriptionLines=descriptionPlain==='—'?[]:descriptionPlain.split('
-').map(line=>line.trim()).filter(Boolean);
+      const descriptionLines=descriptionPlain==='—'
+        ? []
+        : descriptionPlain.split('\n').map(line=>line.trim()).filter(Boolean);
       const guidee=guideeById(a.guidee_id);
       return {
         participants,
