@@ -507,9 +507,6 @@ function formatActivityDate(dateStr,{selected=false}={}){
   const diff=daysDiff(date,today);
   const params=(store?.params)||DEFAULT_PARAMS;
   const recentDays=Math.max(1,Number(params.activites_recent_jours)||30);
-  if(selected){
-    return date.toLocaleDateString('fr-FR');
-  }
   if(diff===0) return "Aujourd'hui";
   if(diff===-1) return 'Hier';
   if(diff===-2) return 'Avant-hier';
@@ -1543,7 +1540,7 @@ function renderGuideeTimeline(){
         id:`start-${g.id}`,
         type:'start',
         date:startDate,
-        icon:'',
+        icon:'🧭',
         color:defaultColor,
         guidee:g,
         consultant:consultant,
@@ -1572,7 +1569,7 @@ function renderGuideeTimeline(){
         id:`end-${g.id}`,
         type:'end',
         date:endDate,
-        icon:'',
+        icon:'🧭',
         color:defaultColor,
         guidee:g,
         consultant:consultant,
@@ -1655,11 +1652,13 @@ function renderGuideeTimeline(){
     const g=ev.guidee;
     const consultant=ev.consultant;
     const item=document.createElement('div');
+    const isMilestone=ev.type==='start' || ev.type==='end';
     const classes=['timeline-item', ev.status];
     const alignRight=ev.type==='activity' && ev.activity?.type==='ACTION_ST_BERNARD';
     if(alignRight) classes.push('timeline-item-alt');
     const isSelected=ev.id===state.guidees.selectedEventId;
     if(isSelected) classes.push('selected');
+    if(isMilestone) classes.push('timeline-item-milestone');
     item.className=classes.join(' ');
     item.dataset.eventId=ev.id;
     const color=ev.color||'var(--accent)';
@@ -1667,6 +1666,11 @@ function renderGuideeTimeline(){
     item.style.setProperty('--selection-color','var(--accent)');
     item.style.setProperty('--timeline-border','var(--border)');
     item.style.setProperty('--timeline-marker-border','var(--border)');
+    if(isMilestone){
+      item.style.setProperty('--selection-color','#fff');
+      item.style.setProperty('--timeline-border','var(--accent)');
+      item.style.setProperty('--timeline-marker-border','var(--accent)');
+    }
     const consultantName=esc(consultant?.nom||'—');
     const friendlyDate=formatActivityDate(ev.date,{selected:isSelected});
     const friendlyDateHtml=esc(friendlyDate);
@@ -1714,7 +1718,7 @@ function renderGuideeTimeline(){
       const gid=ev.guidee?.id||'';
       const guideeLabel=esc(ev.guidee?.nom||'Sans titre');
       const filterAttr=gid?` data-filter-guidee="${gid}"`:'';
-      bodyHtml=`<div class="timeline-text clamp-3">${verb} de la guidée 🧭 <span class="click-span"${filterAttr}><b>${guideeLabel}</b></span></div>`;
+      bodyHtml=`<div class="timeline-text clamp-3">${verb} de la guidée <span class="click-span"${filterAttr}><b>${guideeLabel}</b></span></div>`;
     }
     const markerIcon=isSelected?'✔️':esc(ev.icon);
     item.innerHTML=`<div class="timeline-marker">${markerIcon}</div><div class="timeline-body">${metaHtml}${bodyHtml}</div>`;
@@ -1850,7 +1854,9 @@ function renderReporting(){
   const consultants=[...(store.consultants||[])].sort((a,b)=>(a.nom||'').localeCompare(b.nom||'', 'fr',{sensitivity:'base'}));
   const formatTitleDate=(title,date)=>{
     const safeTitle=(String(title||'').trim()||'Sans titre');
-    return `${safeTitle} (${formatReportDate(date||'')})`;
+    const formattedDate=formatReportDate(date||'');
+    const suffix=formattedDate==='—'? 'MàJ —':`MàJ ${formattedDate}`;
+    return `${safeTitle} (${suffix})`;
   };
   const missionsData=consultants.map(c=>{
     const missionDate=formatReportDate(c.date_fin||'');

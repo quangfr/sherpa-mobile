@@ -185,6 +185,12 @@ dialog::backdrop{background:#0006}
 .timeline-item.future{--timeline-body-bg:#fff;--timeline-body-fg:var(--fg)}
 .timeline-item.past .timeline-marker{background:#e5e7eb;border-color:#d1d5db;color:#6b7280}
 .timeline-item.future .timeline-marker{background:#fff}
+.timeline-item-milestone{--timeline-body-bg:var(--accent);--timeline-body-fg:#fff;--timeline-border:var(--accent);--timeline-marker-border:var(--accent)}
+.timeline-item-milestone .timeline-marker{background:var(--accent);color:#fff}
+.timeline-item-milestone .timeline-date-dot{color:rgba(255,255,255,.6)}
+.timeline-item-milestone .timeline-meta-date{color:inherit}
+.timeline-item-milestone .timeline-edit.btn{color:#fff;border-color:rgba(255,255,255,.35)}
+.timeline-item-milestone .timeline-edit.btn:hover{border-color:#fff}
 .timeline-item.selected .timeline-body{border-width:2px;border-color:var(--selection-color);box-shadow:none}
 .timeline-meta{font-size:13px;line-height:1.45;display:flex;flex-wrap:wrap;gap:6px;font-weight:600;color:inherit;align-items:center}
 .timeline-meta-primary{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
