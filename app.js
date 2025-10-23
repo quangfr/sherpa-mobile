@@ -697,12 +697,25 @@ function storeHasRecords(){
 function hasOfflineDataAvailable(){
   return hasLocalData() || storeHasRecords();
 }
-function save(reason='local-change'){
+function save(reason='local-change', options={}){
+  const {syncImmediate=true} = options || {};
   store.meta=store.meta||{};
   store.meta.updated_at=nowISO();
   localStorage.setItem(LS_KEY,JSON.stringify(store));
   markRemoteDirty(reason);
   refreshAll();
+  if(syncImmediate && typeof syncIfDirty==='function'){
+    try{
+      const maybePromise=syncIfDirty(reason);
+      if(maybePromise && typeof maybePromise.catch==='function'){
+        maybePromise.catch(err=>{
+          console.error('Synchronisation immédiate échouée :',err);
+        });
+      }
+    }catch(err){
+      console.error('Synchronisation immédiate échouée :',err);
+    }
+  }
 }
 const settingsDirtyState={general:false,template:false,prompt:false};
 let settingsDirty=false;
@@ -1224,7 +1237,7 @@ if(!mobile){
   const editBtn=tr.querySelector('[data-edit]');
   const delBtn=tr.querySelector('[data-del]');
   on(editBtn,'click',(e)=>{ e.stopPropagation(); openActivityModal(a.id); });
-  on(delBtn,'click',(e)=>{ e.stopPropagation(); if(confirm('Supprimer cette activité ?')){ store.activities=store.activities.filter(x=>x.id!==a.id); save(); } });
+  on(delBtn,'click',(e)=>{ e.stopPropagation(); if(confirm('Supprimer cette activité ?')){ store.activities=store.activities.filter(x=>x.id!==a.id); save('activity-delete'); } });
 }
 actTBody.appendChild(tr);
 });
@@ -2516,7 +2529,7 @@ if(!isAlerte){ delete data.alerte_active; }
 if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
 if(currentActivityId){ Object.assign(store.activities.find(x=>x.id===currentActivityId),data,{updated_at:nowISO()}); }else{ store.activities.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
-dlgA.close('ok'); save();
+dlgA.close('ok'); save('activity-save');
 };
 btnFaDelete?.addEventListener('click',e=>{
  e.preventDefault();
@@ -2525,7 +2538,7 @@ btnFaDelete?.addEventListener('click',e=>{
   store.activities=store.activities.filter(x=>x.id!==currentActivityId);
   currentActivityId=null;
   dlgA.close('del');
-  save();
+  save('activity-delete');
  }
 });
 /* MODALS (GUIDÉE) */
@@ -2676,7 +2689,7 @@ $('form-guidee').onsubmit=(e)=>{
   if(!payload){ alert('Champs requis manquants.'); return; }
   persistGuideePayload(payload);
   dlgG.close('ok');
-  save();
+  save('guidee-save');
 };
 btnFgEditConsultant?.addEventListener('click',()=>{
   const consultantId=fgConsult?.value;
@@ -2694,7 +2707,7 @@ btnFgEditConsultant?.addEventListener('click',()=>{
     if(shouldSave){
       persistGuideePayload(payload);
       dlgG.close('ok');
-      save();
+      save('guidee-save');
     }else{
       dlgG.close('cancel');
     }
@@ -2710,7 +2723,7 @@ $$('#dlg-guidee .actions [value="del"]').onclick=(e)=>{
     store.guidees=store.guidees.filter(g=>g.id!==currentGuideeId);
     store.activities=store.activities.map(a=>a.guidee_id===currentGuideeId?{...a,guidee_id:undefined}:a);
     dlgG.close('del');
-    save();
+    save('guidee-delete');
     renderGuideeFilters();
     renderGuideeTimeline();
   }
@@ -2835,12 +2848,12 @@ if(currentConsultantId){
   createdConsultantId=uid();
   store.consultants.push({id:createdConsultantId,...data,created_at:nowISO(),updated_at:nowISO()});
 }
-dlgC.close('ok'); save();
+dlgC.close('ok'); save('consultant-save');
 if(createdConsultantId){
   openGuideeModal(null,{defaultConsultantId:createdConsultantId});
 }
 };
-$$('#dlg-consultant .actions [value="del"]').onclick=(e)=>{ e.preventDefault(); if(!currentConsultantId){ dlgC.close(); return; } if(confirm('Supprimer ce consultant (et garder ses activités) ?')){ store.consultants=store.consultants.filter(c=>c.id!==currentConsultantId); dlgC.close('del'); save(); } };
+$$('#dlg-consultant .actions [value="del"]').onclick=(e)=>{ e.preventDefault(); if(!currentConsultantId){ dlgC.close(); return; } if(confirm('Supprimer ce consultant (et garder ses activités) ?')){ store.consultants=store.consultants.filter(c=>c.id!==currentConsultantId); dlgC.close('del'); save('consultant-delete'); } };
 /* SYNC */
 function diffArrayById(current=[], initial=[]){
   const initialMap=new Map((initial||[]).filter(item=>item&&item.id).map(item=>[item.id,item]));
@@ -2890,6 +2903,11 @@ function computeSessionDiff(){
 function ensureSessionDiff(){
   lastSessionDiff=computeSessionDiff();
   return lastSessionDiff;
+}
+function isoToMillis(value){
+  if(!value) return NaN;
+  const ms=Date.parse(String(value));
+  return Number.isFinite(ms)?ms:NaN;
 }
 function formatSyncDate(iso){
   if(!iso) return '—';
@@ -3191,6 +3209,33 @@ async function loadRemoteStore(options={}){
       updated_at_iso:metaIso,
       version:6.0
     };
+    const localMetaIso=store?.meta?.updated_at || store?.meta?.updated_at_iso || null;
+    const remoteMs=isoToMillis(metaIso);
+    const localMs=isoToMillis(localMetaIso);
+    const remoteIsNewer=Number.isFinite(remoteMs) && (!Number.isFinite(localMs) || remoteMs>localMs);
+    const localIsNewer=Number.isFinite(localMs) && (!Number.isFinite(remoteMs) || localMs>remoteMs);
+    if(localIsNewer && !remoteIsNewer){
+      initialStoreSnapshot=deepClone(remoteStore);
+      lastSessionDiff=computeSessionDiff();
+      const diffHasChanges=lastSessionDiff && Object.keys(lastSessionDiff).length>0;
+      remoteReady=true;
+      hasPendingChanges=diffHasChanges;
+      lastRemoteReadIso=metaIso;
+      if(store?.meta?.updated_at){
+        lastRemoteWriteIso=store.meta.updated_at;
+      }
+      syncIndicatorState=diffHasChanges?'pending':'ok';
+      setSyncStatus('Données locales plus récentes que Firestore — tentative de resynchronisation…','warning');
+      updateSyncIndicator();
+      scheduleAutoSync();
+      const reconcilePromise=syncIfDirty('reconcile-after-remote');
+      if(reconcilePromise && typeof reconcilePromise.catch==='function'){
+        reconcilePromise.catch(err=>{
+          console.error('Erreur de resynchronisation immédiate :',err);
+        });
+      }
+      return;
+    }
     applyIncomingStore(remoteStore,'firestore',{alert:false});
     initialStoreSnapshot=deepClone(store);
     lastSessionDiff={};
