@@ -707,6 +707,49 @@ function save(reason='local-change'){
 const settingsDirtyState={general:false,template:false,prompt:false};
 let settingsDirty=false;
 let activeTabId='';
+const settingsGuardDialog=$('dlg-settings-guard');
+let resolveSettingsGuard=null;
+if(settingsGuardDialog){
+  settingsGuardDialog.addEventListener('cancel',evt=>{ evt.preventDefault(); settingsGuardDialog.close('stay'); });
+  settingsGuardDialog.addEventListener('close',()=>{
+    const value=settingsGuardDialog.returnValue||'stay';
+    if(resolveSettingsGuard){
+      resolveSettingsGuard(value);
+      resolveSettingsGuard=null;
+    }
+  });
+}
+function showSettingsGuardDialog(){
+  if(!settingsGuardDialog) return Promise.resolve('discard');
+  if(settingsGuardDialog.open){
+    settingsGuardDialog.close('stay');
+  }
+  return new Promise(resolve=>{
+    resolveSettingsGuard=resolve;
+    settingsGuardDialog.returnValue='stay';
+    settingsGuardDialog.showModal();
+  });
+}
+function guardUnsavedSettings(next){
+  if(!settingsDirty){
+    if(typeof next==='function') next();
+    return;
+  }
+  showSettingsGuardDialog().then(async decision=>{
+    if(decision==='save'){
+      const saved=await saveParamsChanges();
+      if(!saved) return;
+    }else if(decision==='discard'){
+      renderParams({persistTemplate:false});
+      resetSettingsDirty();
+    }else{
+      return;
+    }
+    if(typeof next==='function'){
+      Promise.resolve(next());
+    }
+  });
+}
 /* NAV TABS */
 const TABS=[
  {id:'dashboard',labelFull:'👥 Sherpa',labelShort:'👥'},
@@ -731,18 +774,19 @@ function applyTabLabels(){ const compact = window.innerWidth<=520; $$all('.tab')
 on(window,'resize',applyTabLabels); applyTabLabels();
 function openTab(id, persist=false){
   if(id===activeTabId) return;
+  const activate=()=>{
+    $$all('.tab').forEach(el=>el.classList.remove('active'));
+    const tabBtn=$$('#tab-'+id); if(tabBtn) tabBtn.classList.add('active');
+    $$all('.view').forEach(v=>v.classList.remove('active'));
+    const view=$$('#view-'+id); if(view) view.classList.add('active');
+    activeTabId=id;
+    if(persist) localStorage.setItem(TAB_KEY,id);
+  };
   if(activeTabId==='reglages' && id!=='reglages' && settingsDirty){
-    const shouldLeave=confirm('Des paramètres ne sont pas enregistrés. Enregistrer avant de quitter l\'onglet ?');
-    if(!shouldLeave){
-      return;
-    }
+    guardUnsavedSettings(activate);
+    return;
   }
-  $$all('.tab').forEach(el=>el.classList.remove('active'));
-  const tabBtn=$$('#tab-'+id); if(tabBtn) tabBtn.classList.add('active');
-  $$all('.view').forEach(v=>v.classList.remove('active'));
-  const view=$$('#view-'+id); if(view) view.classList.add('active');
-  activeTabId=id;
-  if(persist) localStorage.setItem(TAB_KEY,id);
+  activate();
 }
 const storedTab=localStorage.getItem(TAB_KEY);
 openTab(storedTab||'activite');
@@ -1100,7 +1144,7 @@ const descLine=descText
   ? `<div class="activity-desc${isSelected?'':' clamp-5'}">${descHtml}</div>`
   : `<div class="activity-desc muted">—</div>`;
 const guideeInfo=(g && isSelected)
-  ? `<div class="activity-guidee">🧭 <span class="activity-guidee-label">Guidée :</span> <span class="activity-guidee-link click-span" role="link" tabindex="0" data-goto-guidee="${g.id}" data-goto-guidee-activity="${a.id}">${esc(g.nom||'Sans titre')}</span></div>`
+  ? `<div class="activity-guidee activity-desc">🧭 <span class="activity-guidee-link click-span" role="link" tabindex="0" data-goto-guidee="${g.id}" data-goto-guidee-activity="${a.id}"><b>${esc(g.nom||'Sans titre')}</b></span></div>`
   : '';
 const mobileDesc=isSelected
   ? `<div class="mobile-desc expanded" data-act="${a.id}"><div class="text">${descHtml||'—'}</div></div>`
@@ -1113,7 +1157,7 @@ const inlineEditButton=()=>`<button class="btn ghost small row-edit" data-inline
 const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span></div>`;
 const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
 const tr=document.createElement('tr'); tr.classList.add('clickable');
-tr.style.setProperty('--selection-color','var(--fg)');
+tr.style.setProperty('--selection-color','var(--accent)');
 const dateObj=parseDate(a.date_publication||'');
 const isPastDate=dateObj && dateObj<todayStart;
 const isFutureOrToday=dateObj && dateObj>=todayStart;
@@ -1385,7 +1429,7 @@ function updateGuideeProgress(event){
   if(guideeProgressFill) guideeProgressFill.style.width=`${pct}%`;
   if(guideeProgressLabel) guideeProgressLabel.textContent=`${pct}% | ${formatHours(totalHours)}h`;
   guideeProgress.classList.remove('hidden');
-  guideeProgress.style.setProperty('--progress-color',event.color||'#2563eb');
+  guideeProgress.style.setProperty('--progress-color',event.color||'#075985');
 }
 function renderGuideeFilters(){
   if(selectGuideeConsult){
@@ -1567,7 +1611,7 @@ function renderGuideeTimeline(){
     item.dataset.eventId=ev.id;
     const color=ev.color||'var(--accent)';
     item.style.setProperty('--timeline-color',color);
-    item.style.setProperty('--selection-color','var(--fg)');
+    item.style.setProperty('--selection-color','var(--accent)');
     item.style.setProperty('--timeline-border','var(--border)');
     item.style.setProperty('--timeline-marker-border','var(--border)');
     const consultantName=esc(consultant?.nom||'—');
@@ -2009,8 +2053,11 @@ btnReportingCopy?.addEventListener('click',async()=>{
     }
   }
 });
-function renderParams(){
-  persistTemplateEditorValue();
+function renderParams(options={}){
+  const persistTemplate=options.persistTemplate!==false;
+  if(persistTemplate){
+    persistTemplateEditorValue();
+  }
   const p=store.params||DEFAULT_PARAMS;
   if(inputSyncInterval) inputSyncInterval.value=p.sync_interval_minutes ?? DEFAULT_SYNC_INTERVAL_MINUTES;
   if(inputFinMission) inputFinMission.value=p.fin_mission_sous_jours;
@@ -2024,8 +2071,7 @@ function renderParams(){
   renderTemplateEditor();
   renderPromptEditor();
 }
-btnSaveParams?.addEventListener('click',async()=>{
-  const button=btnSaveParams;
+async function saveParamsChanges(button=btnSaveParams){
   const originalLabel=button?.textContent||'';
   if(button){
     button.disabled=true;
@@ -2051,9 +2097,11 @@ btnSaveParams?.addEventListener('click',async()=>{
     restartAutoSync();
     await syncIfDirty('settings-manual-save');
     resetSettingsDirty();
+    return true;
   }catch(err){
     console.error('Param settings save error:',err);
     alert(`Enregistrement impossible : ${err?.message||err}`);
+    return false;
   }finally{
     if(button){
       button.textContent=originalLabel;
@@ -2061,7 +2109,8 @@ btnSaveParams?.addEventListener('click',async()=>{
     }
     updateSettingsDirty();
   }
-});
+}
+btnSaveParams?.addEventListener('click',()=>{ saveParamsChanges(btnSaveParams); });
 if(templateTypeSelect){
   on(templateTypeSelect,'change',e=>{
     const nextValue=e.target.value;
@@ -2087,7 +2136,6 @@ btnResetTemplate?.addEventListener('click',async()=>{
     restartAutoSync();
     await syncIfDirty('template-reset');
     markSettingsPartClean('template');
-    alert('Template réinitialisé.');
   }catch(err){
     console.error('Template reset error:',err);
     alert(`Impossible de réinitialiser le template : ${err?.message||err}`);
@@ -2116,7 +2164,6 @@ btnResetPrompt?.addEventListener('click',async()=>{
     restartAutoSync();
     await syncIfDirty('prompt-reset');
     markSettingsPartClean('prompt');
-    alert('Prompts réinitialisés.');
   }catch(err){
     console.error('Prompt reset error:',err);
     alert(`Impossible de réinitialiser le prompt : ${err?.message||err}`);
@@ -2212,10 +2259,71 @@ const faAlertWrap=$('fa-alert-active-wrap');
 const faAlertActive=$('fa-alert-active');
 const faTitleAI=$('fa-title-ai');
 const btnFaGoto=$('fa-goto-consultant');
+const btnFaGotoGuidee=$('fa-goto-guidee');
 const btnFaDelete=$$('#dlg-activity .actions [data-action="delete"]');
 const faOpenAI=$('fa-openai');
+const faDate=$('fa-date');
+const faForm=$('form-activity');
+const faSaveBtn=$$('#dlg-activity .actions [value="ok"]');
+let activityInitialSnapshot=null;
+function snapshotActivityForm(){
+  return {
+    consultant_id:faConsult?.value||'',
+    type:faType?.value||'',
+    date:faDate?.value||'',
+    title:(faTitle?.value||'').trim(),
+    description:(faDesc?.value||'').trim(),
+    heures:faHeures?.value||'',
+    guidee_id:faGuidee?.value||'',
+    probability:(faProbability?.value||'').trim().toUpperCase(),
+    alertActive:faAlertActive?.checked?'1':'0'
+  };
+}
+function normalizeActivitySnapshot(snap){
+  const base=snap||{};
+  const type=(base.type||'').trim();
+  const normalized={
+    consultant_id:base.consultant_id||'',
+    type,
+    date:base.date||'',
+    title:(base.title||'').trim(),
+    description:(base.description||'').trim(),
+    heures:'',
+    guidee_id:'',
+    probability:'',
+    alertActive:'1'
+  };
+  if(type==='ACTION_ST_BERNARD'){
+    normalized.heures=String(base.heures??'').trim();
+    normalized.guidee_id=base.guidee_id||'';
+  }
+  if(type==='PROLONGEMENT'){
+    normalized.probability=(base.probability||'').trim().toUpperCase();
+  }
+  if(type==='ALERTE'){
+    normalized.alertActive=base.alertActive==='0'?'0':'1';
+  }
+  return normalized;
+}
+function isActivityFormDirty(){
+  if(!activityInitialSnapshot) return false;
+  const current=normalizeActivitySnapshot(snapshotActivityForm());
+  return JSON.stringify(current)!==JSON.stringify(activityInitialSnapshot);
+}
+function updateActivitySaveVisibility(){
+  if(!faSaveBtn){
+    return;
+  }
+  if(!activityInitialSnapshot){
+    faSaveBtn.classList.add('hidden');
+    return;
+  }
+  faSaveBtn.classList.toggle('hidden',!isActivityFormDirty());
+}
 attachHashtagAutocomplete(faDesc);
 faDesc?.addEventListener('input',()=>{ faDesc.dataset.autofill='false'; });
+faForm?.addEventListener('input',updateActivitySaveVisibility);
+faForm?.addEventListener('change',updateActivitySaveVisibility);
 if(faHeures && !faHeures.options.length){
   const frag=document.createDocumentFragment();
   for(let i=0;i<=30;i++){
@@ -2236,6 +2344,7 @@ function applyActivityTemplateAutofill(force=false){
     faDesc.value=template;
     faDesc.dataset.autofill='true';
   }
+  updateActivitySaveVisibility();
 }
 faType.onchange=()=>{
   const value=faType.value;
@@ -2266,9 +2375,20 @@ faType.onchange=()=>{
     faAlertActive.checked=true;
   }
   applyActivityTemplateAutofill();
+  updateActivitySaveVisibility();
 };
-faConsult.onchange=()=>{ updateFaGuideeOptions(); };
+faConsult.onchange=()=>{ updateFaGuideeOptions(); updateActivitySaveVisibility(); };
 btnFaGoto.onclick=()=>{ const cid=faConsult.value; if(cid){ dlgA.close(); openConsultantModal(cid); } };
+btnFaGotoGuidee?.addEventListener('click',()=>{
+  const gid=faGuidee?.value;
+  if(!gid){
+    alert('Sélectionnez une guidée associée.');
+    return;
+  }
+  const activityId=currentActivityId || state.activities.selectedId || '';
+  dlgA.close('goto-guidee');
+  gotoGuideeTimeline(gid,activityId);
+});
 faOpenAI?.addEventListener('click',async()=>{
   const currentText=faDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
@@ -2331,6 +2451,7 @@ function updateFaGuideeOptions(preferredId){
   if(!list.length){
     faGuidee.innerHTML='<option value="" disabled>Sélectionner une guidée</option>';
     faGuidee.value='';
+    updateActivitySaveVisibility();
     return;
   }
   const opts=list.map(g=>`<option value="${g.id}">🧭 ${esc(g.nom||'Sans titre')}</option>`);
@@ -2338,17 +2459,20 @@ function updateFaGuideeOptions(preferredId){
   const desired=preferredId ?? faGuidee.value;
   const hasDesired=desired && list.some(g=>g.id===desired);
   faGuidee.value=hasDesired ? desired : (list[0]?.id||'');
+  updateActivitySaveVisibility();
 }
 $('btn-new-activity').onclick=()=>openActivityModal();
 let currentActivityId=null;
 function openActivityModal(id=null){
 currentActivityId=id;
+activityInitialSnapshot=null;
+updateActivitySaveVisibility();
 if(id && state.activities.selectedId!==id){
   state.activities.selectedId=id;
   renderActivities();
 }
 faConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
-$('fa-date').value=todayStr();
+if(faDate) faDate.value=todayStr();
 faDesc.value='';
 faDesc.dataset.autofill='true';
 if(faTitle) faTitle.value='';
@@ -2357,7 +2481,7 @@ if(faProbability) faProbability.value='';
 if(faAlertActive) faAlertActive.checked=true;
 if(id){
 const a=store.activities.find(x=>x.id===id); if(!a) return;
-faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; if(faTitle) faTitle.value=a.title||''; faHeures.value=String(a.heures??0);
+faConsult.value=a.consultant_id; faType.value=a.type; if(faDate) faDate.value=a.date_publication||''; faDesc.value=a.description||''; if(faTitle) faTitle.value=a.title||''; faHeures.value=String(a.heures??0);
  if(faProbability) faProbability.value=String(a.probabilite||'').toUpperCase();
  if(faAlertActive) faAlertActive.checked=a.alerte_active!==false;
  faDesc.dataset.autofill='false';
@@ -2368,6 +2492,8 @@ faType.onchange();
   faType.onchange();
   applyActivityTemplateAutofill(true);
 }
+activityInitialSnapshot=normalizeActivitySnapshot(snapshotActivityForm());
+updateActivitySaveVisibility();
 dlgA.showModal();
 }
 $('form-activity').onsubmit=(e)=>{
@@ -2379,7 +2505,7 @@ const heuresValue=isSTB ? Number(faHeures.value??0) : undefined;
 const probabilityValue=isProlongement ? (faProbability?.value||'').toUpperCase() : '';
 const alertActive=isAlerte ? (faAlertActive?.checked!==false) : undefined;
 const titleValue=(faTitle?.value||'').trim();
-const data={ consultant_id:faConsult.value, type:faType.value, date_publication:$('fa-date').value, title:titleValue, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined };
+const data={ consultant_id:faConsult.value, type:faType.value, date_publication:faDate?.value||'', title:titleValue, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined };
 if(isProlongement && PROLONGEMENT_PROBABILITIES[probabilityValue]){ data.probabilite=probabilityValue; }
 if(isAlerte){ data.alerte_active=alertActive; }
 const heuresInvalid=isSTB && (!Number.isFinite(heuresValue) || heuresValue<0);
@@ -2413,8 +2539,12 @@ const fgDesc=$('fg-desc');
 const fgOpenAI=$('fg-openai');
 const fgTitleAI=$('fg-title-ai');
 const btnFgEditConsultant=$('fg-edit-consultant');
+const fgForm=$('form-guidee');
+const fgSaveBtn=$$('#dlg-guidee .actions [value="ok"]');
 attachHashtagAutocomplete(fgDesc);
 fgDesc?.addEventListener('input',()=>{ fgDesc.dataset.autofill='false'; });
+fgForm?.addEventListener('input',updateGuideeSaveVisibility);
+fgForm?.addEventListener('change',updateGuideeSaveVisibility);
 fgOpenAI?.addEventListener('click',async()=>{
   const currentText=fgDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
@@ -2458,9 +2588,20 @@ function normalizeGuideeSnapshot(snap){
   };
 }
 function isGuideeFormDirty(){
+  if(!guideeInitialSnapshot) return false;
   const current=normalizeGuideeSnapshot(snapshotGuideeForm());
   const initial=normalizeGuideeSnapshot(guideeInitialSnapshot);
   return JSON.stringify(current)!==JSON.stringify(initial);
+}
+function updateGuideeSaveVisibility(){
+  if(!fgSaveBtn){
+    return;
+  }
+  if(!guideeInitialSnapshot){
+    fgSaveBtn.classList.add('hidden');
+    return;
+  }
+  fgSaveBtn.classList.toggle('hidden',!isGuideeFormDirty());
 }
 function buildGuideePayload(){
   const snap=snapshotGuideeForm();
@@ -2492,6 +2633,7 @@ function persistGuideePayload(payload){
   state.guidees.guidee_id=currentGuideeId;
   state.guidees.consultant_id=payload.consultant_id||'';
   guideeInitialSnapshot=normalizeGuideeSnapshot(snapshotGuideeForm());
+  updateGuideeSaveVisibility();
   return currentGuideeId;
 }
 function populateGuideeFormConsultants(){
@@ -2501,6 +2643,8 @@ function populateGuideeFormConsultants(){
 function openGuideeModal(id=null,options={}){
   const {defaultConsultantId=''}=options||{};
   currentGuideeId=id;
+  guideeInitialSnapshot=null;
+  updateGuideeSaveVisibility();
   populateGuideeFormConsultants();
   const optionValues=[...fgConsult.options].map(opt=>opt.value);
   const preferred=defaultConsultantId && optionValues.includes(defaultConsultantId)
@@ -2582,8 +2726,47 @@ const fcFin=$('fc-fin');
 const fcOpenAI=$('fc-openai');
 const btnFcGoto=$('fc-goto-guidees');
 const btnFcBoondLink=$('fc-boond-link');
+const fcForm=$('form-consultant');
+const fcSaveBtn=$$('#dlg-consultant .actions [value="ok"]');
+let consultantInitialSnapshot=null;
 attachHashtagAutocomplete(fcDesc);
 fcDesc?.addEventListener('input',()=>{ fcDesc.dataset.autofill='false'; });
+function snapshotConsultantForm(){
+  return {
+    nom:(fcNom?.value||'').trim(),
+    titre:(fcTitre?.value||'').trim(),
+    date_fin:fcFin?.value||'',
+    boond:(fcBoond?.value||'').trim(),
+    description:(fcDesc?.value||'').trim()
+  };
+}
+function normalizeConsultantSnapshot(snap){
+  const base=snap||{};
+  return {
+    nom:(base.nom||'').trim(),
+    titre:(base.titre||'').trim(),
+    date_fin:base.date_fin||'',
+    boond:(base.boond||'').trim(),
+    description:(base.description||'').trim()
+  };
+}
+function isConsultantFormDirty(){
+  if(!consultantInitialSnapshot) return false;
+  const current=normalizeConsultantSnapshot(snapshotConsultantForm());
+  return JSON.stringify(current)!==JSON.stringify(consultantInitialSnapshot);
+}
+function updateConsultantSaveVisibility(){
+  if(!fcSaveBtn){
+    return;
+  }
+  if(!consultantInitialSnapshot){
+    fcSaveBtn.classList.add('hidden');
+    return;
+  }
+  fcSaveBtn.classList.toggle('hidden',!isConsultantFormDirty());
+}
+fcForm?.addEventListener('input',updateConsultantSaveVisibility);
+fcForm?.addEventListener('change',updateConsultantSaveVisibility);
 fcOpenAI?.addEventListener('click',async()=>{
   const currentText=fcDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
@@ -2611,6 +2794,8 @@ function updateBoondLink(idValue){
 }
 function openConsultantModal(id=null){
 currentConsultantId=id;
+consultantInitialSnapshot=null;
+updateConsultantSaveVisibility();
 const c=id? store.consultants.find(x=>x.id===id) : {nom:'',titre_mission:'',date_fin:'',boond_id:'',description:''};
 const templateConsultant=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.consultant);
 if(fcNom) fcNom.value=c?.nom||'';
@@ -2627,6 +2812,8 @@ if(fcDesc){
   }
 }
 updateBoondLink(c?.boond_id||'');
+consultantInitialSnapshot=normalizeConsultantSnapshot(snapshotConsultantForm());
+updateConsultantSaveVisibility();
 dlgC.showModal();
 }
 if(fcBoond){
@@ -3130,10 +3317,17 @@ btnPasswordReset?.addEventListener('click',async()=>{
 });
 btnSignOut?.addEventListener('click',()=>{
   if(!firebaseAuth) return;
-  firebaseAuth.signOut().catch(err=>{
-    console.error('Sign-out error:',err);
-    setAuthError(formatAuthError(err));
-  });
+  const proceed=()=>{
+    firebaseAuth.signOut().catch(err=>{
+      console.error('Sign-out error:',err);
+      setAuthError(formatAuthError(err));
+    });
+  };
+  if(settingsDirty){
+    guardUnsavedSettings(proceed);
+  }else{
+    proceed();
+  }
 });
 btnRefreshRemote?.addEventListener('click',async()=>{
   if(!firebaseReady || !currentUser){

@@ -118,11 +118,13 @@
 </section>
 <!-- RÉGLAGES -->
 <section class="view" id="view-reglages">
+<div class="reglages-toolbar">
+  <button class="btn primary small" id="btn-save-params">Enregistrer</button>
+</div>
 <div class="reglages-grid">
   <div class="card">
     <div class="card-header">
       <div class="title">⚙️ Paramètres</div>
-      <button class="btn primary small" id="btn-save-params">Enregistrer</button>
     </div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px">
       <label>sync_interval_minutes <input type="number" id="p-sync_interval" min="1"/></label>
@@ -175,6 +177,7 @@
 <h3>✏️ Activité</h3>
 <div class="row" style="gap:6px">
 <button type="button" class="btn small" id="fa-goto-consultant">👤Consultant</button>
+<button type="button" class="btn small" id="fa-goto-guidee">🧭Guidée</button>
 <button type="button" class="btn ghost modal-close" data-close="dlg-activity" aria-label="Fermer">✕</button>
 </div>
 </div>
@@ -238,7 +241,7 @@
       </div>
     </label>
   </div>
-  <div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
+<div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
 <dialog id="dlg-consultant"><form method="dialog" class="modal" id="form-consultant">
 <div class="row space modal-header">
@@ -262,6 +265,15 @@
 </label>
 </div>
 <div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
+</form></dialog>
+<dialog id="dlg-settings-guard"><form method="dialog" class="modal confirm-modal">
+  <h3>Enregistrer les paramètres ?</h3>
+  <p>Des paramètres modifiés ne sont pas enregistrés. Souhaitez-vous les enregistrer avant de continuer ?</p>
+  <div class="actions">
+    <button value="stay" class="btn ghost">Rester</button>
+    <button value="discard" class="btn">Annuler</button>
+    <button value="save" class="btn primary">Enregistrer</button>
+  </div>
 </form></dialog>
 <script src="config.js" defer></script>
 <script src="app.js" defer></script>
