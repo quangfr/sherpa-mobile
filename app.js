@@ -29,69 +29,86 @@ const DEFAULT_HASHTAG_CATALOG=[
   '#TechSQL','#TechPowerBI','#TechAutomation','#TechDocumentation','#TechIntegration',
   '#CustomerInsight','#CustomerRelationship','#CustomerValue','#CustomerFeedback','#CustomerExperience'
 ].join(' ');
-const DEFAULT_ACTIVITY_PROMPTS={
-  ACTION_ST_BERNARD:`Tu es manager coach et tu formalises une activité Action Saint Bernard.
-Base-toi sur les informations suivantes :
-- Activité : {{activity.title}} {{activity.description}}
-- Guidée : {{guidee.title}} {{guidee.description}}
-- Consultant : {{consultant.title}} {{consultant.description}}
-Rédige quatre parties : Contexte, Actions réalisées, Résultats observés, Suivi prévu.
-Intègre les hashtags pertinents tirés de {{hashtags_catalog}} lorsque c'est utile.`,
-  VERBATIM:`Tu es manager coach et tu synthétises un verbatim client.
-Informations disponibles :
-- Activité : {{activity.title}} {{activity.description}}
-- Guidée : {{guidee.title}} {{guidee.description}}
-- Consultant : {{consultant.title}} {{consultant.description}}
-Structure ton texte en trois parties : Verbatim, Situation, Enseignements clés.
-Ajoute des hashtags pertinents issus de {{hashtags_catalog}} uniquement si nécessaire.`,
-  AVIS:`Tu es manager coach et tu rédiges un avis de coaching.
-Utilise :
-- Activité : {{activity.title}} {{activity.description}}
-- Guidée : {{guidee.title}} {{guidee.description}}
-- Consultant : {{consultant.title}} {{consultant.description}}
-Respecte la structure suivante : Points forts, Points de vigilance, Pistes de progression.
-Incorpore les hashtags utiles provenant de {{hashtags_catalog}} lorsque c'est pertinent.`,
-  CORDEE:`Tu es manager coach et tu relates une activité Cordée.
-Appuie-toi sur :
-- Activité : {{activity.title}} {{activity.description}}
-- Guidée : {{guidee.title}} {{guidee.description}}
-- Consultant : {{consultant.title}} {{consultant.description}}
-Organise la synthèse en quatre rubriques : Thématique, Rôle joué, Valeur apportée, Suite prévue.
-Ajoute les hashtags pertinents issus de {{hashtags_catalog}} lorsque cela apporte de la clarté.`,
-  NOTE:`Tu es manager coach et tu rédiges une note d'observation.
-Informations :
-- Activité : {{activity.title}} {{activity.description}}
-- Guidée : {{guidee.title}} {{guidee.description}}
-- Consultant : {{consultant.title}} {{consultant.description}}
-Structure la réponse en trois volets : Contexte, Faits observés, Impacts.
-Insère des hashtags pertinents depuis {{hashtags_catalog}} seulement si cela aide la lecture.`,
-  ALERTE:`Tu es manager coach et tu dois signaler une alerte.
-Base-toi sur :
-- Activité : {{activity.title}} {{activity.description}}
-- Guidée : {{guidee.title}} {{guidee.description}}
-- Consultant : {{consultant.title}} {{consultant.description}}
-Respecte trois sections : Signalement, Risques, Suivi prévu.
-Inclue les hashtags pertinents provenant de {{hashtags_catalog}} lorsque cela facilite le suivi.`
+const ACTIVITY_TYPES=['ACTION_ST_BERNARD','CORDEE','NOTE','VERBATIM','AVIS','ALERTE','PROLONGEMENT'];
+const ACTIVITY_LABELS={
+  ACTION_ST_BERNARD:'Action STB',
+  CORDEE:'Cordée',
+  NOTE:'Note',
+  VERBATIM:'Verbatim',
+  AVIS:'Avis',
+  ALERTE:'Alerte',
+  PROLONGEMENT:'Prolongement'
 };
-const DEFAULT_OPENAI_PROMPTS={
-  activities:{...DEFAULT_ACTIVITY_PROMPTS},
-  guidee:`Tu es manager coach et tu reformules cette description de guidée pour la rendre claire et actionnable.
-Utilise les données suivantes :
-- Guidée : {{guidee.title}} {{guidee.description}}
-- Consultant : {{consultant.title}} {{consultant.description}}
-Présente six parties : Objectif, Contexte, Accompagnement prévu, Compétences mobilisées, Indicateurs de progression, Résultat ou bilan.
-Ajoute les hashtags pertinents issus de {{hashtags_catalog}} si cela renforce la compréhension.`,
-  consultant:`Tu es manager coach et tu dresses un portrait professionnel du consultant à partir de sa description.
-Informations disponibles : {{consultant.title}} {{consultant.description}}
-Décris six sections : Mission actuelle, Objectifs professionnels, Compétences clés, Forces, Points de veille, Style relationnel.
-Inclue des hashtags pertinents tirés de {{hashtags_catalog}} uniquement s'ils apportent de la valeur.`
+const PROLONGEMENT_PROBABILITIES={
+  OUI:{label:'Oui',className:'prob-oui'},
+  PROBABLE:{label:'Probable',className:'prob-probable'},
+  INCERTAIN:{label:'Incertain',className:'prob-incertain'},
+  IMPROBABLE:{label:'Improbable',className:'prob-improbable'},
+  NON:{label:'Non',className:'prob-non'}
 };
-const cloneDefaultPrompts=()=>({
-  activities:{...DEFAULT_OPENAI_PROMPTS.activities},
-  guidee:DEFAULT_OPENAI_PROMPTS.guidee,
-  consultant:DEFAULT_OPENAI_PROMPTS.consultant
-});
-const ACTIVITY_TYPES=['ACTION_ST_BERNARD','CORDEE','NOTE','VERBATIM','AVIS','ALERTE'];
+const DEFAULT_PROLONGEMENT_PROBABILITY='PROBABLE';
+const DESCRIPTION_TEMPLATE_KEYS={
+  activity:{
+    ACTION_ST_BERNARD:'activity:ACTION_ST_BERNARD',
+    CORDEE:'activity:CORDEE',
+    NOTE:'activity:NOTE',
+    VERBATIM:'activity:VERBATIM',
+    AVIS:'activity:AVIS',
+    ALERTE:'activity:ALERTE',
+    PROLONGEMENT:'activity:PROLONGEMENT'
+  },
+  guidee:'guidee',
+  consultant:'consultant'
+};
+const DEFAULT_DESCRIPTION_TEMPLATES={
+  [DESCRIPTION_TEMPLATE_KEYS.activity.AVIS]:`--
+Forces : qualité ou réussite marquante
+Freins : fragilité ou axe d’attention
+Pistes : action pour s'améliorer
+--`,
+  [DESCRIPTION_TEMPLATE_KEYS.activity.ACTION_ST_BERNARD]:`--
+Contexte : situation nécessitant soutien
+Action : geste concret du coach réalisée
+Résultat : effet observé immédiat perçu
+Suivi : prochaine étape prévue
+--`,
+  [DESCRIPTION_TEMPLATE_KEYS.activity.CORDEE]:`--
+Contenu : sujet ou domaine partagé
+Rôle : posture ou implication joué
+Valeur : bénéfice collectif visible apportée
+Suivi : suite ou prolongement prévu
+--`,
+  [DESCRIPTION_TEMPLATE_KEYS.activity.NOTE]:`--
+Contexte : cadre ou événement observé
+Fait : observation factuelle
+Impact : effet ou enseignement clé
+--`,
+  [DESCRIPTION_TEMPLATE_KEYS.activity.PROLONGEMENT]:`--
+Échéance : durée ou nouvelle date de fin
+Décision : date, argument ou événement décisif
+Source : émetteur de l'information
+Action : prochaine étape prévue par @
+--`,
+  [DESCRIPTION_TEMPLATE_KEYS.activity.VERBATIM]:``,
+  [DESCRIPTION_TEMPLATE_KEYS.activity.ALERTE]:``,
+  [DESCRIPTION_TEMPLATE_KEYS.guidee]:`--
+Objectif : résultat visé ou compétence à renforcer
+Contexte : mission, situation ou besoin à l’origine
+Accompagnement : format, fréquence, durée prévisionnelle
+Compétences : #Product #Team #Tech #Data #Customer
+Indicateurs : signes concrets de progression attendus
+Résultat : constat ou bilan en fin de cycle
+--`,
+  [DESCRIPTION_TEMPLATE_KEYS.consultant]:`--
+Mission : contexte actuelle , client, rôle principal
+Objectifs : ambitions motivations à court/moyen terme
+Compétences : #Product #Team #Tech #Data #Customer
+Forces : atouts distinctifs ou points d’appui
+Freins : faiblesses, besoins ou risques à accompagner
+Style : posture, communication, relationnel, énergie
+--`
+};
+const DEFAULT_COMMON_DESCRIPTION_PROMPT=`Peux tu reprendre dans la structure imposée {{description_template}} la description {{description_user}} de manière synthétique ? (1 point = 1 ligne, mettre des virgules entre plusieurs idées) utilise des # de la liste {{hashtags}} pour des notions synonymes qui sont mentionnés.`;
 const DEFAULT_ACTIVITY_TITLE_PROMPT=`Propose un titre court (6 mots maximum) qui commence par une émoji pertinente pour cette activité.
 Type : {{activity.type_label}}
 Consultant : {{consultant.name}}
@@ -480,22 +497,15 @@ $$all('[data-close]').forEach(btn=>on(btn,'click',()=>{ const target=btn.dataset
 /* DEFAULT STORE */
 const DEFAULT_PARAMS={
   sync_interval_minutes:DEFAULT_SYNC_INTERVAL_MINUTES,
-  delai_alerte_jours:7,
   fin_mission_sous_jours:60,
   stb_recent_jours:30,
   avis_manquant_depuis_jours:60,
   activites_recent_jours:30,
   activites_a_venir_jours:30,
   hashtags_catalog:DEFAULT_HASHTAG_CATALOG,
-  openai_prompts:cloneDefaultPrompts()
+  description_templates:{...DEFAULT_DESCRIPTION_TEMPLATES},
+  ai_prompt:DEFAULT_COMMON_DESCRIPTION_PROMPT
 };
-function getActivityPrompt(params,type){
-  const custom=typeof params?.openai_prompts?.activities?.[type]==='string'
-    ? params.openai_prompts.activities[type].trim()
-    : '';
-  const fallback=DEFAULT_OPENAI_PROMPTS.activities[type]||'';
-  return (custom||fallback).trim();
-}
 const DEFAULT_THEMATIQUES=[
   {id:'le-cardinal',nom:'Le Cardinal',emoji:'🧊',color:'#3b82f6'},
   {id:'robert-jr',nom:'Robert Jr',emoji:'🗣️',color:'#ec4899'},
@@ -548,31 +558,23 @@ function ensureThematiqueIds(arr){
 }
 function migrateStore(data){
   const migrated={...data};
-  migrated.params={...DEFAULT_PARAMS,...(data.params||{})};
-  const prompts=cloneDefaultPrompts();
-  const incomingPrompts=data?.params?.openai_prompts;
-  if(incomingPrompts && typeof incomingPrompts==='object'){
-    if(incomingPrompts.activities && typeof incomingPrompts.activities==='object'){
-      ACTIVITY_TYPES.forEach(type=>{
-        const val=incomingPrompts.activities[type];
-        if(typeof val==='string' && val.trim()){
-          prompts.activities[type]=val.trim();
-        }
-      });
-    }
-    if(typeof incomingPrompts.guidee==='string' && incomingPrompts.guidee.trim()){
-      prompts.guidee=incomingPrompts.guidee.trim();
-    }
-    if(typeof incomingPrompts.consultant==='string' && incomingPrompts.consultant.trim()){
-      prompts.consultant=incomingPrompts.consultant.trim();
-    }
+  const incomingParams=typeof data?.params==='object' && data.params?data.params:{};
+  const mergedTemplates={...DEFAULT_DESCRIPTION_TEMPLATES};
+  const incomingTemplates=incomingParams.description_templates;
+  if(incomingTemplates && typeof incomingTemplates==='object'){
+    Object.keys(incomingTemplates).forEach(key=>{
+      const val=incomingTemplates[key];
+      if(typeof val==='string' && val.trim()){
+        mergedTemplates[key]=val.trim();
+      }
+    });
   }
   const legacyActivityMap=data?.params?.openai_activity_prompts;
   if(legacyActivityMap && typeof legacyActivityMap==='object'){
-    ACTIVITY_TYPES.forEach(type=>{
-      const val=legacyActivityMap[type];
+    Object.keys(legacyActivityMap).forEach(key=>{
+      const val=legacyActivityMap[key];
       if(typeof val==='string' && val.trim()){
-        prompts.activities[type]=val.trim();
+        mergedTemplates[`activity:${key}`]=val.trim();
       }
     });
   }
@@ -581,8 +583,9 @@ function migrateStore(data){
     : '';
   if(legacyActivitySingle){
     ACTIVITY_TYPES.forEach(type=>{
-      if(!legacyActivityMap || typeof legacyActivityMap[type]!=='string' || !legacyActivityMap[type].trim()){
-        prompts.activities[type]=legacyActivitySingle;
+      const templateKey=DESCRIPTION_TEMPLATE_KEYS.activity[type];
+      if(templateKey && (!mergedTemplates[templateKey] || !mergedTemplates[templateKey].trim())){
+        mergedTemplates[templateKey]=legacyActivitySingle;
       }
     });
   }
@@ -590,20 +593,28 @@ function migrateStore(data){
     ? data.params.openai_guidee_prompt.trim()
     : '';
   if(legacyGuidee){
-    prompts.guidee=legacyGuidee;
+    mergedTemplates[DESCRIPTION_TEMPLATE_KEYS.guidee]=legacyGuidee;
   }
   const legacyConsultant=typeof data?.params?.openai_consultant_prompt==='string'
     ? data.params.openai_consultant_prompt.trim()
     : '';
   if(legacyConsultant){
-    prompts.consultant=legacyConsultant;
+    mergedTemplates[DESCRIPTION_TEMPLATE_KEYS.consultant]=legacyConsultant;
   }
-  migrated.params.openai_prompts=prompts;
+  const aiPromptRaw=typeof incomingParams.ai_prompt==='string'?incomingParams.ai_prompt.trim():'';
+  migrated.params={
+    ...DEFAULT_PARAMS,
+    ...incomingParams,
+    description_templates:{...mergedTemplates},
+    ai_prompt:aiPromptRaw||DEFAULT_COMMON_DESCRIPTION_PROMPT
+  };
+  delete migrated.params.openai_prompts;
   delete migrated.params.openai_activity_prompt;
   delete migrated.params.openai_consultant_prompt;
   delete migrated.params.openai_guidee_prompt;
   delete migrated.params.openai_activity_prompts;
-  migrated.thematiques=ensureThematiqueIds(data.thematiques && data.thematiques.length?data.thematiques:DEFAULT_THEMATIQUES.map(t=>({...t}))); 
+  delete migrated.params.delai_alerte_jours;
+  migrated.thematiques=ensureThematiqueIds(data.thematiques && data.thematiques.length?data.thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})));
   if(Array.isArray(migrated.consultants)){
     migrated.consultants=migrated.consultants.map(c=>{
       const copy={...c};
@@ -625,6 +636,15 @@ function migrateStore(data){
       }else{
         const firstLine=String(updated.description||'').split(/\r?\n/).find(line=>line.trim())||'';
         updated.title=firstLine.trim().slice(0,160) || 'Sans titre';
+      }
+      if(updated.type==='ALERTE' && updated.alerte_active===undefined){
+        updated.alerte_active=true;
+      }
+      if(updated.type!=='PROLONGEMENT'){
+        delete updated.probabilite;
+      }else{
+        const key=String(updated.probabilite||'').toUpperCase();
+        updated.probabilite=PROLONGEMENT_PROBABILITIES[key]?key:DEFAULT_PROLONGEMENT_PROBABILITY;
       }
       return updated;
     });
@@ -669,9 +689,10 @@ function save(reason='local-change'){
 }
 /* NAV TABS */
 const TABS=[
- {id:'dashboard',labelFull:'🧭 Sherpa',labelShort:'🧭'},
- {id:'activite',labelFull:'📌',labelShort:'📌'},
- {id:'guidee',labelFull:'🗺️',labelShort:'🗺️'},
+ {id:'dashboard',labelFull:'👥 Sherpa',labelShort:'👥'},
+ {id:'activite',labelFull:'📌 Activités',labelShort:'📌'},
+ {id:'guidee',labelFull:'🧭 Guidées',labelShort:'🧭'},
+ {id:'reporting',labelFull:'📈 Reporting',labelShort:'📈'},
  {id:'reglages',labelFull:'⚙️ Paramètres',labelShort:'⚙️'}
 ];
 const tabsEl=$('tabs');
@@ -703,12 +724,10 @@ const p=store.params||DEFAULT_PARAMS, today=new Date();
 const recentDays=Math.max(1,Number(p.activites_recent_jours)||30);
 const upcomingDays=Math.max(1,Number(p.activites_a_venir_jours)||30);
 const hasRecent=(cid,type,days)=>store.activities.some(a=>a.consultant_id===cid && a.type===type && parseDate(a.date_publication)>=addDays(today,-days));
-const alerteCut=addDays(today,-p.delai_alerte_jours);
-const alerteList = store.consultants.filter(c => store.activities.some(a=>a.consultant_id===c.id && a.type==='ALERTE' && parseDate(a.date_publication)>=alerteCut));
+const alerteList = store.consultants.filter(c => store.activities.some(a=>a.consultant_id===c.id && a.type==='ALERTE' && a.alerte_active!==false));
 const finList = store.consultants.filter(c=> c.date_fin && ((d=>d>=0 && d<=p.fin_mission_sous_jours)(daysDiff(parseDate(c.date_fin),today))));
 const stbList = store.consultants.filter(c=>!hasRecent(c.id,'ACTION_ST_BERNARD',p.stb_recent_jours));
 const avisList = store.consultants.filter(c=>!hasRecent(c.id,'AVIS',p.avis_manquant_depuis_jours));
-$('db-fin-w').textContent=p.delai_alerte_jours;
 $('db-fin-x').textContent=p.fin_mission_sous_jours;
 $('db-stb-y').textContent=p.stb_recent_jours;
 $('db-avis-z').textContent=p.avis_manquant_depuis_jours;
@@ -786,16 +805,16 @@ let state={
   filters:{consultant_id:'',type:'',month:'ALL',hashtag:''},
   activities:{selectedId:'',shouldCenter:false},
   guidees:{consultant_id:'',guidee_id:'',selectedEventId:''},
-  prompts:{selected:'activity:ACTION_ST_BERNARD'}
+  templates:{selected:DESCRIPTION_TEMPLATE_KEYS.activity.ACTION_ST_BERNARD}
 };
 /* CONSULTANTS */
 function statusOf(c){
 const p=store.params||DEFAULT_PARAMS, today=new Date();
 const hasSTBRecent = store.activities.some(a=>a.consultant_id===c.id && a.type==='ACTION_ST_BERNARD' && parseDate(a.date_publication)>=addDays(today,-p.stb_recent_jours));
 const hasAvisRecent = store.activities.some(a=>a.consultant_id===c.id && a.type==='AVIS' && parseDate(a.date_publication)>=addDays(today,-p.avis_manquant_depuis_jours));
-const hasAlerteRecent = store.activities.some(a=>a.consultant_id===c.id && a.type==='ALERTE' && parseDate(a.date_publication)>=addDays(today,-p.delai_alerte_jours));
+const hasActiveAlert = store.activities.some(a=>a.consultant_id===c.id && a.type==='ALERTE' && a.alerte_active!==false);
 const past = c.date_fin? (daysDiff(parseDate(c.date_fin),today)<0):false;
-if(past || hasAlerteRecent) return 'r';
+if(past || hasActiveAlert) return 'r';
 return (hasSTBRecent || hasAvisRecent) ? 'g' : 'y';
 }
 const selectConsultant=$('filter-consultant');
@@ -939,7 +958,8 @@ CORDEE:{emoji:'🪢', pill:'', label:'Cordée'},
 NOTE:{emoji:'📝', pill:'note', label:'Note'},
 VERBATIM:{emoji:'💬', pill:'verb', label:'Verbatim'},
 AVIS:{emoji:'🗣️', pill:'avis', label:'Avis'},
-ALERTE:{emoji:'🚨', pill:'alerte', label:'Alerte'}
+ALERTE:{emoji:'🚨', pill:'alerte', label:'Alerte'},
+PROLONGEMENT:{emoji:'↪️', pill:'prol', label:'Prolongement'}
 };
 const TYPE_COLORS={
   ACTION_ST_BERNARD:'var(--stb-f)',
@@ -947,8 +967,17 @@ const TYPE_COLORS={
   NOTE:'var(--note-f)',
   VERBATIM:'var(--verb-f)',
   AVIS:'var(--avis-f)',
-  ALERTE:'var(--alerte-f)'
+  ALERTE:'var(--alerte-f)',
+  PROLONGEMENT:'var(--prolongement-f)'
 };
+function renderProbabilityBadge(value){
+  const key=String(value||'').toUpperCase();
+  const meta=PROLONGEMENT_PROBABILITIES[key];
+  if(!meta) return '';
+  const classes=['probability-badge'];
+  if(meta.className) classes.push(meta.className);
+  return `<span class="${classes.join(' ')}">${esc(meta.label)}</span>`;
+}
 function renderActivities(){
 refreshMonthOptions();
 refreshHashtagOptions();
@@ -1018,6 +1047,7 @@ const g=a.guidee_id ? store.guidees.find(x=>x.id===a.guidee_id):null;
 const meta=TYPE_META[a.type]||{emoji:'❓',pill:'',label:a.type};
 const typeColor=TYPE_COLORS[a.type]||'var(--accent)';
 const heuresBadge = a.type==='ACTION_ST_BERNARD' ? `<span class="hours-badge"><b>${esc(formatHours(a.heures??0))}h</b></span>`:'';
+const probabilityBadge = a.type==='PROLONGEMENT' ? renderProbabilityBadge(a.probabilite) : '';
 const descText=(a.description||'').trim();
 const descHtml=esc(descText);
 const titleText=(a.title||'').trim()||'Sans titre';
@@ -1033,12 +1063,13 @@ const beneficiariesBadge=beneficiariesNames.length
   : '';
 const headerPieces=[beneficiariesBadge].filter(Boolean);
 const metaLine=headerPieces.length?`<div class="activity-meta">${headerPieces.join(' ')}</div>`:'';
-const titleLine=`<div class="activity-title">${heuresBadge?`${heuresBadge} `:''}<span>${titleHtml}</span></div>`;
+const leadingBadges=[heuresBadge,probabilityBadge].filter(Boolean).join(' ');
+const titleLine=`<div class="activity-title">${leadingBadges?`${leadingBadges} `:''}<span>${titleHtml}</span></div>`;
 const descLine=descText
   ? `<div class="activity-desc${isSelected?'':' clamp-5'}">${descHtml}</div>`
   : `<div class="activity-desc muted">—</div>`;
-const guideeInfo=(isSelected && g)
-  ? `<div class="activity-guidee"><span class="activity-guidee-label">🗺️ Guidée :</span> <span class="click-span" data-goto-guidee="${g.id}">${esc(guideeName)}</span></div>`
+const guideeInfo=g
+  ? `<div class="activity-guidee"><span class="click-span" data-goto-guidee="${g.id}">🧭 <b>${esc(guideeName)}</b></span></div>`
   : '';
 const mobileDesc=isSelected
   ? `<div class="mobile-desc expanded" data-act="${a.id}"><div class="text">${descHtml||'—'}</div></div>`
@@ -1128,80 +1159,82 @@ const btnEditGuidee=$('btn-edit-guidee');
 const guideeProgress=$('guidee-progress');
 const guideeProgressFill=guideeProgress?.querySelector('.guidee-progress-bar span');
 const guideeProgressLabel=guideeProgress?.querySelector('.guidee-progress-label');
-const promptTypeSelect=$('prompt-type');
+const templateTypeSelect=$('template-type');
+const templateEditor=$('template-editor');
+const btnSaveTemplate=$('btn-save-template');
+const btnResetTemplate=$('btn-reset-template');
 const promptEditor=$('prompt-editor');
 const btnSavePrompt=$('btn-save-prompt');
 const btnResetPrompt=$('btn-reset-prompt');
 const btnImportJson=$('btn-import-json');
 const btnExportJson=$('btn-export-json');
-function parsePromptKey(raw){
-  const key=String(raw||'').trim();
-  if(key.startsWith('activity:')){
-    const [,type] = key.split(':');
-    return {category:'activity',type:(type||'ACTION_ST_BERNARD')};
-  }
-  if(key==='consultant') return {category:'consultant'};
-  return {category:'guidee'};
+const reportingDocument=$('reporting-document');
+function getTemplateOptions(){
+  const activityOptions=ACTIVITY_TYPES.map(type=>({
+    value:DESCRIPTION_TEMPLATE_KEYS.activity[type],
+    label:`Activité · ${ACTIVITY_LABELS[type]||type}`
+  }));
+  return [
+    ...activityOptions,
+    {value:DESCRIPTION_TEMPLATE_KEYS.guidee,label:'Guidée'},
+    {value:DESCRIPTION_TEMPLATE_KEYS.consultant,label:'Consultant'}
+  ];
 }
-function getPromptDefaultValue(key){
-  const info=parsePromptKey(key);
-  if(info.category==='activity') return DEFAULT_OPENAI_PROMPTS.activities[info.type]||'';
-  if(info.category==='consultant') return DEFAULT_OPENAI_PROMPTS.consultant||'';
-  return DEFAULT_OPENAI_PROMPTS.guidee||'';
+function getDescriptionTemplate(key){
+  if(!key) return '';
+  const params=store?.params||DEFAULT_PARAMS;
+  const templates=params.description_templates||DEFAULT_DESCRIPTION_TEMPLATES;
+  const val=templates[key];
+  if(typeof val==='string' && val.trim()) return val;
+  return DEFAULT_DESCRIPTION_TEMPLATES[key]||'';
 }
-function getPromptValueForKey(key){
-  const info=parsePromptKey(key);
-  const prompts=store?.params?.openai_prompts;
-  if(info.category==='activity'){
-    const val=prompts?.activities?.[info.type];
-    if(typeof val==='string' && val.trim()) return val.trim();
-  }else if(info.category==='consultant'){
-    const val=prompts?.consultant;
-    if(typeof val==='string' && val.trim()) return val.trim();
-  }else{
-    const val=prompts?.guidee;
-    if(typeof val==='string' && val.trim()) return val.trim();
-  }
-  return getPromptDefaultValue(key);
-}
-function setPromptValue(key,value){
+function setDescriptionTemplate(key,value){
+  if(!key) return;
   if(!store.params) store.params={...DEFAULT_PARAMS};
-  if(!store.params.openai_prompts) store.params.openai_prompts=cloneDefaultPrompts();
-  const info=parsePromptKey(key);
-  const trimmed=String(value||'').trim();
-  const container=store.params.openai_prompts;
-  if(info.category==='activity'){
-    container.activities=container.activities||{};
-    if(trimmed){
-      container.activities[info.type]=trimmed;
-    }else{
-      delete container.activities[info.type];
-    }
-  }else if(info.category==='consultant'){
-    if(trimmed){
-      container.consultant=trimmed;
-    }else{
-      delete container.consultant;
-    }
+  const normalized=String(value||'').replace(/\r\n/g,'\n').trim();
+  store.params.description_templates={...store.params.description_templates};
+  if(normalized){
+    store.params.description_templates[key]=normalized;
   }else{
-    if(trimmed){
-      container.guidee=trimmed;
-    }else{
-      delete container.guidee;
-    }
+    delete store.params.description_templates[key];
   }
+}
+function resetDescriptionTemplate(key){
+  if(!key) return;
+  if(!store.params) store.params={...DEFAULT_PARAMS};
+  store.params.description_templates={...store.params.description_templates};
+  delete store.params.description_templates[key];
+}
+function getAiPromptTemplate(){
+  const params=store?.params||DEFAULT_PARAMS;
+  const raw=typeof params.ai_prompt==='string'?params.ai_prompt.trim():'';
+  return raw||DEFAULT_COMMON_DESCRIPTION_PROMPT;
+}
+function renderTemplateEditor(){
+  if(!templateTypeSelect || !templateEditor) return;
+  const options=getTemplateOptions();
+  if(!templateTypeSelect.options.length){
+    options.forEach(opt=>{
+      const option=document.createElement('option');
+      option.value=opt.value;
+      option.textContent=opt.label;
+      templateTypeSelect.appendChild(option);
+    });
+  }
+  const values=options.map(opt=>opt.value);
+  const current=state.templates?.selected;
+  const fallback=values.includes(current)?current:options[0]?.value||'';
+  if(state.templates.selected!==fallback){
+    state.templates.selected=fallback;
+  }
+  if(templateTypeSelect.value!==state.templates.selected){
+    templateTypeSelect.value=state.templates.selected;
+  }
+  templateEditor.value=getDescriptionTemplate(state.templates.selected);
 }
 function renderPromptEditor(){
-  if(!promptEditor || !promptTypeSelect) return;
-  const currentKey=state.prompts?.selected || promptTypeSelect.value || 'activity:ACTION_ST_BERNARD';
-  const normalizedKey=currentKey.startsWith('activity:') && !ACTIVITY_TYPES.includes(currentKey.split(':')[1])
-    ? `activity:${ACTIVITY_TYPES[0]}`
-    : currentKey;
-  state.prompts.selected=normalizedKey;
-  if(promptTypeSelect.value!==normalizedKey){
-    promptTypeSelect.value=normalizedKey;
-  }
-  promptEditor.value=getPromptValueForKey(normalizedKey);
+  if(!promptEditor) return;
+  promptEditor.value=getAiPromptTemplate();
 }
 function updateGuideeEditButton(targetId=''){
   if(!btnEditGuidee) return;
@@ -1265,8 +1298,8 @@ function renderGuideeFilters(){
     const guideeList=store.guidees
       .filter(g=>!state.guidees.consultant_id || g.consultant_id===state.guidees.consultant_id)
       .sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
-    const opts=['<option value="">🗺️ Toutes</option>',
-      ...guideeList.map(g=>`<option value="${esc(g.id)}">🗺️ ${esc(g.nom||'Sans titre')}</option>`)
+    const opts=['<option value="">🧭 Toutes</option>',
+      ...guideeList.map(g=>`<option value="${esc(g.id)}">🧭 ${esc(g.nom||'Sans titre')}</option>`)
     ];
     const html=opts.join('');
     if(selectGuidee.innerHTML!==html) selectGuidee.innerHTML=html;
@@ -1444,8 +1477,12 @@ function renderGuideeTimeline(){
     const hoursBadge=ev.activity && ev.activity.type==='ACTION_ST_BERNARD'
       ? `<span class="hours-badge"><b>${esc(formatHours(ev.activity.heures??0))}h</b></span>`
       : '';
+    const probabilityBadge=ev.activity && ev.activity.type==='PROLONGEMENT'
+      ? renderProbabilityBadge(ev.activity.probabilite)
+      : '';
     const metaPrimaryPieces=[];
     if(hoursBadge) metaPrimaryPieces.push(hoursBadge);
+    if(probabilityBadge) metaPrimaryPieces.push(probabilityBadge);
     if(ev.type==='activity' && ev.activity){
       const title=esc((ev.activity.title||'').trim()||'Sans titre');
       metaPrimaryPieces.push(`<span class="bold">${title}</span>`);
@@ -1469,9 +1506,11 @@ function renderGuideeTimeline(){
       const descriptionContent=descHtml||'—';
       bodyHtml=`${infoLine}<div class="${descriptionClass}">${descriptionContent}</div>`;
     }else{
-      const verb=ev.type==='start'?'Démarrage':'Fin';
-      const parts=[`${verb} de la guidée`];
-      bodyHtml=`<div class="timeline-text clamp-3">${parts.join(' ')}</div>`;
+      const verb=ev.type==='start'?'Début':'Fin';
+      const gid=ev.guidee?.id||'';
+      const guideeLabel=esc(ev.guidee?.nom||'Sans titre');
+      const filterAttr=gid?` data-filter-guidee="${gid}"`:'';
+      bodyHtml=`<div class="timeline-text clamp-3">${verb} de la guidée 🧭 <span class="click-span"${filterAttr}><b>${guideeLabel}</b></span></div>`;
     }
     const markerIcon=isSelected?'✔️':esc(ev.icon);
     item.innerHTML=`<div class="timeline-marker">${markerIcon}</div><div class="timeline-body">${metaHtml}${bodyHtml}</div>`;
@@ -1493,6 +1532,13 @@ function renderGuideeTimeline(){
     if(guideeEdit && ev.guidee){
       on(guideeEdit,'click',e=>{ e.stopPropagation(); openGuideeModal(ev.guidee.id); });
     }
+    item.querySelectorAll('[data-filter-guidee]').forEach(el=>{
+      on(el,'click',e=>{
+        e.stopPropagation();
+        const gid=e.currentTarget.dataset.filterGuidee;
+        if(gid) gotoGuideeTimeline(gid);
+      });
+    });
     timelineEl.appendChild(item);
   });
   if(shouldScroll){
@@ -1537,10 +1583,102 @@ btnEditGuidee?.addEventListener('click',()=>{
   openGuideeModal(currentId);
 });
 /* PARAMS */
+function formatReportDate(dateStr){
+  const date=parseDate(dateStr||'');
+  if(!date) return '—';
+  return date.toLocaleDateString('fr-FR');
+}
+function formatReportMultiline(text){
+  const value=String(text||'').trim();
+  if(!value) return '—';
+  return esc(value).replace(/\n/g,'<br/>');
+}
+function renderReporting(){
+  if(!reportingDocument) return;
+  if(!storeHasRecords()){
+    reportingDocument.innerHTML='<div class="sub">Aucune donnée à afficher.</div>';
+    return;
+  }
+  const today=new Date();
+  const consultants=[...(store.consultants||[])].sort((a,b)=>(a.nom||'').localeCompare(b.nom||'', 'fr',{sensitivity:'base'}));
+  const formatTitleDate=(title,date)=>{
+    const safeTitle=(String(title||'').trim()||'Sans titre');
+    return `${safeTitle} (${formatReportDate(date||'')})`;
+  };
+  const missionsRows=consultants.map(c=>{
+    const missionDate=formatReportDate(c.date_fin||'');
+    const prolongements=(store.activities||[])
+      .filter(a=>a.type==='PROLONGEMENT' && a.consultant_id===c.id)
+      .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''));
+    const lastPro=prolongements[0]||null;
+    let finCell=missionDate;
+    if(lastPro){
+      const proText=formatTitleDate(lastPro.title,lastPro.date_publication||'');
+      finCell=finCell && finCell!=='—'
+        ? `${finCell} • Prolongement : ${proText}`
+        : `Prolongement : ${proText}`;
+    }
+    const guideesForConsultant=(store.guidees||[]).filter(g=>g.consultant_id===c.id);
+    const sortedGuidees=[...guideesForConsultant].sort((a,b)=>(b.date_debut||'').localeCompare(a.date_debut||''));
+    const activeGuidee=sortedGuidees.find(g=>{
+      const start=parseDate(g.date_debut||'');
+      const end=parseDate(g.date_fin||'');
+      if(start && end) return start<=today && end>=today;
+      if(start && !end) return start<=today;
+      if(!start && end) return end>=today;
+      return false;
+    })||sortedGuidees[0];
+    const guideeCell=activeGuidee
+      ? `${activeGuidee.nom?String(activeGuidee.nom).trim()||'Sans titre':'Sans titre'} (${formatReportDate(activeGuidee.date_debut||'')} → ${formatReportDate(activeGuidee.date_fin||'')})`
+      : '—';
+    const lastVerbatim=(store.activities||[])
+      .filter(a=>a.type==='VERBATIM' && a.consultant_id===c.id)
+      .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''))[0]||null;
+    const verbatimCell=lastVerbatim?formatTitleDate(lastVerbatim.title,lastVerbatim.date_publication||''):'—';
+    const lastAvis=(store.activities||[])
+      .filter(a=>a.type==='AVIS' && a.consultant_id===c.id)
+      .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''))[0]||null;
+    const avisCell=lastAvis?formatTitleDate(lastAvis.title,lastAvis.date_publication||''):'—';
+    const activeAlert=(store.activities||[])
+      .filter(a=>a.type==='ALERTE' && a.consultant_id===c.id && a.alerte_active!==false)
+      .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''))[0]||null;
+    const alertCell=activeAlert?formatTitleDate(activeAlert.title,activeAlert.date_publication||''):'—';
+    return `<tr><td>${esc(c.nom||'—')}</td><td>${esc(c.titre_mission||'—')}</td><td>${esc(finCell)}</td><td>${esc(guideeCell)}</td><td>${esc(verbatimCell)}</td><td>${esc(avisCell)}</td><td>${esc(alertCell)}</td></tr>`;
+  });
+  const missionsTable=`<div class="reporting-section"><table><caption>Missions</caption><thead><tr><th>Consultant</th><th>Titre</th><th>Fin de mission</th><th>Guidée en cours</th><th>Dernier verbatim</th><th>Dernier avis</th><th>Alerte en cours</th></tr></thead><tbody>${missionsRows.length?missionsRows.join(''):`<tr><td colspan="7">—</td></tr>`}</tbody></table></div>`;
+  const stbActions=(store.activities||[])
+    .filter(a=>a.type==='ACTION_ST_BERNARD')
+    .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''));
+  const actionsRows=stbActions.map(a=>{
+    const consultant=store.consultants.find(c=>c.id===a.consultant_id)||null;
+    const beneficiaries=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
+    const beneficiaryNames=beneficiaries
+      .map(id=>store.consultants.find(c=>c.id===id)?.nom)
+      .filter(Boolean);
+    const participants=[consultant?.nom||null,...beneficiaryNames];
+    const participantText=participants.filter(Boolean).join(', ');
+    return `<tr><td>${esc(participantText||'—')}</td><td>${esc(formatReportDate(a.date_publication||''))}</td><td>${esc(`${formatHours(a.heures??0)}h`)}</td><td>${esc((a.title||'').trim()||'Sans titre')}</td><td>${formatReportMultiline(a.description)}</td></tr>`;
+  });
+  const actionsTable=`<div class="reporting-section"><table><caption>Actions</caption><thead><tr><th>Consultants</th><th>Date</th><th>Durée</th><th>Titre</th><th>Description</th></tr></thead><tbody>${actionsRows.length?actionsRows.join(''):`<tr><td colspan="5">—</td></tr>`}</tbody></table></div>`;
+  const cordeeActivities=(store.activities||[])
+    .filter(a=>a.type==='CORDEE')
+    .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''));
+  const cordeeRows=cordeeActivities.map(a=>{
+    const consultant=store.consultants.find(c=>c.id===a.consultant_id)||null;
+    const beneficiaries=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
+    const beneficiaryNames=beneficiaries
+      .map(id=>store.consultants.find(c=>c.id===id)?.nom)
+      .filter(Boolean);
+    const participants=[consultant?.nom||null,...beneficiaryNames];
+    const participantText=participants.filter(Boolean).join(', ');
+    return `<tr><td>${esc(participantText||'—')}</td><td>${esc(formatReportDate(a.date_publication||''))}</td><td>${esc((a.title||'').trim()||'Sans titre')}</td><td>${formatReportMultiline(a.description)}</td></tr>`;
+  });
+  const cordeeTable=`<div class="reporting-section"><table><caption>Cordées</caption><thead><tr><th>Consultants</th><th>Date</th><th>Titre</th><th>Description</th></tr></thead><tbody>${cordeeRows.length?cordeeRows.join(''):`<tr><td colspan="4">—</td></tr>`}</tbody></table></div>`;
+  reportingDocument.innerHTML=[missionsTable,actionsTable,cordeeTable].join('');
+}
 function renderParams(){
 const p=store.params||DEFAULT_PARAMS;
 $('p-sync_interval').value=p.sync_interval_minutes ?? DEFAULT_SYNC_INTERVAL_MINUTES;
-$('p-delai_alerte').value=p.delai_alerte_jours;
 $('p-fin_mission_sous').value=p.fin_mission_sous_jours;
 $('p-stb_recent').value=p.stb_recent_jours;
 $('p-avis_manquant').value=p.avis_manquant_depuis_jours;
@@ -1550,12 +1688,12 @@ const hashtagsInput=$('p-hashtags');
 if(hashtagsInput){
   hashtagsInput.value=p.hashtags_catalog ?? DEFAULT_HASHTAG_CATALOG;
 }
+renderTemplateEditor();
 renderPromptEditor();
 }
 $('btn-save-params').onclick=()=>{
 const p=store.params||(store.params={...DEFAULT_PARAMS});
 p.sync_interval_minutes=Math.max(1, Number($('p-sync_interval').value||DEFAULT_SYNC_INTERVAL_MINUTES));
-p.delai_alerte_jours=Number($('p-delai_alerte').value||7);
 p.fin_mission_sous_jours=Number($('p-fin_mission_sous').value||60);
 p.stb_recent_jours=Number($('p-stb_recent').value||30);
 p.avis_manquant_depuis_jours=Number($('p-avis_manquant').value||60);
@@ -1567,23 +1705,38 @@ save();
 restartAutoSync();
 alert('Paramètres enregistrés.');
 };
-if(promptTypeSelect){
-  on(promptTypeSelect,'change',e=>{
-    const key=e.target.value;
-    state.prompts.selected=key;
-    renderPromptEditor();
+if(templateTypeSelect){
+  on(templateTypeSelect,'change',e=>{
+    state.templates.selected=e.target.value;
+    renderTemplateEditor();
   });
 }
+btnSaveTemplate?.addEventListener('click',()=>{
+  const key=templateTypeSelect?.value || state.templates.selected;
+  if(!key){ alert('Sélectionnez un template.'); return; }
+  setDescriptionTemplate(key,templateEditor?.value||'');
+  save();
+  alert('Template enregistré.');
+});
+btnResetTemplate?.addEventListener('click',()=>{
+  const key=templateTypeSelect?.value || state.templates.selected;
+  if(!key) return;
+  resetDescriptionTemplate(key);
+  renderTemplateEditor();
+  save();
+  alert('Template réinitialisé.');
+});
 btnSavePrompt?.addEventListener('click',()=>{
-  const key=state.prompts?.selected || promptTypeSelect?.value || 'activity:ACTION_ST_BERNARD';
   if(!promptEditor){ alert('Éditeur indisponible.'); return; }
-  setPromptValue(key,promptEditor.value||'');
+  if(!store.params) store.params={...DEFAULT_PARAMS};
+  store.params.ai_prompt=(promptEditor.value||'').trim()||DEFAULT_COMMON_DESCRIPTION_PROMPT;
   save();
   alert('Prompt enregistré.');
 });
 btnResetPrompt?.addEventListener('click',()=>{
-  const key=state.prompts?.selected || promptTypeSelect?.value || 'activity:ACTION_ST_BERNARD';
-  setPromptValue(key,'');
+  if(!promptEditor) return;
+  if(!store.params) store.params={...DEFAULT_PARAMS};
+  store.params.ai_prompt=DEFAULT_COMMON_DESCRIPTION_PROMPT;
   renderPromptEditor();
   save();
   alert('Prompt réinitialisé.');
@@ -1643,11 +1796,16 @@ const faConsult=$('fa-consultant');
 const faGuidee=$('fa-guidee');
 const faDesc=$('fa-desc');
 const faTitle=$('fa-title');
+const faProbabilityWrap=$('fa-probability-wrap');
+const faProbability=$('fa-probability');
+const faAlertWrap=$('fa-alert-active-wrap');
+const faAlertActive=$('fa-alert-active');
 const faTitleAI=$('fa-title-ai');
 const btnFaGoto=$('fa-goto-consultant');
 const btnFaDelete=$$('#dlg-activity .actions [data-action="delete"]');
 const faOpenAI=$('fa-openai');
 attachHashtagAutocomplete(faDesc);
+faDesc?.addEventListener('input',()=>{ faDesc.dataset.autofill='false'; });
 if(faHeures && !faHeures.options.length){
   const frag=document.createDocumentFragment();
   for(let i=0;i<=30;i++){
@@ -1659,10 +1817,24 @@ if(faHeures && !faHeures.options.length){
   }
   faHeures.appendChild(frag);
 }
+function applyActivityTemplateAutofill(force=false){
+  if(!faDesc || !faType) return;
+  const key=DESCRIPTION_TEMPLATE_KEYS.activity[faType.value]||'';
+  const template=key?getDescriptionTemplate(key):'';
+  const shouldApply=force || faDesc.dataset.autofill==='true' || !faDesc.value.trim();
+  if(shouldApply){
+    faDesc.value=template;
+    faDesc.dataset.autofill='true';
+  }
+}
 faType.onchange=()=>{
   const value=faType.value;
   const isSTB=value==='ACTION_ST_BERNARD';
+  const isProlongement=value==='PROLONGEMENT';
+  const isAlerte=value==='ALERTE';
   faHeuresWrap.classList.toggle('hidden',!isSTB);
+  faProbabilityWrap?.classList.toggle('hidden',!isProlongement);
+  faAlertWrap?.classList.toggle('hidden',!isAlerte);
   faGuidee.required=isSTB;
   if(isSTB){
     if(!faGuidee.value){
@@ -1672,35 +1844,30 @@ faType.onchange=()=>{
   }else{
     faHeures.value='0';
   }
+  if(faProbability) faProbability.required=!!isProlongement;
+  if(isProlongement){
+    if(faProbability && !faProbability.value){
+      faProbability.value=DEFAULT_PROLONGEMENT_PROBABILITY;
+    }
+  }else if(faProbability){
+    faProbability.value='';
+  }
+  if(!isAlerte && faAlertActive){
+    faAlertActive.checked=true;
+  }
+  applyActivityTemplateAutofill();
 };
 faConsult.onchange=()=>{ updateFaGuideeOptions(); };
 btnFaGoto.onclick=()=>{ const cid=faConsult.value; if(cid){ dlgA.close(); openConsultantModal(cid); } };
 faOpenAI?.addEventListener('click',async()=>{
   const currentText=faDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
-  const params=store?.params||DEFAULT_PARAMS;
-  const template=getActivityPrompt(params,faType.value);
-  const typeMeta=TYPE_META[faType.value]||{label:faType.value};
-  const consultant=store.consultants.find(c=>c.id===faConsult.value)||null;
-  const guidee=faGuidee?.value ? (store.guidees.find(g=>g.id===faGuidee.value)||null) : null;
-  const currentTitle=(faTitle?.value||'').trim()||'Sans titre';
-  const prompt=fillPromptTemplate(template,{
-    activity:{
-      title:currentTitle,
-      description:currentText,
-      type:faType.value,
-      type_label:typeMeta.label||faType.value
-    },
-    guidee:{
-      title:guidee?.nom||'',
-      description:guidee?.description||''
-    },
-    consultant:{
-      name:consultant?.nom||'',
-      title:consultant?.titre_mission||consultant?.nom||'',
-      description:consultant?.description||''
-    },
-    hashtags_catalog:getConfiguredHashtags().join(' ')
+  const templateKey=DESCRIPTION_TEMPLATE_KEYS.activity[faType.value];
+  const templateText=templateKey?getDescriptionTemplate(templateKey):'';
+  const prompt=fillPromptTemplate(getAiPromptTemplate(),{
+    description_template:templateText,
+    description_user:currentText,
+    hashtags:getConfiguredHashtags().join(' ')
   }).trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
   await invokeAIHelper(faOpenAI,faDesc,prompt);
@@ -1732,7 +1899,7 @@ function updateFaGuideeOptions(preferredId){
     faGuidee.value='';
     return;
   }
-  const opts=list.map(g=>`<option value="${g.id}">🗺️ ${esc(g.nom||'Sans titre')}</option>`);
+  const opts=list.map(g=>`<option value="${g.id}">🧭 ${esc(g.nom||'Sans titre')}</option>`);
   faGuidee.innerHTML=opts.join('');
   const desired=preferredId ?? faGuidee.value;
   const hasDesired=desired && list.some(g=>g.id===desired);
@@ -1749,27 +1916,43 @@ if(id && state.activities.selectedId!==id){
 faConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
 $('fa-date').value=todayStr();
 faDesc.value='';
+faDesc.dataset.autofill='true';
 if(faTitle) faTitle.value='';
 faType.value='ACTION_ST_BERNARD'; faHeuresWrap.classList.remove('hidden'); faHeures.value='0';
+if(faProbability) faProbability.value='';
+if(faAlertActive) faAlertActive.checked=true;
 if(id){
 const a=store.activities.find(x=>x.id===id); if(!a) return;
 faConsult.value=a.consultant_id; faType.value=a.type; $('fa-date').value=a.date_publication||''; faDesc.value=a.description||''; if(faTitle) faTitle.value=a.title||''; faHeures.value=String(a.heures??0);
+ if(faProbability) faProbability.value=String(a.probabilite||'').toUpperCase();
+ if(faAlertActive) faAlertActive.checked=a.alerte_active!==false;
+ faDesc.dataset.autofill='false';
 updateFaGuideeOptions(a.guidee_id||'');
 faType.onchange();
 }else{
   updateFaGuideeOptions();
   faType.onchange();
+  applyActivityTemplateAutofill(true);
 }
 dlgA.showModal();
 }
 $('form-activity').onsubmit=(e)=>{
 e.preventDefault();
 const isSTB=faType.value==='ACTION_ST_BERNARD';
+const isProlongement=faType.value==='PROLONGEMENT';
+const isAlerte=faType.value==='ALERTE';
 const heuresValue=isSTB ? Number(faHeures.value??0) : undefined;
+const probabilityValue=isProlongement ? (faProbability?.value||'').toUpperCase() : '';
+const alertActive=isAlerte ? (faAlertActive?.checked!==false) : undefined;
 const titleValue=(faTitle?.value||'').trim();
 const data={ consultant_id:faConsult.value, type:faType.value, date_publication:$('fa-date').value, title:titleValue, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined };
+if(isProlongement && PROLONGEMENT_PROBABILITIES[probabilityValue]){ data.probabilite=probabilityValue; }
+if(isAlerte){ data.alerte_active=alertActive; }
 const heuresInvalid=isSTB && (!Number.isFinite(heuresValue) || heuresValue<0);
-const missing = !data.consultant_id || !data.type || !data.date_publication || !data.title || heuresInvalid || (isSTB && !data.guidee_id);
+const probabilityInvalid=isProlongement && !PROLONGEMENT_PROBABILITIES[probabilityValue];
+const missing = !data.consultant_id || !data.type || !data.date_publication || !data.title || heuresInvalid || probabilityInvalid || (isSTB && !data.guidee_id);
+if(!isProlongement){ delete data.probabilite; }
+if(!isAlerte){ delete data.alerte_active; }
 if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
 if(currentActivityId){ Object.assign(store.activities.find(x=>x.id===currentActivityId),data,{updated_at:nowISO()}); }else{ store.activities.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
@@ -1797,25 +1980,15 @@ const fgOpenAI=$('fg-openai');
 const fgTitleAI=$('fg-title-ai');
 const btnFgEditConsultant=$('fg-edit-consultant');
 attachHashtagAutocomplete(fgDesc);
+fgDesc?.addEventListener('input',()=>{ fgDesc.dataset.autofill='false'; });
 fgOpenAI?.addEventListener('click',async()=>{
   const currentText=fgDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
-  const params=store?.params||DEFAULT_PARAMS;
-  const template=params.openai_prompts?.guidee || DEFAULT_OPENAI_PROMPTS.guidee;
-  const consultantId=fgConsult?.value||'';
-  const consultant=consultantId? (store.consultants.find(c=>c.id===consultantId)||null) : null;
-  const guideeTitle=fgNom?.value.trim()||'';
-  const prompt=fillPromptTemplate(template,{
-    guidee:{
-      title:guideeTitle,
-      description:currentText
-    },
-    consultant:{
-      name:consultant?.nom||'',
-      title:consultant?.titre_mission||consultant?.nom||'',
-      description:consultant?.description||''
-    },
-    hashtags_catalog:getConfiguredHashtags().join(' ')
+  const templateText=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee);
+  const prompt=fillPromptTemplate(getAiPromptTemplate(),{
+    description_template:templateText,
+    description_user:currentText,
+    hashtags:getConfiguredHashtags().join(' ')
   }).trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
   await invokeAIHelper(fgOpenAI,fgDesc,prompt);
@@ -1900,9 +2073,16 @@ function openGuideeModal(id=null,options={}){
     ? defaultConsultantId
     : fgConsult.options[0]?.value||'';
   const g=id? store.guidees.find(x=>x.id===id) : {id:uid(),nom:'',description:'',consultant_id:preferred,date_debut:todayStr(),date_fin:'' ,thematique_id:'autre'};
+  const templateGuidee=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee);
   fgConsult.value=g?.consultant_id||preferred||'';
   fgNom.value=g?.nom||'';
-  fgDesc.value=g?.description||'';
+  if(id){
+    fgDesc.value=g?.description||'';
+    fgDesc.dataset.autofill='false';
+  }else{
+    fgDesc.value=templateGuidee;
+    fgDesc.dataset.autofill='true';
+  }
   const start=g?.date_debut || todayStr();
   fgDebut.value=start;
   const consultant=store.consultants.find(c=>c.id===(g?.consultant_id||fgConsult.value));
@@ -1969,20 +2149,15 @@ const fcOpenAI=$('fc-openai');
 const btnFcGoto=$('fc-goto-guidees');
 const btnFcBoondLink=$('fc-boond-link');
 attachHashtagAutocomplete(fcDesc);
+fcDesc?.addEventListener('input',()=>{ fcDesc.dataset.autofill='false'; });
 fcOpenAI?.addEventListener('click',async()=>{
   const currentText=fcDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
-  const params=store?.params||DEFAULT_PARAMS;
-  const template=params.openai_prompts?.consultant || DEFAULT_OPENAI_PROMPTS.consultant;
-  const consultantName=fcNom?.value.trim()||'';
-  const missionTitle=fcTitre?.value.trim()||'';
-  const prompt=fillPromptTemplate(template,{
-    consultant:{
-      name:consultantName,
-      title:missionTitle||consultantName,
-      description:currentText
-    },
-    hashtags_catalog:getConfiguredHashtags().join(' ')
+  const templateText=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.consultant);
+  const prompt=fillPromptTemplate(getAiPromptTemplate(),{
+    description_template:templateText,
+    description_user:currentText,
+    hashtags:getConfiguredHashtags().join(' ')
   }).trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
   await invokeAIHelper(fcOpenAI,fcDesc,prompt);
@@ -2003,11 +2178,20 @@ function updateBoondLink(idValue){
 function openConsultantModal(id=null){
 currentConsultantId=id;
 const c=id? store.consultants.find(x=>x.id===id) : {nom:'',titre_mission:'',date_fin:'',boond_id:'',description:''};
+const templateConsultant=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.consultant);
 if(fcNom) fcNom.value=c?.nom||'';
 if(fcTitre) fcTitre.value=c?.titre_mission||'';
 if(fcFin) fcFin.value=c?.date_fin||'';
 if(fcBoond) fcBoond.value=c?.boond_id||'';
-if(fcDesc) fcDesc.value=c?.description||'';
+if(fcDesc){
+  if(id){
+    fcDesc.value=c?.description||'';
+    fcDesc.dataset.autofill='false';
+  }else{
+    fcDesc.value=templateConsultant;
+    fcDesc.dataset.autofill='true';
+  }
+}
 updateBoondLink(c?.boond_id||'');
 dlgC.showModal();
 }
@@ -2598,7 +2782,7 @@ function renderActivityFiltersOptions(){
   refreshHashtagOptions();
   updateFilterHighlights();
 }
-function refreshAll(){ renderConsultantOptions(); renderActivityFiltersOptions(); renderActivities(); renderGuideeFilters(); renderGuideeTimeline(); renderParams(); dashboard(); }
+function refreshAll(){ renderConsultantOptions(); renderActivityFiltersOptions(); renderActivities(); renderGuideeFilters(); renderGuideeTimeline(); renderParams(); renderReporting(); dashboard(); }
 /* Premier rendu */
 if(FIRESTORE_ENABLED){
   initFirebase();

@@ -4,17 +4,25 @@
     "updated_at": "2025-10-22T09:48:52.613Z"
   },
   "params": {
-    "delai_alerte_jours": 15,
     "fin_mission_sous_jours": 60,
     "stb_recent_jours": 30,
     "avis_manquant_depuis_jours": 60,
     "activites_recent_jours": 30,
     "activites_a_venir_jours": 30,
     "hashtags_catalog": "#ProductBacklogPrioritization #ProductUserStories #ProductRoadmap #ProductKPIs #ProductVision #DataExploration #DataVisualization #DataModeling #DataStorytelling #DataGovernance #DesignUX #DesignPrototyping #DesignUserTesting #DesignThinking #DesignSystem #TeamLeadership #TeamCommunication #TeamFacilitation #TeamCollaboration #TeamAlignment #TechSQL #TechPowerBI #TechAutomation #TechDocumentation #TechIntegration #CustomerInsight #CustomerRelationship #CustomerValue #CustomerFeedback #CustomerExperience",
-    "openai_activity_prompt": "Je suis manager coach et j'assure le suivi des consultants PO.\nPeux-tu me générer à partir des infos suivantes une description de l'activité de manière plus structurée :\n- Activité : {{activity.title}} {{activity.description}}\n- Compréhension du contexte : {{guidee.title}} {{guidee.description}}\n- Consultant : {{consultant.title}} {{consultant.description}}\nUtilise les mots-clés des hashtags lorsqu'on parle de compétences ({{hashtags_catalog}}).\nRespecte strictement la structure correspondant au type d'activité détaillée ci-dessous.",
     "sync_interval_minutes": 10,
-    "openai_guidee_prompt": "Transforme cette description de guidée en respectant strictement cette structure :\n🎯 Objectif : résultat visé ou compétence à renforcer\n🧩 Contexte : mission, situation ou besoin à l’origine\n🤝 Accompagnement prévu : format, fréquence, durée\n💡 Compétences : #Product #Team #Tech #Data #Customer\n🌱 Indicateurs : signes concrets de progression attendus\n💬 Résultat / bilan : constat en fin de cycle\nUtilise les données : Guidée {{guidee.title}} {{guidee.description}} | Consultant {{consultant.title}} {{consultant.description}}\nRéutilise les hashtags pertinents parmi {{hashtags_catalog}} et termine par des suggestions # et @ si adaptées.",
-    "openai_consultant_prompt": "Transforme cette description consultant en un portrait structuré et professionnel.\nRespecte strictement le format :\n💼 Mission actuelle : contexte, client, rôle principal\n🎯 Objectifs pro : ambitions à court/moyen terme\n💡 Compétences : #Product #Team #Tech #Data #Customer\n🌱 Forces : atouts distinctifs ou points d’appui\n⚠️ Points de veille : freins, besoins ou risques à accompagner\n💬 Style relationnel : posture, communication, énergie\nUtilise les informations suivantes : {{consultant.title}} {{consultant.description}}\nAjoute les hashtags pertinents parmi {{hashtags_catalog}} et termine par des suggestions # et @ si utiles."
+    "description_templates": {
+      "activity:AVIS": "--\nForces : qualité ou réussite marquante\nFreins : fragilité ou axe d’attention\nPistes : action pour s'améliorer\n--",
+      "activity:ACTION_ST_BERNARD": "--\nContexte : situation nécessitant soutien\nAction : geste concret du coach réalisée\nRésultat : effet observé immédiat perçu\nSuivi : prochaine étape prévue\n--",
+      "activity:CORDEE": "--\nContenu : sujet ou domaine partagé\nRôle : posture ou implication joué\nValeur : bénéfice collectif visible apportée\nSuivi : suite ou prolongement prévu\n--",
+      "activity:NOTE": "--\nContexte : cadre ou événement observé\nFait : observation factuelle\nImpact : effet ou enseignement clé\n--",
+      "activity:PROLONGEMENT": "--\nÉchéance : durée ou nouvelle date de fin\nDécision : date, argument ou événement décisif\nSource : émetteur de l'information\nAction : prochaine étape prévue par @\n--",
+      "activity:VERBATIM": "",
+      "activity:ALERTE": "",
+      "guidee": "--\nObjectif : résultat visé ou compétence à renforcer\nContexte : mission, situation ou besoin à l’origine\nAccompagnement : format, fréquence, durée prévisionnelle\nCompétences : #Product #Team #Tech #Data #Customer\nIndicateurs : signes concrets de progression attendus\nRésultat : constat ou bilan en fin de cycle\n--",
+      "consultant": "--\nMission : contexte actuelle , client, rôle principal\nObjectifs : ambitions motivations à court/moyen terme\nCompétences : #Product #Team #Tech #Data #Customer\nForces : atouts distinctifs ou points d’appui\nFreins : faiblesses, besoins ou risques à accompagner\nStyle : posture, communication, relationnel, énergie\n--"
+    },
+    "ai_prompt": "Peux tu reprendre dans la structure imposée {{description_template}} la description {{description_user}} de manière synthétique ? (1 point = 1 ligne, mettre des virgules entre plusieurs idées) utilise des # de la liste {{hashtags}} pour des notions synonymes qui sont mentionnés."
   },
   "consultants": [
     {
