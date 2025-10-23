@@ -1170,10 +1170,7 @@ const beneficiariesBadge=beneficiariesNames.length
   ? `<span class="activity-beneficiary" title="Bénéficiaires">🪢 ${esc(beneficiariesNames.join(', '))}</span>`
   : '';
 const headerPieces=[guideeBadge,beneficiariesBadge].filter(Boolean);
-const isCurrentGuidee=g && state.guidees?.guidee_id && g.id===state.guidees.guidee_id;
-const metaLine=(!isCurrentGuidee && headerPieces.length)
-  ? `<div class="activity-meta">${headerPieces.join(' ')}</div>`
-  : '';
+const metaLine=headerPieces.length?`<div class="activity-meta">${headerPieces.join(' ')}</div>`:'';
 const leadingBadges=[heuresBadge,probabilityBadge].filter(Boolean).join(' ');
 const titleContent=`<span class="activity-title-link click-span">${titleHtml}</span>`;
 const titleLine=`<div class="activity-title" role="button" tabindex="0" data-activity-edit="${a.id}">${leadingBadges?`${leadingBadges} `:''}${titleContent}</div>`;
