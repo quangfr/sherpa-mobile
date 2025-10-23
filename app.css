@@ -185,6 +185,12 @@ dialog::backdrop{background:#0006}
 .timeline-item.future{--timeline-body-bg:#fff;--timeline-body-fg:var(--fg)}
 .timeline-item.past .timeline-marker{background:#e5e7eb;border-color:#d1d5db;color:#6b7280}
 .timeline-item.future .timeline-marker{background:#fff}
+.timeline-item-milestone{--timeline-body-bg:var(--accent);--timeline-body-fg:#fff;--timeline-border:var(--accent);--timeline-marker-border:var(--accent)}
+.timeline-item-milestone .timeline-marker{background:var(--accent);color:#fff}
+.timeline-item-milestone .timeline-date-dot{color:rgba(255,255,255,.6)}
+.timeline-item-milestone .timeline-meta-date{color:inherit}
+.timeline-item-milestone .timeline-edit.btn{color:#fff;border-color:rgba(255,255,255,.35)}
+.timeline-item-milestone .timeline-edit.btn:hover{border-color:#fff}
 .timeline-item.selected .timeline-body{border-width:2px;border-color:var(--selection-color);box-shadow:none}
 .timeline-meta{font-size:13px;line-height:1.45;display:flex;flex-wrap:wrap;gap:6px;font-weight:600;color:inherit;align-items:center}
 .timeline-meta-primary{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -317,8 +323,13 @@ dialog{border-radius:0;width:100vw;height:100vh;max-height:none;margin:0}
 .reporting-document th,.reporting-document td{border:1px solid var(--border);padding:6px;vertical-align:top;}
 .reporting-document th{background:var(--bg);text-align:left;}
 .reporting-document caption{font-weight:700;margin-bottom:6px;text-align:left;}
+.reporting-document .caption-sub{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-top:2px;}
 .reporting-document .reporting-section{display:flex;flex-direction:column;gap:8px;}
+.activity-title[data-activity-edit]{cursor:pointer;}
+.activity-title[data-activity-edit]:focus{outline:2px solid var(--accent);outline-offset:2px;}
+.activity-title[data-activity-edit]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 .activity-title .activity-title-link:focus{outline:2px solid var(--accent);outline-offset:2px;}
+.activity-meta .activity-guidee-chip{font-weight:600;}
 .activity-guidee{margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.45;color:inherit}
-.activity-guidee .activity-guidee-link{text-decoration:none;color:inherit;font-weight:700;}
+.activity-guidee .activity-guidee-link{text-decoration:none;color:inherit;font-weight:600;}
 .activity-guidee .activity-guidee-link:focus{outline:2px solid var(--accent);outline-offset:2px;}
