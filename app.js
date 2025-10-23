@@ -40,6 +40,7 @@ const DEFAULT_HASHTAG_CATALOG=[
   '#TechSQL','#TechPowerBI','#TechAutomation','#TechDocumentation','#TechIntegration',
   '#CustomerInsight','#CustomerRelationship','#CustomerValue','#CustomerFeedback','#CustomerExperience'
 ].join(' ');
+const DEFAULT_MENTION_CATALOG='';
 const ACTIVITY_TYPES=['ACTION_ST_BERNARD','CORDEE','NOTE','VERBATIM','AVIS','ALERTE','PROLONGEMENT'];
 const ACTIVITY_LABELS={
   ACTION_ST_BERNARD:'Action STB',
@@ -186,6 +187,21 @@ function parseHashtagCatalog(text){
     .map(normalizeHashtag)
     .filter(Boolean);
 }
+function normalizeMention(raw){
+  if(!raw) return '';
+  const trimmed=String(raw).trim();
+  if(!trimmed) return '';
+  const prefixed=trimmed.startsWith('@')?trimmed:`@${trimmed}`;
+  const clean=prefixed.replace(/[^@\p{L}\p{N}_-]+/gu,'');
+  if(clean==='@') return '';
+  return clean;
+}
+function parseMentionCatalog(text){
+  return (text||'')
+    .split(/\s+/)
+    .map(normalizeMention)
+    .filter(Boolean);
+}
 function extractHashtags(text){
   if(!text) return [];
   const matches=String(text).match(/#([\p{L}\p{N}_-]+)/gu);
@@ -197,6 +213,10 @@ function getConfiguredHashtags(){
   const configured=parseHashtagCatalog(params?.hashtags_catalog ?? DEFAULT_HASHTAG_CATALOG);
   const combined=[...CORE_HASHTAG_HINTS,...configured];
   return Array.from(new Set(combined));
+}
+function getConfiguredMentions(){
+  const params=store?.params||DEFAULT_PARAMS;
+  return parseMentionCatalog(params?.mentions_catalog ?? DEFAULT_MENTION_CATALOG);
 }
 function normalizeSearchText(text=''){
   return String(text||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
@@ -230,8 +250,9 @@ function getAutocompleteContext(textarea){
   if(!pattern.test(token)) return null;
   return {start:idx,end:pos,token,trigger};
 }
-function getConsultantMentionSuggestions(prefix=''){
+function getMentionSuggestions(prefix=''){
   const list=Array.isArray(store?.consultants)?store.consultants:[];
+  const configured=getConfiguredMentions();
   const search=normalizeSearchText(String(prefix||'').slice(1));
   const seen=new Set();
   const results=[];
@@ -242,6 +263,7 @@ function getConsultantMentionSuggestions(prefix=''){
     seen.add(clean);
     results.push(clean);
   };
+  configured.forEach(add);
   list.forEach(c=>{
     const full=String(c?.nom||'').trim();
     if(!full) return;
@@ -255,7 +277,7 @@ function getConsultantMentionSuggestions(prefix=''){
 function getAutocompleteSuggestions(context){
   if(!context) return [];
   if(context.trigger==='#') return getHashtagSuggestions(context.token);
-  if(context.trigger==='@') return getConsultantMentionSuggestions(context.token);
+  if(context.trigger==='@') return getMentionSuggestions(context.token);
   return [];
 }
 function replaceTokenInTextarea(textarea, context, replacement){
@@ -515,6 +537,7 @@ const DEFAULT_PARAMS={
   activites_recent_jours:30,
   activites_a_venir_jours:30,
   hashtags_catalog:DEFAULT_HASHTAG_CATALOG,
+  mentions_catalog:DEFAULT_MENTION_CATALOG,
   description_templates:{...DEFAULT_DESCRIPTION_TEMPLATES},
   ai_prompt:DEFAULT_COMMON_DESCRIPTION_PROMPT,
   ai_activity_context_prompt:DEFAULT_ACTIVITY_CONTEXT_PROMPT
@@ -1143,21 +1166,22 @@ const beneficiariesIds=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boo
 const beneficiariesNames=beneficiariesIds
   .map(id=>store.consultants.find(cons=>cons.id===id)?.nom)
   .filter(Boolean);
+const guideeBadge=g
+  ? `<span class="activity-guidee-chip click-span" role="link" tabindex="0" data-goto-guidee="${g.id}" data-goto-guidee-activity="${a.id}">🧭 ${esc(g.nom||'Sans titre')}</span>`
+  : '';
 const beneficiariesBadge=beneficiariesNames.length
   ? `<span class="activity-beneficiary" title="Bénéficiaires">🪢 ${esc(beneficiariesNames.join(', '))}</span>`
   : '';
-const headerPieces=[beneficiariesBadge].filter(Boolean);
+const headerPieces=[guideeBadge,beneficiariesBadge].filter(Boolean);
 const metaLine=headerPieces.length?`<div class="activity-meta">${headerPieces.join(' ')}</div>`:'';
 const leadingBadges=[heuresBadge,probabilityBadge].filter(Boolean).join(' ');
-const titleContent=g
-  ? `<span class="activity-title-link click-span" role="link" tabindex="0" data-goto-guidee="${g.id}" data-goto-guidee-activity="${a.id}">${titleHtml}</span>`
-  : `<span class="activity-title-text">${titleHtml}</span>`;
-const titleLine=`<div class="activity-title">${leadingBadges?`${leadingBadges} `:''}${titleContent}</div>`;
+const titleContent=`<span class="activity-title-link click-span">${titleHtml}</span>`;
+const titleLine=`<div class="activity-title" role="button" tabindex="0" data-activity-edit="${a.id}">${leadingBadges?`${leadingBadges} `:''}${titleContent}</div>`;
 const descLine=descText
   ? `<div class="activity-desc${isSelected?'':' clamp-5'}">${descHtml}</div>`
   : `<div class="activity-desc muted">—</div>`;
 const guideeInfo=(g && isSelected)
-  ? `<div class="activity-guidee activity-desc">🧭 <span class="activity-guidee-link click-span" role="link" tabindex="0" data-goto-guidee="${g.id}" data-goto-guidee-activity="${a.id}"><b>${esc(g.nom||'Sans titre')}</b></span></div>`
+  ? `<div class="activity-guidee activity-desc">🧭 <span class="activity-guidee-link click-span" role="link" tabindex="0" data-goto-guidee="${g.id}" data-goto-guidee-activity="${a.id}">${esc(g.nom||'Sans titre')}</span></div>`
   : '';
 const mobileDesc=isSelected
   ? `<div class="mobile-desc expanded" data-act="${a.id}"><div class="text">${descHtml||'—'}</div></div>`
@@ -1216,6 +1240,21 @@ on(tr,'click',(e)=>{
     renderActivities();
   }
 });
+tr.querySelectorAll('[data-activity-edit]').forEach(el=>{
+  const openModal=()=>openActivityModal(a.id);
+  on(el,'click',event=>{
+    if(event.target.closest('[data-goto-guidee],[data-inline-edit]')) return;
+    event.stopPropagation();
+    openModal();
+  });
+  on(el,'keydown',event=>{
+    if(event.target.closest('[data-goto-guidee],[data-inline-edit]')) return;
+    if(event.key==='Enter' || event.key===' '){
+      event.preventDefault();
+      openModal();
+    }
+  });
+});
 tr.querySelectorAll('[data-goto-guidee]').forEach(el=>{
   const handleNavigation=(event)=>{
     event.stopPropagation();
@@ -1269,6 +1308,7 @@ const inputAvisManquant=$('p-avis_manquant');
 const inputActivitesRecent=$('p-activites_recent');
 const inputActivitesAvenir=$('p-activites_avenir');
 const textareaHashtags=$('p-hashtags');
+const textareaMentions=$('p-mentions');
 const btnSaveParams=$('btn-save-params');
 const templateTypeSelect=$('template-type');
 const templateEditor=$('template-editor');
@@ -1822,8 +1862,8 @@ function renderReporting(){
     if(lastPro){
       const proText=formatTitleDate(lastPro.title,lastPro.date_publication||'');
       finCell=finCell && finCell!=='—'
-        ? `${finCell} • Prolongement : ${proText}`
-        : `Prolongement : ${proText}`;
+        ? `${finCell} • ${proText}`
+        : proText;
     }
     const guideesForConsultant=(store.guidees||[]).filter(g=>g.consultant_id===c.id);
     const sortedGuidees=[...guideesForConsultant].sort((a,b)=>(b.date_debut||'').localeCompare(a.date_debut||''));
@@ -1881,13 +1921,18 @@ function renderReporting(){
         participants:participantText,
         date:formatReportDate(a.date_publication||''),
         hours:`${formatHours(a.heures??0)}h`,
+        rawHours:Number(a.heures??0)||0,
         title:(a.title||'').trim()||'Sans titre',
         descriptionHtml:formatReportMultiline(a.description),
         descriptionLines
       };
     });
   const actionsRows=actionsData.map(a=>`<tr><td>${esc(a.participants)}</td><td>${esc(a.date)}</td><td>${esc(a.hours)}</td><td>${esc(a.title)}</td><td>${a.descriptionHtml}</td></tr>`);
-  const actionsTable=`<div class="reporting-section"><table><caption>Actions</caption><thead><tr><th>Consultants</th><th>Date</th><th>Durée</th><th>Titre</th><th>Description</th></tr></thead><tbody>${actionsRows.length?actionsRows.join(''):`<tr><td colspan="5">—</td></tr>`}</tbody></table></div>`;
+  const totalActionsHours=actionsData.reduce((sum,a)=>sum+(Number.isFinite(a.rawHours)?a.rawHours:0),0);
+  const actionsSummary=actionsData.length
+    ? `<span class="caption-sub">Durée totale : ${formatHours(totalActionsHours)}h • ${actionsData.length} action${actionsData.length>1?'s':''}</span>`
+    : '';
+  const actionsTable=`<div class="reporting-section"><table><caption>Actions${actionsSummary?`<br/>${actionsSummary}`:''}</caption><thead><tr><th>Consultants</th><th>Date</th><th>Durée</th><th>Titre</th><th>Description</th></tr></thead><tbody>${actionsRows.length?actionsRows.join(''):`<tr><td colspan="5">—</td></tr>`}</tbody></table></div>`;
   const cordeeActivities=(store.activities||[])
     .filter(a=>a.type==='CORDEE')
     .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''));
@@ -2081,6 +2126,9 @@ function renderParams(options={}){
   if(textareaHashtags){
     textareaHashtags.value=p.hashtags_catalog ?? DEFAULT_HASHTAG_CATALOG;
   }
+  if(textareaMentions){
+    textareaMentions.value=p.mentions_catalog ?? DEFAULT_MENTION_CATALOG;
+  }
   renderTemplateEditor();
   renderPromptEditor();
 }
@@ -2099,6 +2147,7 @@ async function saveParamsChanges(button=btnSaveParams){
     params.activites_recent_jours=Math.max(1,Number(inputActivitesRecent?.value||30));
     params.activites_a_venir_jours=Math.max(1,Number(inputActivitesAvenir?.value||30));
     params.hashtags_catalog=(textareaHashtags?.value||'').trim()||DEFAULT_HASHTAG_CATALOG;
+    params.mentions_catalog=(textareaMentions?.value||'').trim()||DEFAULT_MENTION_CATALOG;
     persistTemplateEditorValue();
     if(promptEditor){
       params.ai_prompt=(promptEditor.value||'').trim()||DEFAULT_COMMON_DESCRIPTION_PROMPT;
@@ -2195,7 +2244,8 @@ btnResetPrompt?.addEventListener('click',async()=>{
   inputAvisManquant,
   inputActivitesRecent,
   inputActivitesAvenir,
-  textareaHashtags
+  textareaHashtags,
+  textareaMentions
 ].filter(Boolean).forEach(input=>{
   input.addEventListener('input',()=>markSettingsPartDirty('general'));
 });
@@ -2530,6 +2580,9 @@ if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
 if(currentActivityId){ Object.assign(store.activities.find(x=>x.id===currentActivityId),data,{updated_at:nowISO()}); }else{ store.activities.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
 dlgA.close('ok'); save('activity-save');
+if(isProlongement && data.consultant_id){
+  setTimeout(()=>openConsultantModal(data.consultant_id),0);
+}
 };
 btnFaDelete?.addEventListener('click',e=>{
  e.preventDefault();
