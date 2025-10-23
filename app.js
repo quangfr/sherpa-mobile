@@ -102,25 +102,24 @@ Source : émetteur de l'information
 Action : prochaine étape prévue par @
 --`,
   [DESCRIPTION_TEMPLATE_KEYS.activity.VERBATIM]:``,
-  [DESCRIPTION_TEMPLATE_KEYS.activity.ALERTE]:``,
-  [DESCRIPTION_TEMPLATE_KEYS.guidee]:`--
-Objectif : résultat visé ou compétence à renforcer
-Contexte : mission, situation ou besoin à l’origine
-Accompagnement : format, fréquence, durée prévisionnelle
-Compétences : #Product #Team #Tech #Data #Customer
-Indicateurs : signes concrets de progression attendus
-Résultat : constat ou bilan en fin de cycle
---`,
-  [DESCRIPTION_TEMPLATE_KEYS.consultant]:`--
-Mission : contexte actuelle , client, rôle principal
-Objectifs : ambitions motivations à court/moyen terme
-Compétences : #Product #Team #Tech #Data #Customer
-Forces : atouts distinctifs ou points d’appui
-Freins : faiblesses, besoins ou risques à accompagner
-Style : posture, communication, relationnel, énergie
---`
+  [DESCRIPTION_TEMPLATE_KEYS.activity.ALERTE]:`ALERTE DESCRIPTION
+Nature : RH ou commerce
+Contexte : (situation déclencheuse)
+Symptômes : (faits ou signaux concrets)
+Suivi : soutien ou ajustement à engager`,
+  [DESCRIPTION_TEMPLATE_KEYS.guidee]:`GUIDEE DESCRIPTION
+Objectif : (résultat attendu ou compétences à renforcer)
+Mission : (contexte, situation ou besoin à l’origine)
+Accompagnement : (format, fréquence, durée prévisionnelle)
+Indicateurs : (signes concrets de progression attendus)`,
+  [DESCRIPTION_TEMPLATE_KEYS.consultant]:`CONSULTANT DESCRIPTION
+Objectif : (souhait à court/moyen terme)
+Forces : (atouts distinctifs, points d’appui)
+Freins : (potentiel, besoins ou risques à accompagner)
+Style : (posture, communication, relationnel, énergie)`
 });
 const DEFAULT_COMMON_DESCRIPTION_PROMPT=`Peux tu reprendre dans la structure imposée {{description_template}} la description {{description_user}} de manière synthétique ? (1 point = 1 ligne, mettre des virgules entre plusieurs idées) utilise des # de la liste {{hashtags}} pour des notions synonymes qui sont mentionnés.`;
+const DEFAULT_ACTIVITY_CONTEXT_PROMPT=`Prendre en compte également les éléments de contexte sur l'objectif en cours {{guide_description}} et les informations sur le consultant {{consultant_description}}.`;
 const DEFAULT_ACTIVITY_TITLE_PROMPT=`Propose un titre court (6 mots maximum) qui commence par une émoji pertinente pour cette activité.
 Type : {{activity.type_label}}
 Consultant : {{consultant.name}}
@@ -426,7 +425,6 @@ const passwordLoginForm=$('password-login-form');
 const passwordEmailInput=$('password-email');
 const passwordPasswordInput=$('password-password');
 const passwordFeedback=$('password-feedback');
-const btnPasswordSignup=$('btn-password-signup');
 const btnPasswordReset=$('btn-password-reset');
 const authError=$('auth-error');
 const btnRefreshRemote=$('btn-refresh-remote');
@@ -456,7 +454,7 @@ function setPasswordFeedback(message='',variant='info'){
 }
 function togglePasswordControls(disabled){
   const submitBtn=passwordLoginForm?.querySelector('button[type="submit"]');
-  [passwordEmailInput,passwordPasswordInput,submitBtn,btnPasswordSignup,btnPasswordReset].forEach(ctrl=>{
+  [passwordEmailInput,passwordPasswordInput,submitBtn,btnPasswordReset].forEach(ctrl=>{
     if(ctrl) ctrl.disabled=!!disabled;
   });
 }
@@ -518,7 +516,8 @@ const DEFAULT_PARAMS={
   activites_a_venir_jours:30,
   hashtags_catalog:DEFAULT_HASHTAG_CATALOG,
   description_templates:{...DEFAULT_DESCRIPTION_TEMPLATES},
-  ai_prompt:DEFAULT_COMMON_DESCRIPTION_PROMPT
+  ai_prompt:DEFAULT_COMMON_DESCRIPTION_PROMPT,
+  ai_activity_context_prompt:DEFAULT_ACTIVITY_CONTEXT_PROMPT
 };
 const DEFAULT_THEMATIQUES=[
   {id:'le-cardinal',nom:'Le Cardinal',emoji:'🧊',color:'#3b82f6'},
@@ -616,11 +615,15 @@ function migrateStore(data){
     mergedTemplates[DESCRIPTION_TEMPLATE_KEYS.consultant]=legacyConsultant;
   }
   const aiPromptRaw=typeof incomingParams.ai_prompt==='string'?incomingParams.ai_prompt.trim():'';
+  const aiActivityContextRaw=typeof incomingParams.ai_activity_context_prompt==='string'
+    ? incomingParams.ai_activity_context_prompt.trim()
+    : '';
   migrated.params={
     ...DEFAULT_PARAMS,
     ...incomingParams,
     description_templates:{...mergedTemplates},
-    ai_prompt:aiPromptRaw||DEFAULT_COMMON_DESCRIPTION_PROMPT
+    ai_prompt:aiPromptRaw||DEFAULT_COMMON_DESCRIPTION_PROMPT,
+    ai_activity_context_prompt:aiActivityContextRaw||DEFAULT_ACTIVITY_CONTEXT_PROMPT
   };
   delete migrated.params.openai_prompts;
   delete migrated.params.openai_activity_prompt;
@@ -729,7 +732,7 @@ on(window,'resize',applyTabLabels); applyTabLabels();
 function openTab(id, persist=false){
   if(id===activeTabId) return;
   if(activeTabId==='reglages' && id!=='reglages' && settingsDirty){
-    const shouldLeave=confirm('Des modifications de paramètres ne sont pas enregistrées. Quitter l\'onglet ?');
+    const shouldLeave=confirm('Des paramètres ne sont pas enregistrés. Enregistrer avant de quitter l\'onglet ?');
     if(!shouldLeave){
       return;
     }
@@ -1214,6 +1217,7 @@ const templateTypeSelect=$('template-type');
 const templateEditor=$('template-editor');
 const btnResetTemplate=$('btn-reset-template');
 const promptEditor=$('prompt-editor');
+const promptActivityContextEditor=$('prompt-activity-context');
 const btnResetPrompt=$('btn-reset-prompt');
 const btnImportJson=$('btn-import-json');
 const btnExportJson=$('btn-export-json');
@@ -1272,10 +1276,14 @@ function setDescriptionTemplate(key,value){
   if(!key) return;
   if(!store.params) store.params={...DEFAULT_PARAMS};
   const normalized=String(value||'').replace(/\r\n/g,'\n').trim();
-  store.params.description_templates={...store.params.description_templates};
+  const currentRaw=store.params.description_templates?.[key];
   if(normalized){
+    if(currentRaw===normalized) return;
+    store.params.description_templates={...store.params.description_templates};
     store.params.description_templates[key]=normalized;
   }else{
+    if(!currentRaw) return;
+    store.params.description_templates={...store.params.description_templates};
     delete store.params.description_templates[key];
   }
 }
@@ -1289,6 +1297,20 @@ function getAiPromptTemplate(){
   const params=store?.params||DEFAULT_PARAMS;
   const raw=typeof params.ai_prompt==='string'?params.ai_prompt.trim():'';
   return raw||DEFAULT_COMMON_DESCRIPTION_PROMPT;
+}
+function getActivityContextPromptTemplate(){
+  const params=store?.params||DEFAULT_PARAMS;
+  const raw=typeof params.ai_activity_context_prompt==='string'
+    ? params.ai_activity_context_prompt.trim()
+    : '';
+  return raw||DEFAULT_ACTIVITY_CONTEXT_PROMPT;
+}
+function persistTemplateEditorValue(){
+  if(!templateEditor) return;
+  if(templateEditor.dataset.initialized!=='true') return;
+  const currentKey=state?.templates?.selected;
+  if(!currentKey) return;
+  setDescriptionTemplate(currentKey,templateEditor.value||'');
 }
 function renderTemplateEditor(){
   if(!templateTypeSelect || !templateEditor) return;
@@ -1311,10 +1333,15 @@ function renderTemplateEditor(){
     templateTypeSelect.value=state.templates.selected;
   }
   templateEditor.value=getDescriptionTemplate(state.templates.selected);
+  templateEditor.dataset.initialized='true';
 }
 function renderPromptEditor(){
-  if(!promptEditor) return;
-  promptEditor.value=getAiPromptTemplate();
+  if(promptEditor){
+    promptEditor.value=getAiPromptTemplate();
+  }
+  if(promptActivityContextEditor){
+    promptActivityContextEditor.value=getActivityContextPromptTemplate();
+  }
 }
 function updateGuideeEditButton(targetId=''){
   if(!btnEditGuidee) return;
@@ -1983,6 +2010,7 @@ btnReportingCopy?.addEventListener('click',async()=>{
   }
 });
 function renderParams(){
+  persistTemplateEditorValue();
   const p=store.params||DEFAULT_PARAMS;
   if(inputSyncInterval) inputSyncInterval.value=p.sync_interval_minutes ?? DEFAULT_SYNC_INTERVAL_MINUTES;
   if(inputFinMission) inputFinMission.value=p.fin_mission_sous_jours;
@@ -2012,18 +2040,17 @@ btnSaveParams?.addEventListener('click',async()=>{
     params.activites_recent_jours=Math.max(1,Number(inputActivitesRecent?.value||30));
     params.activites_a_venir_jours=Math.max(1,Number(inputActivitesAvenir?.value||30));
     params.hashtags_catalog=(textareaHashtags?.value||'').trim()||DEFAULT_HASHTAG_CATALOG;
-    const templateKey=templateTypeSelect?.value||state.templates.selected;
-    if(templateKey && templateEditor){
-      setDescriptionTemplate(templateKey,templateEditor.value||'');
-    }
+    persistTemplateEditorValue();
     if(promptEditor){
       params.ai_prompt=(promptEditor.value||'').trim()||DEFAULT_COMMON_DESCRIPTION_PROMPT;
+    }
+    if(promptActivityContextEditor){
+      params.ai_activity_context_prompt=(promptActivityContextEditor.value||'').trim()||DEFAULT_ACTIVITY_CONTEXT_PROMPT;
     }
     save('settings-manual-save');
     restartAutoSync();
     await syncIfDirty('settings-manual-save');
     resetSettingsDirty();
-    alert('Paramètres enregistrés.');
   }catch(err){
     console.error('Param settings save error:',err);
     alert(`Enregistrement impossible : ${err?.message||err}`);
@@ -2039,16 +2066,9 @@ if(templateTypeSelect){
   on(templateTypeSelect,'change',e=>{
     const nextValue=e.target.value;
     if(nextValue===state.templates.selected) return;
-    if(settingsDirtyState.template){
-      const confirmChange=confirm('Les modifications du template ne sont pas enregistrées. Changer de template ?');
-      if(!confirmChange){
-        e.target.value=state.templates.selected;
-        return;
-      }
-    }
+    persistTemplateEditorValue();
     state.templates.selected=nextValue;
     renderTemplateEditor();
-    markSettingsPartClean('template');
   });
 }
 btnResetTemplate?.addEventListener('click',async()=>{
@@ -2090,18 +2110,20 @@ btnResetPrompt?.addEventListener('click',async()=>{
   try{
     if(!store.params) store.params={...DEFAULT_PARAMS};
     store.params.ai_prompt=DEFAULT_COMMON_DESCRIPTION_PROMPT;
+    store.params.ai_activity_context_prompt=DEFAULT_ACTIVITY_CONTEXT_PROMPT;
     renderPromptEditor();
     save('prompt-reset');
     restartAutoSync();
     await syncIfDirty('prompt-reset');
     markSettingsPartClean('prompt');
-    alert('Prompt réinitialisé.');
+    alert('Prompts réinitialisés.');
   }catch(err){
     console.error('Prompt reset error:',err);
     alert(`Impossible de réinitialiser le prompt : ${err?.message||err}`);
   }finally{
     if(button){
       button.textContent=originalLabel;
+      button.disabled=false;
     }
     updateSettingsDirty();
   }
@@ -2119,10 +2141,14 @@ btnResetPrompt?.addEventListener('click',async()=>{
 });
 templateEditor?.addEventListener('input',()=>markSettingsPartDirty('template'));
 promptEditor?.addEventListener('input',()=>markSettingsPartDirty('prompt'));
+promptActivityContextEditor?.addEventListener('input',()=>markSettingsPartDirty('prompt'));
 window.addEventListener('beforeunload',event=>{
   if(settingsDirty){
     event.preventDefault();
-    event.returnValue='';
+    event.returnValue='Des paramètres ne sont pas enregistrés. Enregistrer avant de quitter ?';
+  }else if(hasPendingChanges){
+    event.preventDefault();
+    event.returnValue='Des données ne sont pas synchronisées. Sauvegarder avant de quitter ?';
   }
 });
 btnExportJson?.addEventListener('click',()=>{
@@ -2248,11 +2274,35 @@ faOpenAI?.addEventListener('click',async()=>{
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
   const templateKey=DESCRIPTION_TEMPLATE_KEYS.activity[faType.value];
   const templateText=templateKey?getDescriptionTemplate(templateKey):'';
-  const prompt=fillPromptTemplate(getAiPromptTemplate(),{
+  const consultant=store.consultants.find(c=>c.id===faConsult.value)||null;
+  const guidee=store.guidees.find(g=>g.id===faGuidee.value)||null;
+  const basePrompt=fillPromptTemplate(getAiPromptTemplate(),{
     description_template:templateText,
     description_user:currentText,
     hashtags:getConfiguredHashtags().join(' ')
   }).trim();
+  const contextTemplate=getActivityContextPromptTemplate();
+  const contextPrompt=contextTemplate?fillPromptTemplate(contextTemplate,{
+    activity:{
+      description:currentText,
+      type:faType.value
+    },
+    consultant:{
+      id:consultant?.id||'',
+      name:consultant?.nom||'',
+      description:consultant?.description||'',
+      mission:consultant?.titre_mission||''
+    },
+    guidee:{
+      id:guidee?.id||'',
+      name:guidee?.nom||'',
+      description:guidee?.description||'',
+      thematique_id:guidee?.thematique_id||''
+    },
+    guide_description:guidee?.description||'',
+    consultant_description:consultant?.description||''
+  }).trim():'';
+  const prompt=[basePrompt,contextPrompt].filter(Boolean).join('\n\n').trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
   await invokeAIHelper(faOpenAI,faDesc,prompt);
 });
@@ -3056,25 +3106,6 @@ passwordLoginForm?.addEventListener('submit',async evt=>{
     setPasswordFeedback('Connexion réussie.','success');
   }catch(err){
     console.error('Password sign-in error:',err);
-    setPasswordFeedback(formatAuthError(err),'error');
-  }finally{
-    togglePasswordControls(false);
-  }
-});
-btnPasswordSignup?.addEventListener('click',async()=>{
-  if(!firebaseAuth){ setAuthError('Firebase non disponible.'); return; }
-  const email=(passwordEmailInput?.value||'').trim();
-  const password=passwordPasswordInput?.value||'';
-  if(!email || !password){ setPasswordFeedback('Email et mot de passe requis.','error'); return; }
-  if(password.length<6){ setPasswordFeedback('Mot de passe : 6 caractères minimum.','error'); return; }
-  setAuthError('');
-  setPasswordFeedback('Création du compte…');
-  togglePasswordControls(true);
-  try{
-    await firebaseAuth.createUserWithEmailAndPassword(email,password);
-    setPasswordFeedback('Compte créé et connecté ✅','success');
-  }catch(err){
-    console.error('Password sign-up error:',err);
     setPasswordFeedback(formatAuthError(err),'error');
   }finally{
     togglePasswordControls(false);

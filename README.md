@@ -23,7 +23,8 @@
 - **params** (seuils & UI) — valeurs par défaut :
   - `sync_interval_minutes`, `fin_mission_sous_jours`, `stb_recent_jours`,
     `avis_manquant_depuis_jours`, `activites_recent_jours`, `activites_a_venir_jours`,
-    `hashtags_catalog`, `description_templates`, `ai_prompt` (prompt commun aux descriptions).
+    `hashtags_catalog`, `description_templates`, `ai_prompt` (prompt commun aux descriptions),
+    `ai_activity_context_prompt` (contexte additionnel injecté sur les activités).
 - **thematiques** : `{ id, nom, emoji, color }`, IDs normalisés et complétés au chargement.
 - **consultants** :
   - `{ id, nom, titre_mission, date_fin?, boond_id?, description?, created_at, updated_at }` (sans `url`).

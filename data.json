@@ -18,11 +18,12 @@
       "activity:NOTE": "--\nContexte : cadre ou événement observé\nFait : observation factuelle\nImpact : effet ou enseignement clé\n--",
       "activity:PROLONGEMENT": "--\nÉchéance : durée ou nouvelle date de fin\nDécision : date, argument ou événement décisif\nSource : émetteur de l'information\nAction : prochaine étape prévue par @\n--",
       "activity:VERBATIM": "",
-      "activity:ALERTE": "",
-      "guidee": "--\nObjectif : résultat visé ou compétence à renforcer\nContexte : mission, situation ou besoin à l’origine\nAccompagnement : format, fréquence, durée prévisionnelle\nCompétences : #Product #Team #Tech #Data #Customer\nIndicateurs : signes concrets de progression attendus\nRésultat : constat ou bilan en fin de cycle\n--",
-      "consultant": "--\nMission : contexte actuelle , client, rôle principal\nObjectifs : ambitions motivations à court/moyen terme\nCompétences : #Product #Team #Tech #Data #Customer\nForces : atouts distinctifs ou points d’appui\nFreins : faiblesses, besoins ou risques à accompagner\nStyle : posture, communication, relationnel, énergie\n--"
+      "activity:ALERTE": "ALERTE DESCRIPTION\nNature : RH ou commerce\nContexte : (situation déclencheuse)\nSymptômes : (faits ou signaux concrets)\nSuivi : soutien ou ajustement à engager",
+      "guidee": "GUIDEE DESCRIPTION\nObjectif : (résultat attendu ou compétences à renforcer)\nMission : (contexte, situation ou besoin à l’origine)\nAccompagnement : (format, fréquence, durée prévisionnelle)\nIndicateurs : (signes concrets de progression attendus)",
+      "consultant": "CONSULTANT DESCRIPTION\nObjectif : (souhait à court/moyen terme)\nForces : (atouts distinctifs, points d’appui)\nFreins : (potentiel, besoins ou risques à accompagner)\nStyle : (posture, communication, relationnel, énergie)"
     },
-    "ai_prompt": "Peux tu reprendre dans la structure imposée {{description_template}} la description {{description_user}} de manière synthétique ? (1 point = 1 ligne, mettre des virgules entre plusieurs idées) utilise des # de la liste {{hashtags}} pour des notions synonymes qui sont mentionnés."
+    "ai_prompt": "Peux tu reprendre dans la structure imposée {{description_template}} la description {{description_user}} de manière synthétique ? (1 point = 1 ligne, mettre des virgules entre plusieurs idées) utilise des # de la liste {{hashtags}} pour des notions synonymes qui sont mentionnés.",
+    "ai_activity_context_prompt": "Prendre en compte également les éléments de contexte sur l'objectif en cours {{guide_description}} et les informations sur le consultant {{consultant_description}}."
   },
   "consultants": [
     {
