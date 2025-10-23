@@ -317,8 +317,13 @@ dialog{border-radius:0;width:100vw;height:100vh;max-height:none;margin:0}
 .reporting-document th,.reporting-document td{border:1px solid var(--border);padding:6px;vertical-align:top;}
 .reporting-document th{background:var(--bg);text-align:left;}
 .reporting-document caption{font-weight:700;margin-bottom:6px;text-align:left;}
+.reporting-document .caption-sub{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-top:2px;}
 .reporting-document .reporting-section{display:flex;flex-direction:column;gap:8px;}
+.activity-title[data-activity-edit]{cursor:pointer;}
+.activity-title[data-activity-edit]:focus{outline:2px solid var(--accent);outline-offset:2px;}
+.activity-title[data-activity-edit]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 .activity-title .activity-title-link:focus{outline:2px solid var(--accent);outline-offset:2px;}
+.activity-meta .activity-guidee-chip{font-weight:600;}
 .activity-guidee{margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.45;color:inherit}
-.activity-guidee .activity-guidee-link{text-decoration:none;color:inherit;font-weight:700;}
+.activity-guidee .activity-guidee-link{text-decoration:none;color:inherit;font-weight:600;}
 .activity-guidee .activity-guidee-link:focus{outline:2px solid var(--accent);outline-offset:2px;}
