@@ -70,6 +70,7 @@ const DESCRIPTION_TEMPLATE_KEYS={
     PROLONGEMENT:'activity:PROLONGEMENT'
   },
   guidee:'guidee',
+  guidee_result:'guidee_result',
   consultant:'consultant'
 };
 // Templates issus du snapshot Firestore du 22/10/2025.
@@ -113,6 +114,11 @@ Objectif : (résultat attendu ou compétences à renforcer)
 Mission : (contexte, situation ou besoin à l’origine)
 Accompagnement : (format, fréquence, durée prévisionnelle)
 Indicateurs : (signes concrets de progression attendus)`,
+  [DESCRIPTION_TEMPLATE_KEYS.guidee_result]:`GUIDEE RESULTAT
+Résultat probable : (résultat réaliste attendu)
+Indice de confiance : 0-100%
+Opportunités : (facteurs de réussite)
+Risques : (facteurs d’échecs)`,
   [DESCRIPTION_TEMPLATE_KEYS.consultant]:`CONSULTANT DESCRIPTION
 Objectif : (souhait à court/moyen terme)
 Forces : (atouts distinctifs, points d’appui)
@@ -120,7 +126,7 @@ Freins : (potentiel, besoins ou risques à accompagner)
 Style : (posture, communication, relationnel, énergie)`
 });
 const DEFAULT_COMMON_DESCRIPTION_PROMPT=`Peux tu reprendre dans la structure imposée {{description_template}} la description {{description_user}} de manière synthétique ? (1 point = 1 ligne, mettre des virgules entre plusieurs idées) utilise des # de la liste {{hashtags}} pour des notions synonymes qui sont mentionnés.`;
-const DEFAULT_ACTIVITY_CONTEXT_PROMPT=`Prendre en compte également les éléments de contexte sur l'objectif en cours {{guide_description}} et les informations sur le consultant {{consultant_description}}.`;
+const DEFAULT_ACTIVITY_CONTEXT_PROMPT=`Prendre en compte également les éléments de contexte de la mission {{guide_description}}{{guide_finalite}} et les informations sur le consultant {{consultant_description}}.`;
 const DEFAULT_ACTIVITY_TITLE_PROMPT=`Propose un titre court (6 mots maximum) qui commence par une émoji pertinente pour cette activité.
 Type : {{activity.type_label}}
 Consultant : {{consultant.name}}
@@ -1355,6 +1361,7 @@ function getTemplateOptions(){
   return [
     ...activityOptions,
     {value:DESCRIPTION_TEMPLATE_KEYS.guidee,label:'Guidée'},
+    {value:DESCRIPTION_TEMPLATE_KEYS.guidee_result,label:'Guidée · Résultat'},
     {value:DESCRIPTION_TEMPLATE_KEYS.consultant,label:'Consultant'}
   ];
 }
@@ -1511,6 +1518,46 @@ function renderGuideeFilters(){
       state.guidees.guidee_id='';
     }
   }
+}
+function findDefaultGuideeForConsultant(consultantId){
+  if(!consultantId) return '';
+  const relevant=store.guidees.filter(g=>g.consultant_id===consultantId);
+  if(!relevant.length) return '';
+  const today=new Date();
+  const todayTime=today.getTime();
+  const prioritized=relevant.map(g=>{
+    const start=parseDate(g.date_debut||'');
+    const end=parseDate(g.date_fin||'');
+    const startTime=start?start.getTime():NaN;
+    const endTime=end?end.getTime():NaN;
+    let category=3;
+    if(!Number.isNaN(startTime) && !Number.isNaN(endTime) && startTime<=todayTime && endTime>=todayTime){
+      category=0;
+    }else if(!Number.isNaN(startTime) && startTime>=todayTime){
+      category=1;
+    }else if(!Number.isNaN(startTime)){
+      category=2;
+    }
+    const distance=!Number.isNaN(startTime)?Math.abs(startTime-todayTime):Number.MAX_SAFE_INTEGER;
+    const tie=!Number.isNaN(startTime)
+      ? (category===1?startTime:-startTime)
+      : Number.MAX_SAFE_INTEGER;
+    return {
+      guidee:g,
+      category,
+      distance,
+      tie,
+      name:(g.nom||'')
+    };
+  });
+  const best=prioritized.reduce((acc,item)=>{
+    if(!acc) return item;
+    if(item.category!==acc.category) return item.category<acc.category?item:acc;
+    if(item.distance!==acc.distance) return item.distance<acc.distance?item:acc;
+    if(item.tie!==acc.tie) return item.tie<acc.tie?item:acc;
+    return item.name.localeCompare(acc.name)<0 ? item : acc;
+  },null);
+  return best?.guidee?.id||relevant[0].id||'';
 }
 function formatTimelineDate(dateStr){
   const date=parseDate(dateStr);
@@ -1695,7 +1742,12 @@ function renderGuideeTimeline(){
       const title=esc((ev.activity.title||'').trim()||'Sans titre');
       metaPrimaryPieces.push(`<span class="bold">${title}</span>`);
     }else{
-      metaPrimaryPieces.push(`<span class="bold">${consultantName}</span>`);
+      const verb=ev.type==='start'?'Début':'Fin';
+      const gid=ev.guidee?.id||'';
+      const filterAttr=gid?` data-filter-guidee="${gid}"`:'';
+      const guideeLabel=esc(ev.guidee?.nom||'Sans titre');
+      const clickableName=gid?`<span class="click-span"${filterAttr}>${guideeLabel}</span>`:guideeLabel;
+      metaPrimaryPieces.push(`<span class="bold">${verb} 🧭 ${clickableName}</span>`);
     }
     const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-primary">${metaPrimaryPieces.join(' ')}</div><div class="timeline-meta-date"><span class="timeline-date-dot">•</span><span class="bold" title="${rawDate}">${friendlyDateHtml}</span>${editButtons.join('')}</div></div>`;
     let bodyHtml='';
@@ -1714,11 +1766,15 @@ function renderGuideeTimeline(){
       const descriptionContent=descHtml||'—';
       bodyHtml=`${infoLine}<div class="${descriptionClass}">${descriptionContent}</div>`;
     }else{
-      const verb=ev.type==='start'?'Début':'Fin';
-      const gid=ev.guidee?.id||'';
-      const guideeLabel=esc(ev.guidee?.nom||'Sans titre');
-      const filterAttr=gid?` data-filter-guidee="${gid}"`:'';
-      bodyHtml=`<div class="timeline-text clamp-3">${verb} de la guidée <span class="click-span"${filterAttr}><b>${guideeLabel}</b></span></div>`;
+      const consultantLine=consultant && consultantName!=='—'
+        ? `<div class="timeline-meta-secondary">👤 ${consultantName}</div>`
+        : '';
+      const textRaw=ev.type==='start'
+        ? (ev.guidee?.description||'').trim()
+        : (ev.guidee?.resultat||'').trim();
+      const textHtml=textRaw?esc(textRaw):'—';
+      const descriptionClass=isSelected?'timeline-description':'timeline-description clamp-8';
+      bodyHtml=`${consultantLine}<div class="${descriptionClass}">${textHtml}</div>`;
     }
     const markerIcon=isSelected?'✔️':esc(ev.icon);
     item.innerHTML=`<div class="timeline-marker">${markerIcon}</div><div class="timeline-body">${metaHtml}${bodyHtml}</div>`;
@@ -1758,8 +1814,9 @@ function renderGuideeTimeline(){
 }
 
 on(selectGuideeConsult,'change',e=>{
-  state.guidees.consultant_id=e.target.value;
-  state.guidees.guidee_id='';
+  const consultantId=e.target.value;
+  state.guidees.consultant_id=consultantId;
+  state.guidees.guidee_id=consultantId?findDefaultGuideeForConsultant(consultantId):'';
   state.guidees.selectedEventId='';
   renderGuideeFilters();
   renderGuideeTimeline();
@@ -2446,7 +2503,35 @@ faType.onchange=()=>{
   applyActivityTemplateAutofill();
   updateActivitySaveVisibility();
 };
-faConsult.onchange=()=>{ updateFaGuideeOptions(); updateActivitySaveVisibility(); };
+function buildGuideeTooltipContent(guidee){
+  if(!guidee) return '';
+  const parts=[];
+  const description=(guidee.description||'').trim();
+  const result=(guidee.resultat||'').trim();
+  if(description){
+    parts.push(`Description : ${description}`);
+  }
+  if(result){
+    parts.push(`Finalité : ${result}`);
+  }
+  return parts.join('\n\n');
+}
+function updateActivityGuideeTooltip(){
+  if(!btnFaGotoGuidee) return;
+  const guideeId=faGuidee?.value||'';
+  const guidee=guideeId?store.guidees.find(g=>g.id===guideeId):null;
+  const tooltip=buildGuideeTooltipContent(guidee);
+  btnFaGotoGuidee.title=tooltip||'Ouvrir la guidée associée';
+}
+function updateActivityConsultantTooltip(){
+  if(!btnFaGoto) return;
+  const consultantId=faConsult?.value||'';
+  const consultant=consultantId?store.consultants.find(c=>c.id===consultantId):null;
+  const description=(consultant?.description||'').trim();
+  btnFaGoto.title=description||'Ouvrir la fiche consultant';
+}
+faConsult.onchange=()=>{ updateFaGuideeOptions(); updateActivityConsultantTooltip(); updateActivitySaveVisibility(); };
+faGuidee?.addEventListener('change',()=>{ updateActivityGuideeTooltip(); updateActivitySaveVisibility(); });
 btnFaGoto.onclick=()=>{ const cid=faConsult.value; if(cid){ dlgA.close(); openConsultantModal(cid); } };
 btnFaGotoGuidee?.addEventListener('click',()=>{
   const gid=faGuidee?.value;
@@ -2465,6 +2550,7 @@ faOpenAI?.addEventListener('click',async()=>{
   const templateText=templateKey?getDescriptionTemplate(templateKey):'';
   const consultant=store.consultants.find(c=>c.id===faConsult.value)||null;
   const guidee=store.guidees.find(g=>g.id===faGuidee.value)||null;
+  const guideResultText=(guidee?.resultat||'').trim();
   const basePrompt=fillPromptTemplate(getAiPromptTemplate(),{
     description_template:templateText,
     description_user:currentText,
@@ -2489,6 +2575,7 @@ faOpenAI?.addEventListener('click',async()=>{
       thematique_id:guidee?.thematique_id||''
     },
     guide_description:guidee?.description||'',
+    guide_finalite:guideResultText?`\n${guideResultText}`:'',
     consultant_description:consultant?.description||''
   }).trim():'';
   const prompt=[basePrompt,contextPrompt].filter(Boolean).join('\n\n').trim();
@@ -2520,6 +2607,8 @@ function updateFaGuideeOptions(preferredId){
   if(!list.length){
     faGuidee.innerHTML='<option value="" disabled>Sélectionner une guidée</option>';
     faGuidee.value='';
+    updateActivityGuideeTooltip();
+    updateActivityConsultantTooltip();
     updateActivitySaveVisibility();
     return;
   }
@@ -2528,6 +2617,8 @@ function updateFaGuideeOptions(preferredId){
   const desired=preferredId ?? faGuidee.value;
   const hasDesired=desired && list.some(g=>g.id===desired);
   faGuidee.value=hasDesired ? desired : (list[0]?.id||'');
+  updateActivityGuideeTooltip();
+  updateActivityConsultantTooltip();
   updateActivitySaveVisibility();
 }
 $('btn-new-activity').onclick=()=>openActivityModal();
@@ -2562,6 +2653,8 @@ faType.onchange();
   applyActivityTemplateAutofill(true);
 }
 activityInitialSnapshot=normalizeActivitySnapshot(snapshotActivityForm());
+updateActivityGuideeTooltip();
+updateActivityConsultantTooltip();
 updateActivitySaveVisibility();
 dlgA.showModal();
 }
@@ -2608,15 +2701,27 @@ const fgNom=$('fg-nom');
 const fgDebut=$('fg-debut');
 const fgFin=$('fg-fin');
 const fgDesc=$('fg-desc');
+const fgResult=$('fg-result');
 const fgOpenAI=$('fg-openai');
+const fgResultAI=$('fg-result-ai');
 const fgTitleAI=$('fg-title-ai');
 const btnFgEditConsultant=$('fg-edit-consultant');
 const fgForm=$('form-guidee');
 const fgSaveBtn=$$('#dlg-guidee .actions [value="ok"]');
+function updateGuideeConsultantTooltip(){
+  if(!btnFgEditConsultant) return;
+  const consultantId=fgConsult?.value||'';
+  const consultant=consultantId?store.consultants.find(c=>c.id===consultantId):null;
+  const description=(consultant?.description||'').trim();
+  btnFgEditConsultant.title=description||'Ouvrir la fiche consultant';
+}
 attachHashtagAutocomplete(fgDesc);
+attachHashtagAutocomplete(fgResult);
 fgDesc?.addEventListener('input',()=>{ fgDesc.dataset.autofill='false'; });
+fgResult?.addEventListener('input',()=>{ fgResult.dataset.autofill='false'; });
 fgForm?.addEventListener('input',updateGuideeSaveVisibility);
 fgForm?.addEventListener('change',updateGuideeSaveVisibility);
+fgConsult?.addEventListener('change',()=>{ updateGuideeConsultantTooltip(); updateGuideeSaveVisibility(); });
 fgOpenAI?.addEventListener('click',async()=>{
   const currentText=fgDesc.value.trim();
   if(!currentText){ alert('Saisissez une description avant de générer un résumé.'); return; }
@@ -2628,6 +2733,18 @@ fgOpenAI?.addEventListener('click',async()=>{
   }).trim();
   if(!prompt){ alert('Prompt invalide.'); return; }
   await invokeAIHelper(fgOpenAI,fgDesc,prompt);
+});
+fgResultAI?.addEventListener('click',async()=>{
+  const currentText=fgResult.value.trim();
+  if(!currentText){ alert('Saisissez un résultat avant de générer un résumé.'); return; }
+  const templateText=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee_result);
+  const prompt=fillPromptTemplate(getAiPromptTemplate(),{
+    description_template:templateText,
+    description_user:currentText,
+    hashtags:getConfiguredHashtags().join(' ')
+  }).trim();
+  if(!prompt){ alert('Prompt invalide.'); return; }
+  await invokeAIHelper(fgResultAI,fgResult,prompt);
 });
 fgTitleAI?.addEventListener('click',async()=>{
   const description=fgDesc?.value.trim()||'';
@@ -2646,7 +2763,8 @@ function snapshotGuideeForm(){
     nom:(fgNom?.value||'').trim(),
     date_debut:fgDebut?.value||'',
     date_fin:fgFin?.value||'',
-    description:(fgDesc?.value||'').trim()
+    description:(fgDesc?.value||'').trim(),
+    resultat:(fgResult?.value||'').trim()
   };
 }
 function normalizeGuideeSnapshot(snap){
@@ -2656,7 +2774,8 @@ function normalizeGuideeSnapshot(snap){
     nom:(base.nom||'').trim(),
     date_debut:base.date_debut||'',
     date_fin:base.date_fin||'',
-    description:(base.description||'').trim()
+    description:(base.description||'').trim(),
+    resultat:(base.resultat||'').trim()
   };
 }
 function isGuideeFormDirty(){
@@ -2686,6 +2805,7 @@ function buildGuideePayload(){
     consultant_id:snap.consultant_id,
     nom:snap.nom,
     description:snap.description||undefined,
+    resultat:snap.resultat||undefined,
     date_debut:dateDebut,
     date_fin:dateFin,
     thematique_id:thematiqueId,
@@ -2722,22 +2842,28 @@ function openGuideeModal(id=null,options={}){
   const preferred=defaultConsultantId && optionValues.includes(defaultConsultantId)
     ? defaultConsultantId
     : fgConsult.options[0]?.value||'';
-  const g=id? store.guidees.find(x=>x.id===id) : {id:uid(),nom:'',description:'',consultant_id:preferred,date_debut:todayStr(),date_fin:'' ,thematique_id:'autre'};
+  const g=id? store.guidees.find(x=>x.id===id) : {id:uid(),nom:'',description:'',resultat:'',consultant_id:preferred,date_debut:todayStr(),date_fin:'' ,thematique_id:'autre'};
   const templateGuidee=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee);
+  const templateResult=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee_result);
   fgConsult.value=g?.consultant_id||preferred||'';
   fgNom.value=g?.nom||'';
   if(id){
     fgDesc.value=g?.description||'';
     fgDesc.dataset.autofill='false';
+    fgResult.value=g?.resultat||'';
+    fgResult.dataset.autofill='false';
   }else{
     fgDesc.value=templateGuidee;
     fgDesc.dataset.autofill='true';
+    fgResult.value=templateResult;
+    fgResult.dataset.autofill='true';
   }
   const start=g?.date_debut || todayStr();
   fgDebut.value=start;
   const consultant=store.consultants.find(c=>c.id===(g?.consultant_id||fgConsult.value));
   const defaultEnd=consultant?.date_fin||start;
   fgFin.value=g?.date_fin||defaultEnd;
+  updateGuideeConsultantTooltip();
   guideeInitialSnapshot=normalizeGuideeSnapshot(snapshotGuideeForm());
   dlgG.showModal();
 }

@@ -20,10 +20,11 @@
       "activity:VERBATIM": "",
       "activity:ALERTE": "ALERTE DESCRIPTION\nNature : RH ou commerce\nContexte : (situation déclencheuse)\nSymptômes : (faits ou signaux concrets)\nSuivi : soutien ou ajustement à engager",
       "guidee": "GUIDEE DESCRIPTION\nObjectif : (résultat attendu ou compétences à renforcer)\nMission : (contexte, situation ou besoin à l’origine)\nAccompagnement : (format, fréquence, durée prévisionnelle)\nIndicateurs : (signes concrets de progression attendus)",
+      "guidee_result": "GUIDEE RESULTAT\nRésultat probable : (résultat réaliste attendu)\nIndice de confiance : 0-100%\nOpportunités : (facteurs de réussite)\nRisques : (facteurs d’échecs)",
       "consultant": "CONSULTANT DESCRIPTION\nObjectif : (souhait à court/moyen terme)\nForces : (atouts distinctifs, points d’appui)\nFreins : (potentiel, besoins ou risques à accompagner)\nStyle : (posture, communication, relationnel, énergie)"
     },
     "ai_prompt": "Peux tu reprendre dans la structure imposée {{description_template}} la description {{description_user}} de manière synthétique ? (1 point = 1 ligne, mettre des virgules entre plusieurs idées) utilise des # de la liste {{hashtags}} pour des notions synonymes qui sont mentionnés.",
-    "ai_activity_context_prompt": "Prendre en compte également les éléments de contexte sur l'objectif en cours {{guide_description}} et les informations sur le consultant {{consultant_description}}."
+    "ai_activity_context_prompt": "Prendre en compte également les éléments de contexte de la mission {{guide_description}}{{guide_finalite}} et les informations sur le consultant {{consultant_description}}."
   },
   "consultants": [
     {
