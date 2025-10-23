@@ -1084,7 +1084,9 @@ const titleLine=`<div class="activity-title">${leadingBadges?`${leadingBadges} `
 const descLine=descText
   ? `<div class="activity-desc${isSelected?'':' clamp-5'}">${descHtml}</div>`
   : `<div class="activity-desc muted">—</div>`;
-const guideeInfo='';
+const guideeInfo=(g && isSelected)
+  ? `<div class="activity-guidee">🧭 <span class="activity-guidee-label">Guidée :</span> <span class="activity-guidee-link click-span" role="link" tabindex="0" data-goto-guidee="${g.id}" data-goto-guidee-activity="${a.id}">${esc(g.nom||'Sans titre')}</span></div>`
+  : '';
 const mobileDesc=isSelected
   ? `<div class="mobile-desc expanded" data-act="${a.id}"><div class="text">${descHtml||'—'}</div></div>`
   : `<div class="mobile-desc" data-act="${a.id}"><div class="text${descText?' clamp-5':''}">${descHtml||'—'}</div></div>`;
@@ -1752,7 +1754,7 @@ function renderReporting(){
         date:formatReportDate(a.date_publication||''),
         hours:`${formatHours(a.heures??0)}h`,
         title:(a.title||'').trim()||'Sans titre',
-        descriptionHtml=formatReportMultiline(a.description),
+        descriptionHtml:formatReportMultiline(a.description),
         descriptionLines
       };
     });
@@ -1777,7 +1779,7 @@ function renderReporting(){
         participants:participantText,
         date:formatReportDate(a.date_publication||''),
         title:(a.title||'').trim()||'Sans titre',
-        descriptionHtml=formatReportMultiline(a.description),
+        descriptionHtml:formatReportMultiline(a.description),
         descriptionLines
       };
     });
