@@ -426,7 +426,6 @@ const passwordLoginForm=$('password-login-form');
 const passwordEmailInput=$('password-email');
 const passwordPasswordInput=$('password-password');
 const passwordFeedback=$('password-feedback');
-const btnPasswordSignup=$('btn-password-signup');
 const btnPasswordReset=$('btn-password-reset');
 const authError=$('auth-error');
 const btnRefreshRemote=$('btn-refresh-remote');
@@ -456,7 +455,7 @@ function setPasswordFeedback(message='',variant='info'){
 }
 function togglePasswordControls(disabled){
   const submitBtn=passwordLoginForm?.querySelector('button[type="submit"]');
-  [passwordEmailInput,passwordPasswordInput,submitBtn,btnPasswordSignup,btnPasswordReset].forEach(ctrl=>{
+  [passwordEmailInput,passwordPasswordInput,submitBtn,btnPasswordReset].forEach(ctrl=>{
     if(ctrl) ctrl.disabled=!!disabled;
   });
 }
@@ -729,7 +728,7 @@ on(window,'resize',applyTabLabels); applyTabLabels();
 function openTab(id, persist=false){
   if(id===activeTabId) return;
   if(activeTabId==='reglages' && id!=='reglages' && settingsDirty){
-    const shouldLeave=confirm('Des modifications de paramètres ne sont pas enregistrées. Quitter l\'onglet ?');
+    const shouldLeave=confirm('Des paramètres ne sont pas enregistrés. Enregistrer avant de quitter l\'onglet ?');
     if(!shouldLeave){
       return;
     }
@@ -2023,7 +2022,6 @@ btnSaveParams?.addEventListener('click',async()=>{
     restartAutoSync();
     await syncIfDirty('settings-manual-save');
     resetSettingsDirty();
-    alert('Paramètres enregistrés.');
   }catch(err){
     console.error('Param settings save error:',err);
     alert(`Enregistrement impossible : ${err?.message||err}`);
@@ -2039,13 +2037,6 @@ if(templateTypeSelect){
   on(templateTypeSelect,'change',e=>{
     const nextValue=e.target.value;
     if(nextValue===state.templates.selected) return;
-    if(settingsDirtyState.template){
-      const confirmChange=confirm('Les modifications du template ne sont pas enregistrées. Changer de template ?');
-      if(!confirmChange){
-        e.target.value=state.templates.selected;
-        return;
-      }
-    }
     state.templates.selected=nextValue;
     renderTemplateEditor();
     markSettingsPartClean('template');
@@ -2122,7 +2113,10 @@ promptEditor?.addEventListener('input',()=>markSettingsPartDirty('prompt'));
 window.addEventListener('beforeunload',event=>{
   if(settingsDirty){
     event.preventDefault();
-    event.returnValue='';
+    event.returnValue='Des paramètres ne sont pas enregistrés. Enregistrer avant de quitter ?';
+  }else if(hasPendingChanges){
+    event.preventDefault();
+    event.returnValue='Des données ne sont pas synchronisées. Sauvegarder avant de quitter ?';
   }
 });
 btnExportJson?.addEventListener('click',()=>{
@@ -3056,25 +3050,6 @@ passwordLoginForm?.addEventListener('submit',async evt=>{
     setPasswordFeedback('Connexion réussie.','success');
   }catch(err){
     console.error('Password sign-in error:',err);
-    setPasswordFeedback(formatAuthError(err),'error');
-  }finally{
-    togglePasswordControls(false);
-  }
-});
-btnPasswordSignup?.addEventListener('click',async()=>{
-  if(!firebaseAuth){ setAuthError('Firebase non disponible.'); return; }
-  const email=(passwordEmailInput?.value||'').trim();
-  const password=passwordPasswordInput?.value||'';
-  if(!email || !password){ setPasswordFeedback('Email et mot de passe requis.','error'); return; }
-  if(password.length<6){ setPasswordFeedback('Mot de passe : 6 caractères minimum.','error'); return; }
-  setAuthError('');
-  setPasswordFeedback('Création du compte…');
-  togglePasswordControls(true);
-  try{
-    await firebaseAuth.createUserWithEmailAndPassword(email,password);
-    setPasswordFeedback('Compte créé et connecté ✅','success');
-  }catch(err){
-    console.error('Password sign-up error:',err);
     setPasswordFeedback(formatAuthError(err),'error');
   }finally{
     togglePasswordControls(false);

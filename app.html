@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>SHERPA — MVP v5.0.1</title><link rel="stylesheet" href="app.css"/><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script></head><body>
-<div class="auth-gate hidden" id="auth-gate"><div class="auth-card"><h1>Bienvenue sur Sherpa</h1><p class="auth-sub">Connectez-vous pour accéder à vos données.</p><form class="auth-password" id="password-login-form"><label for="password-email">Connexion email</label><input id="password-email" type="email" placeholder="vous@example.com" autocomplete="email" required/><label for="password-password">Mot de passe</label><input id="password-password" type="password" placeholder="Votre mot de passe" autocomplete="current-password" required/><div class="auth-actions"><button class="btn primary" type="submit">Se connecter</button><button class="btn" type="button" id="btn-password-signup">Créer un compte</button></div></form><button class="auth-link" type="button" id="btn-password-reset">Mot de passe oublié ?</button><div class="auth-feedback" id="password-feedback"></div><div class="auth-feedback error" id="auth-error"></div></div></div>
+<div class="auth-gate hidden" id="auth-gate"><div class="auth-card"><h1>Bienvenue sur Sherpa</h1><p class="auth-sub">Connectez-vous pour accéder à vos données.</p><form class="auth-password" id="password-login-form"><label for="password-email">Connexion email</label><input id="password-email" type="email" placeholder="vous@example.com" autocomplete="email" required/><label for="password-password">Mot de passe</label><input id="password-password" type="password" placeholder="Votre mot de passe" autocomplete="current-password" required/><div class="auth-actions"><button class="btn primary" type="submit">Se connecter</button></div></form><button class="auth-link" type="button" id="btn-password-reset">Mot de passe oublié ?</button><div class="auth-feedback" id="password-feedback"></div><div class="auth-feedback error" id="auth-error"></div></div></div>
 <header><div class="wrap header-bar"><nav class="tabs" id="tabs"></nav><div class="header-actions"><button class="btn small" id="btn-sync-indicator" title="Synchronisation">⚠️</button><div class="auth-user hidden" id="auth-user"><button class="btn small" type="button" id="btn-sign-out" aria-label="Se déconnecter">🔒<span class="sr-only">Se déconnecter</span></button></div></div></div></header>
 <main class="wrap">
 <!-- DASHBOARD -->
@@ -120,7 +120,10 @@
 <section class="view" id="view-reglages">
 <div class="reglages-grid">
   <div class="card">
-    <div class="title">⚙️ Paramètres</div>
+    <div class="card-header">
+      <div class="title">⚙️ Paramètres</div>
+      <button class="btn primary small" id="btn-save-params">Enregistrer</button>
+    </div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px">
       <label>sync_interval_minutes <input type="number" id="p-sync_interval" min="1"/></label>
             <label>fin_mission_sous_jours <input type="number" id="p-fin_mission_sous" min="1"/></label>
@@ -132,7 +135,6 @@
     <label style="grid-column:1/-1">Liste des hashtags disponibles (séparés par un espace)
       <textarea id="p-hashtags" rows="4" placeholder="#ProductBacklogPrioritization #ProductUserStories …"></textarea>
     </label>
-    <div class="row" style="margin-top:8px"><button class="btn primary small" id="btn-save-params">Enregistrer</button></div>
     <div class="sub" style="margin-top:6px">Les titres du Dashboard & l’affichage des barres se mettent à jour automatiquement.</div>
     <div class="backup-block">
       <div class="subtitle">Backup</div>
