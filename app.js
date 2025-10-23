@@ -1110,7 +1110,7 @@ const inlineEditButton=()=>`<button class="btn ghost small row-edit" data-inline
 const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span></div>`;
 const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
 const tr=document.createElement('tr'); tr.classList.add('clickable');
-tr.style.setProperty('--selection-color',typeColor);
+tr.style.setProperty('--selection-color','var(--fg)');
 const dateObj=parseDate(a.date_publication||'');
 const isPastDate=dateObj && dateObj<todayStart;
 const isFutureOrToday=dateObj && dateObj>=todayStart;
@@ -1540,7 +1540,7 @@ function renderGuideeTimeline(){
     item.dataset.eventId=ev.id;
     const color=ev.color||'var(--accent)';
     item.style.setProperty('--timeline-color',color);
-    item.style.setProperty('--selection-color',color);
+    item.style.setProperty('--selection-color','var(--fg)');
     item.style.setProperty('--timeline-border','var(--border)');
     item.style.setProperty('--timeline-marker-border','var(--border)');
     const consultantName=esc(consultant?.nom||'—');
