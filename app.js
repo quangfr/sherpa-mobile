@@ -8,6 +8,17 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'
 const parseDate=s=>s? new Date(s+'T00:00:00'):null;
 const daysDiff=(a,b)=>Math.round((a-b)/86400000);
 const addDays=(d,n)=>new Date(d.getTime()+n*86400000);
+function formatDateInput(date){
+  if(!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  const offset=date.getTimezoneOffset();
+  const local=new Date(date.getTime()-offset*60000);
+  return local.toISOString().slice(0,10);
+}
+function getDefaultReportingRange(){
+  const end=new Date();
+  const start=addDays(end,-30);
+  return {startDate:formatDateInput(start),endDate:formatDateInput(end)};
+}
 const isMobile=()=>window.innerWidth<=520;
 function progBadge(p){ const pct=Math.max(0,Math.min(100,Number(p)||0)); return pct<30?'🟥':(pct<70?'🟨':'🟩'); }
 function pctColorClass(p){ const v=Math.max(0,Math.min(100,Number(p)||0)); return v<30?'fill-r':(v<70?'fill-y':'fill-g'); }
@@ -142,6 +153,8 @@ const FIRESTORE_COLLECTIONS={
 const FIRESTORE_PARAMS_DOC='app';
 const FIRESTORE_META_DOC='app';
 const FIRESTORE_ENABLED=true;
+const REPORTING_COPY_DEFAULT_LABEL='Copier';
+const REPORTING_COPY_SUCCESS_LABEL='Copié !';
 function fillPromptTemplate(template, values={}){
   return String(template||'').replace(/{{\s*([a-zA-Z0-9_.]+)\s*}}/g,(match,key)=>{
     const path=key.split('.');
@@ -805,7 +818,8 @@ let state={
   filters:{consultant_id:'',type:'',month:'ALL',hashtag:''},
   activities:{selectedId:'',shouldCenter:false},
   guidees:{consultant_id:'',guidee_id:'',selectedEventId:''},
-  templates:{selected:DESCRIPTION_TEMPLATE_KEYS.activity.ACTION_ST_BERNARD}
+  templates:{selected:DESCRIPTION_TEMPLATE_KEYS.activity.ACTION_ST_BERNARD},
+  reporting:getDefaultReportingRange()
 };
 /* CONSULTANTS */
 function statusOf(c){
@@ -1053,7 +1067,6 @@ const descHtml=esc(descText);
 const titleText=(a.title||'').trim()||'Sans titre';
 const titleHtml=esc(titleText);
 const isSelected=state.activities.selectedId===a.id;
-const guideeName=g?.nom||'Sans titre';
 const beneficiariesIds=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
 const beneficiariesNames=beneficiariesIds
   .map(id=>store.consultants.find(cons=>cons.id===id)?.nom)
@@ -1064,13 +1077,14 @@ const beneficiariesBadge=beneficiariesNames.length
 const headerPieces=[beneficiariesBadge].filter(Boolean);
 const metaLine=headerPieces.length?`<div class="activity-meta">${headerPieces.join(' ')}</div>`:'';
 const leadingBadges=[heuresBadge,probabilityBadge].filter(Boolean).join(' ');
-const titleLine=`<div class="activity-title">${leadingBadges?`${leadingBadges} `:''}<span>${titleHtml}</span></div>`;
+const titleContent=g
+  ? `<span class="activity-title-link click-span" role="link" tabindex="0" data-goto-guidee="${g.id}" data-goto-guidee-activity="${a.id}">${titleHtml}</span>`
+  : `<span class="activity-title-text">${titleHtml}</span>`;
+const titleLine=`<div class="activity-title">${leadingBadges?`${leadingBadges} `:''}${titleContent}</div>`;
 const descLine=descText
   ? `<div class="activity-desc${isSelected?'':' clamp-5'}">${descHtml}</div>`
   : `<div class="activity-desc muted">—</div>`;
-const guideeInfo=g
-  ? `<div class="activity-guidee"><span class="click-span" data-goto-guidee="${g.id}">🧭 <b>${esc(guideeName)}</b></span></div>`
-  : '';
+const guideeInfo='';
 const mobileDesc=isSelected
   ? `<div class="mobile-desc expanded" data-act="${a.id}"><div class="text">${descHtml||'—'}</div></div>`
   : `<div class="mobile-desc" data-act="${a.id}"><div class="text${descText?' clamp-5':''}">${descHtml||'—'}</div></div>`;
@@ -1128,7 +1142,22 @@ on(tr,'click',(e)=>{
     renderActivities();
   }
 });
-tr.querySelectorAll('[data-goto-guidee]').forEach(el=>on(el,'click',(e)=>{ e.stopPropagation(); const gid=e.currentTarget.dataset.gotoGuidee; if(gid) gotoGuideeTimeline(gid); }));
+tr.querySelectorAll('[data-goto-guidee]').forEach(el=>{
+  const handleNavigation=(event)=>{
+    event.stopPropagation();
+    const target=event.currentTarget;
+    const gid=target?.dataset?.gotoGuidee;
+    const aid=target?.dataset?.gotoGuideeActivity||'';
+    if(gid) gotoGuideeTimeline(gid,aid);
+  };
+  on(el,'click',handleNavigation);
+  on(el,'keydown',event=>{
+    if(event.key==='Enter' || event.key===' '){
+      event.preventDefault();
+      handleNavigation(event);
+    }
+  });
+});
 tr.querySelectorAll('[data-inline-edit]').forEach(btn=>on(btn,'click',(e)=>{ e.stopPropagation(); openActivityModal(a.id); }));
 if(!mobile){
   const editBtn=tr.querySelector('[data-edit]');
@@ -1169,6 +1198,11 @@ const btnResetPrompt=$('btn-reset-prompt');
 const btnImportJson=$('btn-import-json');
 const btnExportJson=$('btn-export-json');
 const reportingDocument=$('reporting-document');
+const reportingStartInput=$('reporting-start-date');
+const reportingEndInput=$('reporting-end-date');
+const btnReportingCopy=$('btn-reporting-copy');
+let lastReportingText='';
+let reportingCopyResetTimer=null;
 function getTemplateOptions(){
   const activityOptions=ACTIVITY_TYPES.map(type=>({
     value:DESCRIPTION_TEMPLATE_KEYS.activity[type],
@@ -1593,10 +1627,53 @@ function formatReportMultiline(text){
   if(!value) return '—';
   return esc(value).replace(/\n/g,'<br/>');
 }
+function formatReportPlainText(text){
+  const value=String(text||'').trim();
+  if(!value) return '—';
+  return value.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+}
 function renderReporting(){
   if(!reportingDocument) return;
+  if(reportingCopyResetTimer){
+    clearTimeout(reportingCopyResetTimer);
+    reportingCopyResetTimer=null;
+  }
+  if(btnReportingCopy){
+    btnReportingCopy.textContent=REPORTING_COPY_DEFAULT_LABEL;
+    btnReportingCopy.disabled=false;
+  }
+  if(!state.reporting){
+    state.reporting=getDefaultReportingRange();
+  }
+  const startValue=state.reporting.startDate||'';
+  const endValue=state.reporting.endDate||'';
+  if(reportingStartInput && reportingStartInput.value!==startValue) reportingStartInput.value=startValue;
+  if(reportingEndInput && reportingEndInput.value!==endValue) reportingEndInput.value=endValue;
+  let startDateObj=startValue?parseDate(startValue):null;
+  let endDateObj=endValue?parseDate(endValue):null;
+  if(startDateObj && Number.isNaN(startDateObj.getTime())) startDateObj=null;
+  if(endDateObj && Number.isNaN(endDateObj.getTime())) endDateObj=null;
+  if(startDateObj && endDateObj && endDateObj<startDateObj){
+    const tmp=startDateObj;
+    startDateObj=endDateObj;
+    endDateObj=tmp;
+    const normalizedStart=formatDateInput(startDateObj);
+    const normalizedEnd=formatDateInput(endDateObj);
+    state.reporting.startDate=normalizedStart;
+    state.reporting.endDate=normalizedEnd;
+    if(reportingStartInput) reportingStartInput.value=normalizedStart;
+    if(reportingEndInput) reportingEndInput.value=normalizedEnd;
+  }
+  const withinRange=(dateStr)=>{
+    const date=parseDate(dateStr||'');
+    if(!date || Number.isNaN(date.getTime())) return false;
+    if(startDateObj && date<startDateObj) return false;
+    if(endDateObj && date>endDateObj) return false;
+    return true;
+  };
   if(!storeHasRecords()){
     reportingDocument.innerHTML='<div class="sub">Aucune donnée à afficher.</div>';
+    lastReportingText='Aucune donnée à afficher.';
     return;
   }
   const today=new Date();
@@ -1605,7 +1682,7 @@ function renderReporting(){
     const safeTitle=(String(title||'').trim()||'Sans titre');
     return `${safeTitle} (${formatReportDate(date||'')})`;
   };
-  const missionsRows=consultants.map(c=>{
+  const missionsData=consultants.map(c=>{
     const missionDate=formatReportDate(c.date_fin||'');
     const prolongements=(store.activities||[])
       .filter(a=>a.type==='PROLONGEMENT' && a.consultant_id===c.id)
@@ -1643,39 +1720,189 @@ function renderReporting(){
       .filter(a=>a.type==='ALERTE' && a.consultant_id===c.id && a.alerte_active!==false)
       .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''))[0]||null;
     const alertCell=activeAlert?formatTitleDate(activeAlert.title,activeAlert.date_publication||''):'—';
-    return `<tr><td>${esc(c.nom||'—')}</td><td>${esc(c.titre_mission||'—')}</td><td>${esc(finCell)}</td><td>${esc(guideeCell)}</td><td>${esc(verbatimCell)}</td><td>${esc(avisCell)}</td><td>${esc(alertCell)}</td></tr>`;
+    return {
+      consultant:c.nom||'—',
+      missionTitle:c.titre_mission||'—',
+      missionEnd:finCell,
+      guidee:guideeCell,
+      verbatim:verbatimCell,
+      avis:avisCell,
+      alert:alertCell
+    };
   });
+  const missionsRows=missionsData.map(m=>`<tr><td>${esc(m.consultant||'—')}</td><td>${esc(m.missionTitle||'—')}</td><td>${esc(m.missionEnd||'—')}</td><td>${esc(m.guidee||'—')}</td><td>${esc(m.verbatim||'—')}</td><td>${esc(m.avis||'—')}</td><td>${esc(m.alert||'—')}</td></tr>`);
   const missionsTable=`<div class="reporting-section"><table><caption>Missions</caption><thead><tr><th>Consultant</th><th>Titre</th><th>Fin de mission</th><th>Guidée en cours</th><th>Dernier verbatim</th><th>Dernier avis</th><th>Alerte en cours</th></tr></thead><tbody>${missionsRows.length?missionsRows.join(''):`<tr><td colspan="7">—</td></tr>`}</tbody></table></div>`;
   const stbActions=(store.activities||[])
     .filter(a=>a.type==='ACTION_ST_BERNARD')
     .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''));
-  const actionsRows=stbActions.map(a=>{
-    const consultant=store.consultants.find(c=>c.id===a.consultant_id)||null;
-    const beneficiaries=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
-    const beneficiaryNames=beneficiaries
-      .map(id=>store.consultants.find(c=>c.id===id)?.nom)
-      .filter(Boolean);
-    const participants=[consultant?.nom||null,...beneficiaryNames];
-    const participantText=participants.filter(Boolean).join(', ');
-    return `<tr><td>${esc(participantText||'—')}</td><td>${esc(formatReportDate(a.date_publication||''))}</td><td>${esc(`${formatHours(a.heures??0)}h`)}</td><td>${esc((a.title||'').trim()||'Sans titre')}</td><td>${formatReportMultiline(a.description)}</td></tr>`;
-  });
+  const actionsData=stbActions
+    .filter(a=>withinRange(a.date_publication||''))
+    .map(a=>{
+      const consultant=store.consultants.find(c=>c.id===a.consultant_id)||null;
+      const beneficiaries=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
+      const beneficiaryNames=beneficiaries
+        .map(id=>store.consultants.find(c=>c.id===id)?.nom)
+        .filter(Boolean);
+      const participants=[consultant?.nom||null,...beneficiaryNames];
+      const participantText=participants.filter(Boolean).join(', ')||'—';
+      const descriptionPlain=formatReportPlainText(a.description);
+      const descriptionLines=descriptionPlain==='—'?[]:descriptionPlain.split('\n').map(line=>line.trim()).filter(Boolean);
+      return {
+        participants:participantText,
+        date:formatReportDate(a.date_publication||''),
+        hours:`${formatHours(a.heures??0)}h`,
+        title:(a.title||'').trim()||'Sans titre',
+        descriptionHtml=formatReportMultiline(a.description),
+        descriptionLines
+      };
+    });
+  const actionsRows=actionsData.map(a=>`<tr><td>${esc(a.participants)}</td><td>${esc(a.date)}</td><td>${esc(a.hours)}</td><td>${esc(a.title)}</td><td>${a.descriptionHtml}</td></tr>`);
   const actionsTable=`<div class="reporting-section"><table><caption>Actions</caption><thead><tr><th>Consultants</th><th>Date</th><th>Durée</th><th>Titre</th><th>Description</th></tr></thead><tbody>${actionsRows.length?actionsRows.join(''):`<tr><td colspan="5">—</td></tr>`}</tbody></table></div>`;
   const cordeeActivities=(store.activities||[])
     .filter(a=>a.type==='CORDEE')
     .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''));
-  const cordeeRows=cordeeActivities.map(a=>{
-    const consultant=store.consultants.find(c=>c.id===a.consultant_id)||null;
-    const beneficiaries=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
-    const beneficiaryNames=beneficiaries
-      .map(id=>store.consultants.find(c=>c.id===id)?.nom)
-      .filter(Boolean);
-    const participants=[consultant?.nom||null,...beneficiaryNames];
-    const participantText=participants.filter(Boolean).join(', ');
-    return `<tr><td>${esc(participantText||'—')}</td><td>${esc(formatReportDate(a.date_publication||''))}</td><td>${esc((a.title||'').trim()||'Sans titre')}</td><td>${formatReportMultiline(a.description)}</td></tr>`;
-  });
+  const cordeeData=cordeeActivities
+    .filter(a=>withinRange(a.date_publication||''))
+    .map(a=>{
+      const consultant=store.consultants.find(c=>c.id===a.consultant_id)||null;
+      const beneficiaries=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
+      const beneficiaryNames=beneficiaries
+        .map(id=>store.consultants.find(c=>c.id===id)?.nom)
+        .filter(Boolean);
+      const participants=[consultant?.nom||null,...beneficiaryNames];
+      const participantText=participants.filter(Boolean).join(', ')||'—';
+      const descriptionPlain=formatReportPlainText(a.description);
+      const descriptionLines=descriptionPlain==='—'?[]:descriptionPlain.split('\n').map(line=>line.trim()).filter(Boolean);
+      return {
+        participants:participantText,
+        date:formatReportDate(a.date_publication||''),
+        title:(a.title||'').trim()||'Sans titre',
+        descriptionHtml=formatReportMultiline(a.description),
+        descriptionLines
+      };
+    });
+  const cordeeRows=cordeeData.map(a=>`<tr><td>${esc(a.participants)}</td><td>${esc(a.date)}</td><td>${esc(a.title)}</td><td>${a.descriptionHtml}</td></tr>`);
   const cordeeTable=`<div class="reporting-section"><table><caption>Cordées</caption><thead><tr><th>Consultants</th><th>Date</th><th>Titre</th><th>Description</th></tr></thead><tbody>${cordeeRows.length?cordeeRows.join(''):`<tr><td colspan="4">—</td></tr>`}</tbody></table></div>`;
   reportingDocument.innerHTML=[missionsTable,actionsTable,cordeeTable].join('');
+  const missionsTextLines=[];
+  if(missionsData.length){
+    missionsData.forEach(m=>{
+      missionsTextLines.push(`- ${m.consultant} — ${m.missionTitle}`);
+      missionsTextLines.push(`  Fin de mission : ${m.missionEnd}`);
+      missionsTextLines.push(`  Guidée en cours : ${m.guidee}`);
+      missionsTextLines.push(`  Dernier verbatim : ${m.verbatim}`);
+      missionsTextLines.push(`  Dernier avis : ${m.avis}`);
+      missionsTextLines.push(`  Alerte en cours : ${m.alert}`);
+      missionsTextLines.push('');
+    });
+    while(missionsTextLines.length && missionsTextLines[missionsTextLines.length-1]==='') missionsTextLines.pop();
+  }else{
+    missionsTextLines.push('Aucune mission.');
+  }
+  const actionsTextLines=[];
+  if(actionsData.length){
+    actionsData.forEach((action,idx)=>{
+      actionsTextLines.push(`${idx+1}. ${action.title}`);
+      actionsTextLines.push(`   Date : ${action.date}`);
+      actionsTextLines.push(`   Durée : ${action.hours}`);
+      actionsTextLines.push(`   Consultants : ${action.participants}`);
+      if(action.descriptionLines.length){
+        actionsTextLines.push(`   Description : ${action.descriptionLines[0]}`);
+        for(let i=1;i<action.descriptionLines.length;i++){
+          actionsTextLines.push(`                 ${action.descriptionLines[i]}`);
+        }
+      }else{
+        actionsTextLines.push('   Description : —');
+      }
+      actionsTextLines.push('');
+    });
+    while(actionsTextLines.length && actionsTextLines[actionsTextLines.length-1]==='') actionsTextLines.pop();
+  }else{
+    actionsTextLines.push('Aucune action.');
+  }
+  const cordeeTextLines=[];
+  if(cordeeData.length){
+    cordeeData.forEach((item,idx)=>{
+      cordeeTextLines.push(`${idx+1}. ${item.title}`);
+      cordeeTextLines.push(`   Date : ${item.date}`);
+      cordeeTextLines.push(`   Consultants : ${item.participants}`);
+      if(item.descriptionLines.length){
+        cordeeTextLines.push(`   Description : ${item.descriptionLines[0]}`);
+        for(let i=1;i<item.descriptionLines.length;i++){
+          cordeeTextLines.push(`                 ${item.descriptionLines[i]}`);
+        }
+      }else{
+        cordeeTextLines.push('   Description : —');
+      }
+      cordeeTextLines.push('');
+    });
+    while(cordeeTextLines.length && cordeeTextLines[cordeeTextLines.length-1]==='') cordeeTextLines.pop();
+  }else{
+    cordeeTextLines.push('Aucune cordée.');
+  }
+  const sections=[
+    '=== Missions ===',
+    ...missionsTextLines,
+    '',
+    '=== Actions ===',
+    ...actionsTextLines,
+    '',
+    '=== Cordées ===',
+    ...cordeeTextLines
+  ];
+  lastReportingText=sections.join('\n').trimEnd();
 }
+reportingStartInput?.addEventListener('change',e=>{
+  if(!state.reporting) state.reporting=getDefaultReportingRange();
+  state.reporting.startDate=e.target.value||'';
+  renderReporting();
+});
+reportingEndInput?.addEventListener('change',e=>{
+  if(!state.reporting) state.reporting=getDefaultReportingRange();
+  state.reporting.endDate=e.target.value||'';
+  renderReporting();
+});
+btnReportingCopy?.addEventListener('click',async()=>{
+  if(!lastReportingText || !lastReportingText.trim()){
+    alert('Rien à copier.');
+    return;
+  }
+  const showSuccess=()=>{
+    if(btnReportingCopy){
+      btnReportingCopy.textContent=REPORTING_COPY_SUCCESS_LABEL;
+      if(reportingCopyResetTimer){
+        clearTimeout(reportingCopyResetTimer);
+      }
+      reportingCopyResetTimer=setTimeout(()=>{
+        if(btnReportingCopy){
+          btnReportingCopy.textContent=REPORTING_COPY_DEFAULT_LABEL;
+        }
+        reportingCopyResetTimer=null;
+      },2000);
+    }
+  };
+  try{
+    await navigator.clipboard.writeText(lastReportingText);
+    showSuccess();
+  }catch(err){
+    try{
+      const textarea=document.createElement('textarea');
+      textarea.value=lastReportingText;
+      textarea.setAttribute('readonly','');
+      textarea.style.position='fixed';
+      textarea.style.opacity='0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      const ok=document.execCommand('copy');
+      document.body.removeChild(textarea);
+      if(!ok) throw new Error('execCommand failed');
+      showSuccess();
+    }catch(fallbackErr){
+      console.error('Copy failed',fallbackErr);
+      alert('Impossible de copier automatiquement. Sélectionnez et copiez manuellement.');
+    }
+  }
+});
 function renderParams(){
 const p=store.params||DEFAULT_PARAMS;
 $('p-sync_interval').value=p.sync_interval_minutes ?? DEFAULT_SYNC_INTERVAL_MINUTES;

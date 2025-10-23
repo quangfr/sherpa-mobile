@@ -302,9 +302,16 @@ dialog{border-radius:0;width:100vw;height:100vh;max-height:none;margin:0}
 }
 
 .reporting-pane{display:flex;flex-direction:column;gap:12px;}
+.reporting-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:12px;}
+.reporting-toolbar label{display:flex;flex-direction:column;gap:4px;font-size:12px;}
+.reporting-toolbar input[type=date]{min-width:160px;}
+.reporting-toolbar .spacer{flex:1 1 auto;}
+.reporting-toolbar .btn{align-self:flex-start;}
 .reporting-document{margin-top:8px;display:flex;flex-direction:column;gap:16px;font-size:13px;line-height:1.5;}
 .reporting-document table{width:100%;border-collapse:collapse;font-size:13px;}
 .reporting-document th,.reporting-document td{border:1px solid var(--border);padding:6px;vertical-align:top;}
 .reporting-document th{background:var(--bg);text-align:left;}
 .reporting-document caption{font-weight:700;margin-bottom:6px;text-align:left;}
 .reporting-document .reporting-section{display:flex;flex-direction:column;gap:8px;}
+.activity-title .activity-title-link{text-decoration:underline;}
+.activity-title .activity-title-link:focus{outline:2px solid var(--accent);outline-offset:2px;}
