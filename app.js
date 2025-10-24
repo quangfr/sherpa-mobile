@@ -1348,6 +1348,8 @@ const promptTitleEditor=$('prompt-title');
 const btnResetPrompt=$('btn-reset-prompt');
 const btnImportJson=$('btn-import-json');
 const btnExportJson=$('btn-export-json');
+const btnResetFirestore=$('btn-reset-firestore');
+const btnResetLocal=$('btn-reset-local');
 const reportingDocument=$('reporting-document');
 const reportingStartInput=$('reporting-start-date');
 const reportingEndInput=$('reporting-end-date');
@@ -2851,6 +2853,56 @@ btnImportJson?.addEventListener('click',()=>{
   input.click();
 });
 
+btnResetFirestore?.addEventListener('click',async()=>{
+  if(!FIRESTORE_ENABLED){
+    alert('Reset Firestore indisponible hors connexion.');
+    return;
+  }
+  if(!firebaseDb || !currentUser){
+    setSyncStatus('Connectez-vous pour réinitialiser Firestore.','warning');
+    alert('Connectez-vous pour réinitialiser Firestore.');
+    if(FIRESTORE_ENABLED && !hasOfflineDataAvailable()) toggleAuthGate(true);
+    return;
+  }
+  if(!confirm('Écraser tout Firestore avec la donnée locale ?')) return;
+  btnResetFirestore.disabled=true;
+  try{
+    await overwriteFirestoreFromLocal();
+    alert('Firestore réinitialisé depuis la donnée locale ✅');
+  }catch(err){
+    console.error('Reset Firestore error:',err);
+    alert(`Réinitialisation Firestore impossible : ${err?.message||err}`);
+  }finally{
+    btnResetFirestore.disabled=false;
+  }
+});
+
+btnResetLocal?.addEventListener('click',async()=>{
+  if(!FIRESTORE_ENABLED){
+    alert('Reset Local indisponible hors connexion.');
+    return;
+  }
+  if(!firebaseDb || !currentUser){
+    setSyncStatus('Connectez-vous pour réinitialiser la donnée locale depuis Firestore.','warning');
+    alert('Connectez-vous pour réinitialiser la donnée locale depuis Firestore.');
+    if(FIRESTORE_ENABLED && !hasOfflineDataAvailable()) toggleAuthGate(true);
+    return;
+  }
+  if(!confirm('Remplacer toute la donnée locale par Firestore ?')) return;
+  btnResetLocal.disabled=true;
+  try{
+    await loadRemoteStore({manual:true,reason:'reset-local',forceApply:true});
+    setSyncStatus('Données locales remplacées par Firestore.','success');
+    alert('Données locales remplacées par Firestore ✅');
+  }catch(err){
+    console.error('Reset Local error:',err);
+    setSyncStatus(`Erreur lors du reset local : ${err?.message||err}`,'error');
+    alert(`Réinitialisation locale impossible : ${err?.message||err}`);
+  }finally{
+    btnResetLocal.disabled=false;
+  }
+});
+
 /* MODALS (ACTIVITÉ) */
 const dlgA=$('dlg-activity');
 const faType=$('fa-type');
@@ -3972,9 +4024,114 @@ async function saveStoreToFirestore(reason='auto', diffOverride=null){
     updateSyncIndicator();
   }
 }
+async function overwriteFirestoreFromLocal(){
+  if(!firebaseDb || !currentUser) throw new Error('Connexion Firestore requise.');
+  const reason='reset-firestore';
+  const nowIso=nowISO();
+  const collectionsConfig=[
+    {key:'consultants',collection:FIRESTORE_COLLECTIONS.consultants},
+    {key:'activities',collection:FIRESTORE_COLLECTIONS.activities},
+    {key:'guidees',collection:FIRESTORE_COLLECTIONS.guidees},
+    {key:'thematiques',collection:FIRESTORE_COLLECTIONS.thematiques}
+  ];
+  const buildLocalList=(key)=>{
+    const list=Array.isArray(store?.[key])?store[key]:[];
+    return list.map(item=>deepClone(item)).filter(item=>item && item.id);
+  };
+  const commitOperations=async (operations=[])=>{
+    if(!operations.length) return;
+    const CHUNK_SIZE=400;
+    for(let index=0; index<operations.length; index+=CHUNK_SIZE){
+      const batch=firebaseDb.batch();
+      const end=Math.min(index+CHUNK_SIZE,operations.length);
+      for(let i=index;i<end;i++){
+        operations[i](batch);
+      }
+      await batch.commit();
+    }
+  };
+  isSyncInFlight=true;
+  syncIndicatorState='pending';
+  updateSyncIndicator();
+  setSyncStatus('Réinitialisation de Firestore depuis la donnée locale…','warning');
+  try{
+    const operations=[];
+    for(const cfg of collectionsConfig){
+      const {key,collection}=cfg;
+      const localItems=buildLocalList(key);
+      const localIds=new Set(localItems.map(item=>String(item.id)));
+      const collectionRef=firebaseDb.collection(collection);
+      const snapshot=await collectionRef.get();
+      snapshot.forEach(doc=>{
+        if(!localIds.has(doc.id)){
+          const docRef=collectionRef.doc(doc.id);
+          operations.push(batch=>{ batch.delete(docRef); });
+        }
+      });
+      localItems.forEach(item=>{
+        const docId=String(item.id);
+        if(!docId) return;
+        const normalized={...item};
+        delete normalized._status;
+        const docRef=collectionRef.doc(docId);
+        const payload=cleanFirestoreData({
+          ...normalized,
+          id:docId,
+          updated_at:normalized.updated_at||nowIso
+        });
+        operations.push(batch=>{ batch.set(docRef,payload,{merge:false}); });
+      });
+    }
+    const paramsPayload=cleanFirestoreData(deepClone(store?.params||DEFAULT_PARAMS));
+    const paramsRef=firebaseDb.collection(FIRESTORE_COLLECTIONS.params).doc(FIRESTORE_PARAMS_DOC);
+    operations.push(batch=>{ batch.set(paramsRef,paramsPayload,{merge:false}); });
+    const metaRef=firebaseDb.collection(FIRESTORE_COLLECTIONS.meta).doc(FIRESTORE_META_DOC);
+    const updatedMeta={
+      ...(store?.meta||{}),
+      updated_at:nowIso,
+      updated_at_iso:nowIso,
+      version:6.0,
+      last_writer:currentUser.email||currentUser.uid||null,
+      last_reason:reason
+    };
+    const metaPayload=cleanFirestoreData({...updatedMeta});
+    const serverStamp=(firebase.firestore && firebase.firestore.FieldValue && firebase.firestore.FieldValue.serverTimestamp)
+      ? firebase.firestore.FieldValue.serverTimestamp()
+      : null;
+    if(serverStamp) metaPayload.updated_at=serverStamp;
+    operations.push(batch=>{ batch.set(metaRef,metaPayload,{merge:false}); });
+    await commitOperations(operations);
+    store.meta={...updatedMeta};
+    initialStoreSnapshot=deepClone(store);
+    lastSessionDiff={};
+    hasPendingChanges=false;
+    remoteReady=true;
+    lastRemoteWriteIso=nowIso;
+    lastRemoteReadIso=nowIso;
+    lastSyncSuccess=Date.now();
+    syncIndicatorState='ok';
+    updateUsageGate();
+    restartRemotePolling();
+    scheduleAutoSync();
+    localStorage.setItem(LS_KEY,JSON.stringify(store));
+    refreshAll();
+    setSyncStatus(`Firestore réinitialisé (${formatSyncDate(nowIso)})`,'success');
+    updateSyncIndicator();
+  }catch(err){
+    syncIndicatorState='error';
+    lastSyncError=Date.now();
+    updateSyncIndicator();
+    setSyncStatus(`Erreur lors de la réinitialisation Firestore : ${err.message||err}`,'error');
+    throw err;
+  }finally{
+    isSyncInFlight=false;
+    updateSyncIndicator();
+  }
+}
+
 async function loadRemoteStore(options={}){
-  if(!firebaseDb || !currentUser) return;
-  const {manual=false,reason='auto',silent=false}=options;
+  if(!firebaseDb || !currentUser) return null;
+  const {manual=false,reason='auto',silent=false,forceApply=false}=options;
   if(isRemoteLoadInFlight){
     remoteLoadQueuedOptions=remoteLoadQueuedOptions || {...options};
     return;
@@ -4002,7 +4159,7 @@ async function loadRemoteStore(options={}){
         setSyncStatus('Aucune donnée distante détectée — initialisation en cours…','warning');
       }
       await saveStoreToFirestore('initial-upload',buildFullStoreDiff());
-      return;
+      return null;
     }
     const mapCollection=snap=>snap.docs.map(doc=>{
       const item=mapDocToItem(doc);
@@ -4031,7 +4188,8 @@ async function loadRemoteStore(options={}){
     const localMs=isoToMillis(localMetaIso);
     const remoteIsNewer=Number.isFinite(remoteMs) && (!Number.isFinite(localMs) || remoteMs>localMs);
     const localIsNewer=Number.isFinite(localMs) && (!Number.isFinite(remoteMs) || localMs>remoteMs);
-    if(localIsNewer && !remoteIsNewer){
+    const hasLocalRecords=storeHasRecords();
+    if(!forceApply && localIsNewer && !remoteIsNewer && hasLocalRecords){
       initialStoreSnapshot=deepClone(remoteStore);
       lastSessionDiff=computeSessionDiff();
       const diffHasChanges=lastSessionDiff && Object.keys(lastSessionDiff).length>0;
@@ -4053,7 +4211,7 @@ async function loadRemoteStore(options={}){
           console.error('Erreur de resynchronisation immédiate :',err);
         });
       }
-      return;
+      return null;
     }
     applyIncomingStore(remoteStore,'firestore',{alert:false});
     initialStoreSnapshot=deepClone(store);
@@ -4070,6 +4228,7 @@ async function loadRemoteStore(options={}){
     }
     updateUsageGate({silent:!showFeedback});
     startRemotePolling();
+    return remoteStore;
   }catch(err){
     console.error('Firestore load error:',err);
     syncIndicatorState='error';
@@ -4097,6 +4256,7 @@ async function loadRemoteStore(options={}){
       });
     }
   }
+  return null;
 }
 async function handleAuthStateChanged(user){
   currentUser=user||null;
