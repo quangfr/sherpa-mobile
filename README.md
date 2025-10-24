@@ -23,8 +23,10 @@
 - **params** (seuils & UI) — valeurs par défaut :
   - `sync_interval_minutes`, `fin_mission_sous_jours`, `stb_recent_jours`,
     `avis_manquant_depuis_jours`, `activites_recent_jours`, `activites_a_venir_jours`,
-    `hashtags_catalog`, `description_templates`, `ai_prompt` (prompt commun aux descriptions),
-    `ai_activity_context_prompt` (contexte additionnel injecté sur les activités).
+    `hashtags_catalog`, `mentions_catalog`, `description_templates`,
+    `ai_prompt` (prompt commun aux descriptions),
+    `ai_activity_context_prompt` (contexte additionnel injecté sur les activités),
+    `ai_title_prompt` (génération IA du titre d’activité).
 - **thematiques** : `{ id, nom, emoji, color }`, IDs normalisés et complétés au chargement.
 - **consultants** :
   - `{ id, nom, titre_mission, date_fin?, boond_id?, description?, created_at, updated_at }` (sans `url`).
@@ -53,6 +55,7 @@
   - `🚨 Alertes actives`, `⏳ Fin de mission < X j`, `🐕‍🦺 Sans action STB > Y j`, `🗣️ Sans avis > Z j`.
 - Bloc “Actions en cours” / “Actions à venir” : liste des guidées avec STB à 0h, affichant consultant + badge heures + date (préfixée `•`).
 - Bouton global “Ajouter un consultant”.
+- Modale consultant : champ description pré-rempli/placeholder via le template dédié, bouton IA pour enrichir le texte.
 
 ### 3.3 Activités (📌)
 - Barre d’outils : compteur, `Ajouter`, `Réinitialiser`, filtres (`consultant`, `type`, `#️⃣`, `month`).
@@ -61,14 +64,17 @@
   - Nom de la guidée en pied de ligne (texte cliquable) renvoyant vers la timeline filtrée.
   - Description clampée; guidee associée affichée uniquement pour la ligne sélectionnée (bloc `activity-guidee`).
 - Actions rapides : édition, duplication, suppression, accès consultant/guidée, génération IA (description & titre).
+- Modale activité : description initialisée et placeholder via le template du type sélectionné ; suggestion de titre IA via le prompt paramétrable.
 
 ### 3.4 Guidées (🧭)
 - Barre : `Créer`, `Éditer`, `Réinitialiser`, filtres (`consultant`, `guidée`), progression (% + heures cumulées).
 - Timeline verticale :
   - Encadrés style cartes activités (ombre, survol, sélection colorée).
-  - Événements `start/end` affichent “Début / Fin de la guidée 🧭 <Nom>`” (clic = filtre guidée).
+  - Événements `start/end` affichent “Consultant • Début/Fin de la guidée 🧭 <Nom>`” alignés à droite (clic = filtre guidée).
+  - Marqueurs d’événements agrandis pour souligner le type associé.
   - Date affichée selon sélection (exacte si sélectionnée, relatif sinon).
   - Boutons inline `✏️` pour éditer activité/guidée, clic = sélection + focus.
+- Modale guidée : champs description et résultat initialisés + placeholder selon leurs templates, boutons IA (description, résultat, titre).
 
 ### 3.5 Reporting (📈)
 - Document HTML (copiable en texte ou riche) structuré en trois tableaux :
@@ -76,11 +82,12 @@
   2. **Actions** : participants (consultant + bénéficiaires), date, durée, titre, description.
   3. **Cordées** : participants, date, titre, description.
 - Placeholder `—` sur lignes ou cellules vides.
+- Filtres période initialisés sur la plage `01/07/2025 → aujourd’hui`.
 
 ### 3.6 Paramètres (⚙️)
 - Carte **Paramètres** : inputs numériques pour seuils, textarea hashtags, bouton `Enregistrer`.
 - Carte **Templates de description** : sélecteur de template, textarea éditable, boutons `Réinitialiser` / `Enregistrer`.
-- Carte **Prompt IA** : textarea unique pour le prompt commun, boutons `Réinitialiser` / `Enregistrer`.
+- Carte **Prompt IA** : textareas pour le prompt commun, le contexte d’activité et le prompt de titre, boutons `Réinitialiser` / `Enregistrer`.
 - Bloc **Backup** : boutons `📤 Importer la donnée en JSON`, `📥 Exporter la donnée en JSON` (FileReader + Blob).
 
 ### 3.7 Styles & tokens
@@ -137,7 +144,7 @@
 - `renderActivities()` construit lignes + état sélection, badges heures/probabilité, meta, guidee.
 - `renderGuideeTimeline()` compose événements (début, activités, fin) avec tri, statut, scroll auto.
 - `renderReporting()` assemble le document reporting (missions/actions/cordées) avec placeholders `—`.
-- `renderTemplateEditor()` & `renderPromptEditor()` gèrent sélecteur de template et prompt commun.
+- `renderTemplateEditor()` & `renderPromptEditor()` gèrent sélecteur de template, prompts (commun/contexte/titre) et placeholders des modales.
 - Autres rendus : filtres (consultants/guidées/hashtags), dashboard métriques, paramètres.
 
 ### 5.4 Performance & robustesse
@@ -148,7 +155,7 @@
 
 ### 5.5 Intégrations
 - **Firebase** (Auth + Firestore) : login email/mot de passe, auto-sync périodique configurable (`sync_interval_minutes`).
-- **OpenAI** : endpoints `faOpenAI` / `fcOpenAI` + prompt unique personnalisable (modèle `gpt-5-nano`).
+- **OpenAI** : endpoints `faOpenAI` / `fcOpenAI` + prompts paramétrables (description, contexte d’activité, titre) sur le modèle `gpt-5-nano`.
 - Aucun lien GitHub / diff automatique (supprimé au profit du backup JSON).
 
 ---
