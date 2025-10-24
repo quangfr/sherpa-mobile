@@ -504,6 +504,7 @@ function isRemoteDataStale(){
   return Date.now()-lastMs>threshold;
 }
 function shouldBlockUsage(){
+  if(authGateForced) return true;
   if(!FIRESTORE_ENABLED) return false;
   if(!currentUser) return !hasOfflineDataAvailable();
   if(!remoteReady) return true;
@@ -602,6 +603,7 @@ let firebaseAuth=null;
 let firebaseDb=null;
 let firebaseReady=false;
 let currentUser=null;
+let authGateForced=false;
 let remoteReady=false;
 let isRemoteLoadInFlight=false;
 let remoteLoadQueuedOptions=null;
@@ -4261,6 +4263,7 @@ async function loadRemoteStore(options={}){
 async function handleAuthStateChanged(user){
   currentUser=user||null;
   if(user){
+    authGateForced=false;
     renderAuthUser(user);
     btnRefreshRemote?.removeAttribute('disabled');
     btnSignOut?.removeAttribute('disabled');
@@ -4280,14 +4283,14 @@ async function handleAuthStateChanged(user){
       updateUsageGate();
     }
   }else{
+    authGateForced=true;
     renderAuthUser(null);
     btnRefreshRemote?.setAttribute('disabled','true');
     if(btnSignOut) btnSignOut.setAttribute('disabled','true');
     remoteReady=false;
     hasPendingChanges=false;
     stopAutoSync();
-    const shouldShowGate=FIRESTORE_ENABLED && !hasOfflineDataAvailable();
-    toggleAuthGate(shouldShowGate);
+    toggleAuthGate(true);
     setPasswordFeedback('');
     setSyncStatus('Travail hors connexion — connectez-vous pour synchroniser.');
     syncIndicatorState='error';
