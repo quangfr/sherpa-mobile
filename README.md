@@ -19,11 +19,14 @@
   3. Pour récupérer la donnée de production, utiliser le bouton `📥 Export JSON` du mode en ligne : un fichier `sherpa-backup-YYYY-MM-DD.json` est téléchargé. Placez-le dans le même dossier que `app.html` pour un chargement automatique (le plus récent est appliqué), ou importez-le depuis l'onglet `Paramètres > Backup`.
 
 ## 2. Collaboration et workflow Git/Codex
-- Lancer la conversation sur Codex depuis la branche `main`
-- Avant le merge vers `main`, s'il y a eu des évolutions entre temps, demander Codex de `Màj ma branche depuis main` pour éliminer les risques de conflits.
-- Après le merge, patienter **1 à 2 minutes** : GitHub Pages reconstruit automatiquement le site (`/app.html`). Valider ensuite l'URL publique.
-- Il faut reprendre la
-- Documenter avec Codex chaque évolution significative depuis la dernière modification (README, changelog) afin de faciliter la collaboration.
+- Démarrer toujours une conversation Codex depuis la branche `main`
+- (évolution complexe) Créer la pull request (PR) et vérifier en local la branche `dev`
+- (évolution complexe) Poursuivre les améliorations dans la conversation seulement si pas de merge
+- Merger la PR dans la branche `main` au plus tôt
+- Patienter **1 à 2 minutes** avant de vérifier sur l'instance de production
+- Documenter chaque évolution significative dans le README
+
+Note : Dans le cas d'un travail 
 
 ## 3. Description fonctionnelle
 ### Contexte
