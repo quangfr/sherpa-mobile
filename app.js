@@ -150,6 +150,8 @@ const FIREBASE_CONFIG = {
 const DEFAULT_SYNC_INTERVAL_MINUTES=10;
 const SYNC_DEBOUNCE_MS=2000;
 const STALE_CHECK_INTERVAL_MS=30000;
+const REMOTE_STALE_THRESHOLD_MULTIPLIER=3;
+const REMOTE_POLL_MIN_INTERVAL_MS=60000;
 const FIRESTORE_COLLECTIONS={
   consultants:'consultants',
   activities:'activities',
@@ -492,6 +494,33 @@ function toggleAuthGate(show){
   if(!authGate) return;
   authGate.classList.toggle('hidden',!show);
 }
+function isRemoteDataStale(){
+  if(!remoteReady) return true;
+  if(!lastRemoteReadIso) return true;
+  const lastMs=isoToMillis(lastRemoteReadIso);
+  if(!Number.isFinite(lastMs)) return true;
+  const threshold=getRemoteStaleThresholdMs();
+  if(!Number.isFinite(threshold) || threshold<=0) return false;
+  return Date.now()-lastMs>threshold;
+}
+function shouldBlockUsage(){
+  if(!FIRESTORE_ENABLED) return false;
+  if(!currentUser) return !hasOfflineDataAvailable();
+  if(!remoteReady) return true;
+  return isRemoteDataStale();
+}
+function updateUsageGate(options={}){
+  const {silent=false}=options;
+  const locked=shouldBlockUsage();
+  toggleAuthGate(locked);
+  if(silent || !locked || !currentUser) return;
+  if(syncIndicatorState==='error') return;
+  if(!remoteReady){
+    setSyncStatus('Chargement des données distantes en cours…','warning');
+  }else if(isRemoteDataStale()){
+    setSyncStatus('Synchronisation requise — rechargez les données distantes.','warning');
+  }
+}
 function renderAuthUser(user){
   if(!authUserWrap) return;
   authUserWrap.classList.toggle('hidden',!user);
@@ -574,8 +603,11 @@ let firebaseDb=null;
 let firebaseReady=false;
 let currentUser=null;
 let remoteReady=false;
+let isRemoteLoadInFlight=false;
+let remoteLoadQueuedOptions=null;
 let autoSyncTimeout=null;
 let autoSyncIntervalId=null;
+let remotePollIntervalId=null;
 let isSyncInFlight=false;
 let syncQueued=false;
 let lastRemoteWriteIso=null;
@@ -3577,6 +3609,23 @@ function isoToMillis(value){
   const ms=Date.parse(String(value));
   return Number.isFinite(ms)?ms:NaN;
 }
+function extractMetaIso(meta){
+  if(!meta || typeof meta!=='object') return null;
+  if(meta.updated_at_iso) return String(meta.updated_at_iso);
+  const stamp=meta.updated_at;
+  if(stamp){
+    if(typeof stamp.toDate==='function'){
+      try{ return stamp.toDate().toISOString(); }catch{
+        return null;
+      }
+    }
+    if(typeof stamp==='string') return stamp;
+  }
+  return null;
+}
+function getRemoteBaselineIso(){
+  return lastRemoteReadIso || initialStoreSnapshot?.meta?.updated_at || initialStoreSnapshot?.meta?.updated_at_iso || null;
+}
 function formatSyncDate(iso){
   if(!iso) return '—';
   const date=new Date(iso);
@@ -3590,6 +3639,16 @@ function getSyncIntervalMinutes(){
 }
 function getSyncIntervalMs(){
   return getSyncIntervalMinutes()*60*1000;
+}
+function getRemotePollIntervalMs(){
+  const interval=getSyncIntervalMs();
+  if(!Number.isFinite(interval) || interval<=0) return REMOTE_POLL_MIN_INTERVAL_MS;
+  return Math.max(interval,REMOTE_POLL_MIN_INTERVAL_MS);
+}
+function getRemoteStaleThresholdMs(){
+  const interval=getSyncIntervalMs();
+  const threshold=Number.isFinite(interval)?interval*REMOTE_STALE_THRESHOLD_MULTIPLIER:0;
+  return Math.max(threshold,REMOTE_POLL_MIN_INTERVAL_MS*REMOTE_STALE_THRESHOLD_MULTIPLIER);
 }
 function cleanFirestoreData(input){
   if(Array.isArray(input)) return input.map(cleanFirestoreData);
@@ -3661,6 +3720,7 @@ function updateSyncIndicator(){
   btnSyncIndicator.textContent=icon;
   btnSyncIndicator.title=title;
   btnSyncIndicator.disabled=false;
+  updateUsageGate({silent:true});
 }
 function startSyncIndicatorMonitor(){
   stopSyncIndicatorMonitor();
@@ -3672,6 +3732,7 @@ function restartAutoSync(){
   stopAutoSync();
   startAutoSync();
   scheduleAutoSync();
+  restartRemotePolling();
 }
 function scheduleAutoSync(){
   if(autoSyncTimeout){
@@ -3687,12 +3748,13 @@ function startAutoSync(){
     clearInterval(autoSyncIntervalId);
     autoSyncIntervalId=null;
   }
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser) return;
+  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
   const interval=getSyncIntervalMs();
   if(interval>0){
     autoSyncIntervalId=setInterval(()=>{ syncIfDirty('interval'); },interval);
   }
   startSyncIndicatorMonitor();
+  startRemotePolling();
 }
 function stopAutoSync(){
   if(autoSyncTimeout){
@@ -3704,7 +3766,30 @@ function stopAutoSync(){
     autoSyncIntervalId=null;
   }
   stopSyncIndicatorMonitor();
+  stopRemotePolling();
   updateSyncIndicator();
+}
+function stopRemotePolling(){
+  if(remotePollIntervalId){
+    clearInterval(remotePollIntervalId);
+    remotePollIntervalId=null;
+  }
+}
+function startRemotePolling(){
+  stopRemotePolling();
+  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
+  const interval=getRemotePollIntervalMs();
+  if(!Number.isFinite(interval) || interval<=0) return;
+  remotePollIntervalId=setInterval(()=>{
+    if(typeof document!=='undefined' && document.visibilityState && document.visibilityState!=='visible') return;
+    loadRemoteStore({manual:false,reason:'poll',silent:true}).catch(err=>{
+      console.error('Remote poll error:',err);
+    });
+  },interval);
+}
+function restartRemotePolling(){
+  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser) return;
+  startRemotePolling();
 }
 function markRemoteDirty(reason='local-change'){
   if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
@@ -3713,6 +3798,37 @@ function markRemoteDirty(reason='local-change'){
   syncIndicatorState='pending';
   updateSyncIndicator();
   scheduleAutoSync();
+}
+async function detectRemoteConflict(metaRef, reason){
+  if(reason==='initial-upload') return null;
+  const baselineIso=getRemoteBaselineIso();
+  if(!baselineIso){
+    const err=new Error('Lecture distante requise avant la sauvegarde.');
+    err.code='firestore-baseline-missing';
+    return err;
+  }
+  const baselineMs=isoToMillis(baselineIso);
+  if(!Number.isFinite(baselineMs)){
+    const err=new Error('Horodatage local invalide — rechargez les données distantes.');
+    err.code='firestore-baseline-missing';
+    return err;
+  }
+  try{
+    const snapshot=await metaRef.get();
+    if(snapshot?.exists){
+      const latestIso=extractMetaIso(snapshot.data()||{});
+      const remoteMs=isoToMillis(latestIso);
+      if(Number.isFinite(remoteMs) && remoteMs>baselineMs){
+        const conflictErr=new Error('La base distante a été modifiée par une autre session.');
+        conflictErr.code='firestore-conflict';
+        conflictErr.remoteIso=latestIso;
+        return conflictErr;
+      }
+    }
+  }catch(err){
+    console.warn('Impossible de vérifier les conflits Firestore:',err);
+  }
+  return null;
 }
 async function syncIfDirty(reason='auto'){
   if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
@@ -3807,6 +3923,19 @@ async function saveStoreToFirestore(reason='auto', diffOverride=null){
   batch.set(metaRef,metaPayload,{merge:true});
   setSyncStatus('Sauvegarde sur Firestore…','warning');
   try{
+    const conflict=await detectRemoteConflict(metaRef,reason);
+    if(conflict){
+      hasPendingChanges=true;
+      remoteReady=false;
+      syncIndicatorState='error';
+      lastSyncError=Date.now();
+      const detail=conflict.code==='firestore-conflict'
+        ? 'Des modifications distantes ont été détectées. Rafraîchissez avant de poursuivre.'
+        : 'Synchronisation distante requise avant la sauvegarde. Rafraîchissez vos données.';
+      setSyncStatus(detail,'error');
+      updateUsageGate();
+      throw conflict;
+    }
     await batch.commit();
     store.meta=store.meta||{};
     store.meta.updated_at=nowIso;
@@ -3816,17 +3945,27 @@ async function saveStoreToFirestore(reason='auto', diffOverride=null){
     initialStoreSnapshot=deepClone(store);
     lastSessionDiff={};
     lastRemoteWriteIso=nowIso;
+    lastRemoteReadIso=nowIso;
     hasPendingChanges=false;
     remoteReady=true;
     syncIndicatorState='ok';
     lastSyncSuccess=Date.now();
     setSyncStatus(`Dernière sauvegarde : ${formatSyncDate(nowIso)}`,'success');
+    updateUsageGate();
+    restartRemotePolling();
   }catch(err){
-    console.error('Firestore save error:',err);
-    hasPendingChanges=true;
-    syncIndicatorState='error';
-    lastSyncError=Date.now();
-    setSyncStatus(`Erreur de sauvegarde Firestore : ${err.message||err}`,'error');
+    if(err?.code==='firestore-conflict'){
+      console.warn('Conflit Firestore détecté :',err);
+    }else if(err?.code==='firestore-baseline-missing'){
+      console.warn('Horodatage distant manquant :',err);
+    }else{
+      console.error('Firestore save error:',err);
+      hasPendingChanges=true;
+      syncIndicatorState='error';
+      lastSyncError=Date.now();
+      setSyncStatus(`Erreur de sauvegarde Firestore : ${err.message||err}`,'error');
+      updateUsageGate();
+    }
     throw err;
   }finally{
     isSyncInFlight=false;
@@ -3835,10 +3974,18 @@ async function saveStoreToFirestore(reason='auto', diffOverride=null){
 }
 async function loadRemoteStore(options={}){
   if(!firebaseDb || !currentUser) return;
-  const {manual=false}=options;
-  syncIndicatorState='pending';
-  updateSyncIndicator();
-  setSyncStatus(manual?'Rafraîchissement depuis Firestore…':'Chargement des données depuis Firestore…','warning');
+  const {manual=false,reason='auto',silent=false}=options;
+  if(isRemoteLoadInFlight){
+    remoteLoadQueuedOptions=remoteLoadQueuedOptions || {...options};
+    return;
+  }
+  isRemoteLoadInFlight=true;
+  const showFeedback=!silent || !remoteReady;
+  if(showFeedback){
+    syncIndicatorState='pending';
+    updateSyncIndicator();
+    setSyncStatus(manual?'Rafraîchissement depuis Firestore…':'Chargement des données depuis Firestore…','warning');
+  }
   try{
     const [consultantsSnap,activitiesSnap,guideesSnap,thematiquesSnap,paramsDoc,metaDoc]=await Promise.all([
       firebaseDb.collection(FIRESTORE_COLLECTIONS.consultants).get(),
@@ -3851,7 +3998,9 @@ async function loadRemoteStore(options={}){
     const hasRemoteData=!consultantsSnap.empty || !activitiesSnap.empty || !guideesSnap.empty || !thematiquesSnap.empty || (paramsDoc.exists && Object.keys(paramsDoc.data()||{}).length>0);
     if(!hasRemoteData){
       remoteReady=true;
-      setSyncStatus('Aucune donnée distante détectée — initialisation en cours…','warning');
+      if(showFeedback){
+        setSyncStatus('Aucune donnée distante détectée — initialisation en cours…','warning');
+      }
       await saveStoreToFirestore('initial-upload',buildFullStoreDiff());
       return;
     }
@@ -3869,7 +4018,7 @@ async function loadRemoteStore(options={}){
     };
     const rawMeta=remoteStore.meta||{};
     const serverTimestamp=rawMeta.updated_at;
-    const metaIso=rawMeta.updated_at_iso || (serverTimestamp && typeof serverTimestamp.toDate==='function' ? serverTimestamp.toDate().toISOString() : null) || nowISO();
+    const metaIso=extractMetaIso(rawMeta) || (serverTimestamp && typeof serverTimestamp.toDate==='function' ? serverTimestamp.toDate().toISOString() : null) || nowISO();
     remoteStore.meta={
       ...store.meta,
       ...rawMeta,
@@ -3896,6 +4045,8 @@ async function loadRemoteStore(options={}){
       setSyncStatus('Données locales plus récentes que Firestore — tentative de resynchronisation…','warning');
       updateSyncIndicator();
       scheduleAutoSync();
+      updateUsageGate({silent:!showFeedback});
+      startRemotePolling();
       const reconcilePromise=syncIfDirty('reconcile-after-remote');
       if(reconcilePromise && typeof reconcilePromise.catch==='function'){
         reconcilePromise.catch(err=>{
@@ -3914,15 +4065,37 @@ async function loadRemoteStore(options={}){
     lastSyncSuccess=Date.now();
     syncIndicatorState='ok';
     const message=metaIso?`Dernière lecture distante : ${formatSyncDate(metaIso)}`:'Synchronisation distante terminée.';
-    setSyncStatus(message,'success');
+    if(showFeedback){
+      setSyncStatus(message,'success');
+    }
+    updateUsageGate({silent:!showFeedback});
+    startRemotePolling();
   }catch(err){
     console.error('Firestore load error:',err);
     syncIndicatorState='error';
     lastSyncError=Date.now();
-    setSyncStatus(`Erreur de lecture Firestore : ${err.message||err}`,'error');
+    if(!lastRemoteReadIso){
+      remoteReady=false;
+    }
+    if(showFeedback){
+      setSyncStatus(`Erreur de lecture Firestore : ${err.message||err}`,'error');
+    }
+    updateUsageGate({silent:!showFeedback});
     throw err;
   }finally{
-    updateSyncIndicator();
+    if(showFeedback){
+      updateSyncIndicator();
+    }
+    isRemoteLoadInFlight=false;
+    if(remoteLoadQueuedOptions){
+      const queuedOptions={...remoteLoadQueuedOptions};
+      remoteLoadQueuedOptions=null;
+      if(queuedOptions.reason===undefined) queuedOptions.reason='queued';
+      if(queuedOptions.silent===undefined) queuedOptions.silent=!queuedOptions.manual;
+      loadRemoteStore(queuedOptions).catch(queueErr=>{
+        console.error('Erreur lors du rechargement différé :',queueErr);
+      });
+    }
   }
 }
 async function handleAuthStateChanged(user){
@@ -3931,18 +4104,20 @@ async function handleAuthStateChanged(user){
     renderAuthUser(user);
     btnRefreshRemote?.removeAttribute('disabled');
     btnSignOut?.removeAttribute('disabled');
-    toggleAuthGate(false);
     setAuthError('');
     setPasswordFeedback('');
     passwordLoginForm?.reset();
     syncIndicatorState='pending';
     updateSyncIndicator();
+    updateUsageGate();
     try{
       await loadRemoteStore({manual:false});
       startAutoSync();
       scheduleAutoSync();
     }catch(err){
       console.error('Initial remote sync error:',err);
+    }finally{
+      updateUsageGate();
     }
   }else{
     renderAuthUser(null);
@@ -3960,6 +4135,7 @@ async function handleAuthStateChanged(user){
     lastRemoteReadIso=null;
     lastRemoteWriteIso=null;
     updateSyncIndicator();
+    updateUsageGate();
   }
 }
 function initFirebase(){
@@ -4079,7 +4255,7 @@ window.addEventListener('beforeunload',()=>{
 });
 btnSignOut?.setAttribute('disabled','true');
 btnRefreshRemote?.setAttribute('disabled','true');
-toggleAuthGate(FIRESTORE_ENABLED && !hasOfflineDataAvailable());
+updateUsageGate();
 if(hasOfflineDataAvailable()){
   setSyncStatus('Travail hors connexion — connectez-vous pour synchroniser.');
 }
