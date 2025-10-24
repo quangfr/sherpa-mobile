@@ -1,12 +1,13 @@
 # Sherpa — Guide fonctionnel et pratiques d'équipe (v6)
 
 ## 1. Installation et environnements
-- **Instance de production** : publiée automatiquement depuis la branche `main` du dépôt [github.com/quangfr/sherpa](https://github.com/quangfr/sherpa). La configuration Firebase **Firestore** doit être renseignée dans `app.js` (bloc `firebaseConfig`) avec les identifiants de l'instance de production.
+- **Instance de production** : publiée automatiquement depuis la branche `main` du dépôt [github.com/quangfr/sherpa](https://github.com/quangfr/sherpa). La configuration Firebase **Firestore** doit être renseignée dans `app.js` (bloc `firebaseConfig`) avec les identifiants de l'instance de production. Un **worker Cloudflare** sert de proxy d'API pour masquer les secrets Firebase et n'autorise que les appels provenant de l'application Sherpa.
 - **Mode en ligne** : ouvrir `https://quangfr.github.io/sherpa/app.html`. L'authentification Firebase déclenche ensuite la synchronisation Firestore (consultants, guidées, activités, paramètres).
 - **Mode hors ligne / sandbox locale** :
   1. Télécharger le dépôt (`Code` → `Download ZIP`) ou cloner puis ouvrir le dossier localement.
   2. Ouvrir `app.html` ou `index.html` directement dans le navigateur pour lancer l'application en sandbox. Aucune requête réseau n'est déclenchée ; les données sont lues/écrites dans `localStorage` (`SHERPA_STORE_V6`).
   3. Utiliser le bouton `⬇️` (export JSON) pour sauvegarder la base locale et `📤`/`📥` pour importer/exporter un fichier `data.json`.
+  4. Le fichier `data.json` fournit un jeu de données anonymisées pour accélérer les tests locaux et valider les migrations hors connexion.
 - **Retour en ligne** : reconnecter l'application à Firestore en réactivant l'authentification (bouton `Se connecter`). Les écritures locales sont fusionnées grâce au diff client.
 
 ## 2. Collaboration et workflow Git/Codex
@@ -45,7 +46,7 @@ Sherpa est un cockpit "local-first" destiné aux Product Owners, coachs et manag
 - **Accessibilité** : éléments focusables (`tabIndex=0`), commandes clavier (`Enter/Space`), header sticky, tables scrollables avec `hover-scroll`.
 
 ### Technique
-- **Structure** : `index.html` (accueil), `app.html` (SPA), `app.css` (tokens/layout), `app.js` (logique métier, Firestore, IA), `data.json` (jeu d'exemple).
+- **Structure** : `index.html` (accueil), `app.html` (SPA), `app.css` (tokens/layout), `app.js` (logique métier, Firestore, IA), `data.json` (jeu d'exemple anonymisé pour sandbox).
 - **Cycle de vie** : `load()` lit `localStorage`, `migrateStore()` applique les mises à niveau, `save()` persiste et déclenche la sync Firestore (sauf hors ligne). Le diff est géré via `computeSessionDiff`/`ensureSessionDiff`.
 - **Synchronisation** : Firebase Auth + Firestore (login email/mot de passe, reconnexion silencieuse, diff client, auto-sync `sync_interval_minutes`). En mode hors ligne, aucune requête réseau, bouton `⬇️` pour export rapide.
 - **IA** : intégration OpenAI (prompts communs/contexte/titre) via endpoints proxy `faOpenAI` et `fcOpenAI`, désactivée hors ligne.
