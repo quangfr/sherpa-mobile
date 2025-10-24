@@ -205,9 +205,11 @@ dialog::backdrop{background:#0006}
 .timeline-meta{font-size:13px;line-height:1.45;display:flex;flex-direction:column;gap:4px;font-weight:600;color:inherit;align-items:flex-start;text-align:left}
 .timeline-meta-primary{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:inherit}
 .timeline-meta-date{display:flex;align-items:center;gap:6px;width:100%;justify-content:flex-start}
+.timeline-meta-separator{color:var(--muted);font-size:12px}
 .timeline-meta-date .sub{font-size:12px}
 @media (max-width:600px){
   .timeline-meta-date{flex-direction:column;align-items:flex-start;gap:4px}
+  .timeline-meta-separator{display:none}
 }
 .timeline-item-milestone .timeline-meta-date .sub{color:rgba(255,255,255,.85)}
 .timeline-item-milestone .timeline-body{align-items:flex-end;text-align:right}
@@ -235,21 +237,13 @@ dialog::backdrop{background:#0006}
 .timeline-edit-guidee{display:inline-flex}
 .timeline-edit.btn{padding:2px 6px;font-size:12px}
 .timeline-edit.btn.small{font-size:12px}
-.hours-badge{display:inline-flex;align-items:center;gap:4px;padding:0 6px;border-radius:999px;background:var(--pill);color:#111;font-size:12px;line-height:1.4;font-weight:600}
-.probability-badge{display:inline-flex;align-items:center;padding:0 6px;border-radius:999px;font-size:12px;line-height:1.4;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--muted);}
-.probability-badge.prob-oui{background:#dcfce7;border-color:#bbf7d0;color:#15803d;}
-.probability-badge.prob-probable{background:#e0f2fe;border-color:#bae6fd;color:#0369a1;}
-.probability-badge.prob-incertain{background:#fef9c3;border-color:#fef08a;color:#b45309;}
-.probability-badge.prob-improbable{background:#fee2e2;border-color:#fecaca;color:#b91c1c;}
-.probability-badge.prob-non{background:#fecaca;border-color:#fca5a5;color:#991b1b;}
-.alert-status-badge{display:inline-flex;align-items:center;padding:0 6px;border-radius:999px;font-size:12px;line-height:1.4;font-weight:600;border:1px solid var(--border);background:var(--pill);color:var(--muted);white-space:nowrap;}
-.alert-status-badge.status-majeur{background:var(--alerte);border-color:var(--alerte);color:var(--alerte-f);}
-.alert-status-badge.status-mineur{background:#fef9c3;border-color:#fde68a;color:#92400e;}
-.alert-status-badge.status-inactif{background:#e5e7eb;border-color:#d1d5db;color:#374151;}
+.hours-badge{display:inline-flex;align-items:center;gap:4px;padding:0 6px;border-radius:999px;background:var(--pill);color:#111;font-size:12px;line-height:1.4;font-weight:500}
+.hours-badge b{font-weight:500}
+.probability-badge,.alert-status-badge,.alert-type-badge{display:inline-flex;align-items:center;padding:0 6px;border-radius:999px;font-size:12px;line-height:1.4;font-weight:600;background:var(--pill);color:#111;white-space:nowrap;border:none}
+.probability-badge.prob-oui,.probability-badge.prob-probable,.probability-badge.prob-incertain,.probability-badge.prob-improbable,.probability-badge.prob-non{background:var(--pill);color:#111;border:none}
+.alert-status-badge.status-majeur,.alert-status-badge.status-mineur,.alert-status-badge.status-inactif{background:var(--pill);color:#111;border:none}
+.alert-type-badge.type-rh,.alert-type-badge.type-mixed{background:var(--pill);color:#111;border:none}
 .db-row .alert-status-badge{margin-left:4px;}
-.alert-type-badge{display:inline-flex;align-items:center;padding:0 6px;border-radius:999px;font-size:12px;line-height:1.4;font-weight:600;border:1px solid var(--border);background:#fff7ed;color:#9a3412;white-space:nowrap;}
-.alert-type-badge.type-rh{background:#e0f2fe;border-color:#bae6fd;color:#0f172a;}
-.alert-type-badge.type-mixed{background:#ede9fe;border-color:#ddd6fe;color:#5b21b6;}
 .consultant-chip{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap;}
 .consultant-chip .consultant-name{font-weight:600;}
 .consultant-chip-bold .consultant-name{font-weight:700;}
