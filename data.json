@@ -2,49 +2,49 @@
   "consultants": [
     {
       "id": "1749ed39-98e5-48f5-8939-0b8004ef0f01",
-      "titre_mission": "PDA SAFRAN WALK COCKPIT",
-      "nom": "Léonard BOUVERET",
-      "updated_at": "2025-10-23T13:25:50.652Z",
+      "titre_mission": "PDA - COCKPIT D'ANALYSE",
+      "nom": "Julien MARTIN",
+      "updated_at": "2025-10-24T15:39:18.679Z",
       "created_at": "2025-10-23T12:56:10.887Z",
-      "boond_id": "",
+      "boond_id": "5581",
       "date_fin": "2026-03-29"
     },
     {
       "id": "2f81bcab-9ac2-4ccc-83f9-1039f7fafd3b",
-      "nom": "Samuel MERY",
+      "nom": "Mathieu DUC",
       "created_at": "2025-10-23T11:58:52.503Z",
       "date_fin": "2025-12-31",
-      "updated_at": "2025-10-24T09:04:49.064Z",
-      "titre_mission": "PO SAFRAN SCORE",
-      "boond_id": "",
-      "description": "Objectif : Se former sur les aspects plus techniques du métier de PO\nForces : Réactivité, envie d'apprendre, capacité d'adaptation\nFreins : Moins autonome dans l'apprentissage\nStyle : Volontaire, respectueux"
+      "updated_at": "2025-10-24T15:38:22.883Z",
+      "titre_mission": "PO - PROJET SCORE",
+      "boond_id": "3035",
+      "description": "Objectif : monter en compétences techniques PO\nForces : réactif, curieux, adaptabilité\nFreins : autonomie d'apprentissage à renforcer\nStyle : volontaire, posé"
     },
     {
       "id": "844ac712-93fb-4fce-b344-4d6187873d2c",
-      "titre_mission": "PMO SAFRAN MAESTRO",
-      "updated_at": "2025-10-23T12:05:37.241Z",
+      "titre_mission": "PMO - MAESTRO",
+      "updated_at": "2025-10-24T15:37:49.620Z",
       "date_fin": "2026-02-28",
       "created_at": "2025-10-22T10:29:54.809Z",
-      "nom": "Livier HASSLER",
-      "boond_id": ""
+      "nom": "Clara MOREL",
+      "boond_id": "4779"
     },
     {
       "id": "dfdde439-de94-4f5e-ba57-b2a52af56ad6",
-      "nom": "Grimaud BOUVERET",
-      "updated_at": "2025-10-24T11:56:39.808Z",
+      "nom": "Victor LEROY",
+      "updated_at": "2025-10-24T15:39:58.222Z",
       "date_fin": "2025-10-31",
-      "titre_mission": "PDA SAFRAN SPECTRE",
+      "titre_mission": "PDA - SPECTRE",
       "created_at": "2025-10-23T15:00:58.934Z",
-      "boond_id": ""
+      "boond_id": "1958"
     },
     {
       "id": "ed68741a-710d-4d90-a657-58f98bde1c29",
       "date_fin": "2026-01-02",
       "created_at": "2025-10-23T13:29:09.601Z",
-      "titre_mission": "PO EPICONCEPT HOMERE",
-      "nom": "Alain KIZIL",
-      "updated_at": "2025-10-23T18:03:51.040Z",
-      "boond_id": ""
+      "titre_mission": "PO - SIRH HOMÈRE",
+      "nom": "Pierre DURAND",
+      "updated_at": "2025-10-24T15:39:36.711Z",
+      "boond_id": "18029"
     }
   ],
   "activities": [
@@ -52,10 +52,10 @@
       "id": "136c3287-edfe-448b-87c5-1fbe04110d13",
       "created_at": "2025-10-23T11:52:27.605Z",
       "date_publication": "2025-07-09",
-      "title": "Roadmap avec des jalons fonctionnels",
+      "title": "🗺️ Mise en place d'une roadmap fonctionnelle",
       "guidee_id": "8e912d13-2d9e-4361-afde-c46318662e85",
       "type": "ACTION_ST_BERNARD",
-      "description": "Contexte : Pas de roadmap pour décrire la vision produit\nAction : Préparer et coacher sur le format de la Go-Roadmap\nRésultat : Sortir des strates organisationnels et rentrer dans le fonctionnel\nSuivi : Alimentation par @Livier de la Go-Roadmap",
+      "description": "Contexte : absence d'une feuille de route produit claire.\nAction : co-construire un canevas de roadmap et coacher le format.\nRésultat : passage d'une vision organisationnelle à une vision fonctionnelle.\nSuivi : alimenté par @coach_ref",
       "consultant_id": "844ac712-93fb-4fce-b344-4d6187873d2c",
       "updated_at": "2025-10-23T15:15:53.499Z",
       "heures": 3
@@ -63,52 +63,52 @@
     {
       "id": "152218ea-a789-468e-a286-eb97db17ef7a",
       "updated_at": "2025-10-23T16:15:02.470Z",
-      "title": "Aide pour l'élaboration d'une vision produit",
+      "title": "🧭 Atelier : clarifier la vision produit",
       "type": "ACTION_ST_BERNARD",
       "consultant_id": "dfdde439-de94-4f5e-ba57-b2a52af56ad6",
       "heures": 2,
       "date_publication": "2025-09-23",
       "guidee_id": "452414ef-4ecb-4f59-9dd4-8f8b52b570b2",
       "created_at": "2025-10-23T16:13:24.507Z",
-      "description": "Contexte : Fin de la mission courte sur 2 mois sur le périmètre LEY\nAction : Proposer une présentation des chantiers data SPECTRE / PRISME avec des illustrations\nRésultat : Présentation faite à moitié"
+      "description": "Contexte : mission courte, besoin d'une synthèse claire.\nAction : préparer une présentation structurée des chantiers data.\nRésultat : slide deck partiellement finalisé.\nSuivi : en attente de retours du client."
     },
     {
       "id": "2b197ecc-ac82-4739-af7b-4dc0829f9161",
       "guidee_id": "8e912d13-2d9e-4361-afde-c46318662e85",
       "date_publication": "2025-10-03",
-      "description": "Échéance : 28/02/2026\nDécision : Renouvellement de la prestation avec l'échéance de fin d'année. \nSource : Cécile MARY",
+      "description": "Échéance : 28/02/2026.\nDécision : proposition de prolongation jusqu'à fin février.\nSource : contact client.",
       "probabilite": "OUI",
       "consultant_id": "844ac712-93fb-4fce-b344-4d6187873d2c",
-      "title": "Prolongement de 2 mois à fin février",
+      "title": "🔁 Proposition : prolongation 2 mois",
       "created_at": "2025-10-23T14:06:37.386Z",
       "type": "PROLONGEMENT",
       "updated_at": "2025-10-23T17:41:22.901Z"
     },
     {
       "id": "3e1e31c7-131b-41a4-bd71-d77072296ea9",
-      "description": "Contexte : Temp de trajet long et nuit sur place depuis Lille. Démotivation générale après 2 ans de mission et contexte familial. Mission plus PMO que PO initialement. \nSymptômes : Peu de disponibilité ou de motivation pour le coaching. Forte attente pour l'entretien annuel. \nSuivi : Sortie de mission à acter avec une transition pour trouver une mission plus proche.",
+      "description": "Contexte : fatigue due aux déplacements et recharge insuffisante.\nSymptômes : baisse de motivation, rôle éloigné du brief initial.\nSuivi : envisager transition vers une mission géographiquement plus proche.",
       "alerte_types": [
         "COMMERCE",
         "RH"
       ],
-      "title": "Sortie de mission souhaitée",
+      "title": "⚠️ Risque de sortie de mission",
       "type": "ALERTE",
       "date_publication": "2025-08-01",
       "created_at": "2025-10-23T14:12:06.804Z",
       "guidee_id": "8e912d13-2d9e-4361-afde-c46318662e85",
       "alerte_statut": "MINEUR",
       "consultant_id": "844ac712-93fb-4fce-b344-4d6187873d2c",
-      "updated_at": "2025-10-24T14:42:49.742Z"
+      "updated_at": "2025-10-24T15:33:37.517Z"
     },
     {
       "id": "4de43d0d-3d06-4976-a819-113312de9b29",
-      "description": "Contexte : Pas de temps pour faire du travail de fond. Flux tendu. Posture chef d'orchestre.  \nForces : Communication, Animation de groupe. PMO\nFreins : Manque de temps d'investigation et d'étude sur des compétences #Tech #Design\nSuivi : @Livier Se dégager du temps pour être stream leader (PO)",
+      "description": "Contexte : flux tendu, manque de temps pour le travail de fond.\nForces : animation et communication d'équipe.\nFreins : capacité d'investigation limitée.\nSuivi : libérer du temps opérationnel pour travailler la stratégie.",
       "guidee_id": "8e912d13-2d9e-4361-afde-c46318662e85",
       "type": "AVIS",
       "date_publication": "2025-10-17",
       "created_at": "2025-10-23T14:54:41.618Z",
       "consultant_id": "844ac712-93fb-4fce-b344-4d6187873d2c",
-      "title": "Pas encore d'initiative PO sur le prototypage",
+      "title": "📝 Avis : besoin de temps pour prototypage",
       "updated_at": "2025-10-24T12:49:56.161Z"
     },
     {
@@ -116,8 +116,8 @@
       "alerte_types": [
         "COMMERCE"
       ],
-      "description": "Contexte : Retour de l'ancienne PO\nSymptômes : Pas de budget, bon de commande s'arrête au 02/01/2026\nSuivi : Trouver un autre périmètre d'intervention chez Epiconcept",
-      "title": "Peu de possibilités de prolongement en 2025",
+      "description": "Contexte : retour de l'ancienne équipe sur le périmètre.\nSymptômes : budget limité, fin de bon de commande proche.\nSuivi : explorer d'autres périmètres possibles chez le client.",
+      "title": "🚧 Faible probabilité de prolongation",
       "updated_at": "2025-10-24T14:42:26.454Z",
       "alerte_statut": "MINEUR",
       "consultant_id": "ed68741a-710d-4d90-a657-58f98bde1c29",
@@ -130,20 +130,20 @@
       "id": "59ee70d0-0c13-4541-82b0-729dd42e12d8",
       "created_at": "2025-10-23T14:22:07.134Z",
       "type": "PROLONGEMENT",
-      "title": "Confirmation de la fin de mission",
+      "title": "✅ Confirmation : fin de mission",
       "updated_at": "2025-10-24T11:06:09.611Z",
       "date_publication": "2025-10-03",
-      "description": "Décision : Bon de commande envoyé jusqu'à début janvier.\nContexte de reprise par l'ancienne PO. \nSource : Quantin POELS\nSuivi : Action de @Oliver pour voir d'autres opportunités chez EPI-CONCEPT via @Hassan et le N+2 Emmanuel",
+      "description": "Décision : bon de commande confirmé jusqu'à début janvier.\nContexte : reprise partielle par l'ancienne équipe.\nSource : contact interne.\nSuivi : action par @account_manager pour identifier d'autres opportunités.",
       "consultant_id": "ed68741a-710d-4d90-a657-58f98bde1c29",
       "probabilite": "IMPROBABLE",
       "guidee_id": "54eab822-1df6-4b35-b807-886620f640f5"
     },
     {
       "id": "5e564a6e-a04a-499b-866b-0e0b2fcc22b2",
-      "description": "Contexte : Risque de non prolongement. Besoin de donner une vision sur la fiabilisation des données.\nAction : Orientations sur des chantiers UX/UI répondant à ces enjeux (rapidité et confort de la saisie + intégration IA)\nRésultat : Identification des priorités et précisions sur les chantiers\nSuivi : Présentation interne des 5 idées en maquettes",
+      "description": "Contexte : risque de non-prolongation, besoin de fiabiliser la donnée.\nAction : prioriser chantiers UX/UI pour améliorer saisie et intégration IA.\nRésultat : liste d'orientations priorisées et 5 maquettes proposées.\nSuivi : présentation des maquettes en comité interne.",
       "guidee_id": "c5b048a5-fd57-4aac-a303-1185f59c0d42",
       "consultant_id": "2f81bcab-9ac2-4ccc-83f9-1039f7fafd3b",
-      "title": "Chantier UX/UI pour fiabiliser les données",
+      "title": "🔧 Chantier UX/UI : fiabilisation donnée",
       "type": "ACTION_ST_BERNARD",
       "updated_at": "2025-10-23T15:15:05.030Z",
       "date_publication": "2025-10-03",
@@ -159,8 +159,8 @@
       "created_at": "2025-10-23T12:48:53.621Z",
       "type": "ACTION_ST_BERNARD",
       "heures": 4,
-      "title": "Revue UX/UI sur des idées fonctionnelles",
-      "description": "Contexte : Les fonctionnalités sont peu ergonomiques, à moindre valeur ajoutée et non réfléchis dans une dynamique d'ensemble.\nAction : Suggestions d'améliorations UX/UI impactantes\nRésultat : Revue de la conception et repriorisation des idées UX/UI pertinentes\nSuivi : Rédaction US + Présentation en interne @Samuel"
+      "title": "🔎 Revue UX/UI : priorisation",
+      "description": "Contexte : ergonomie à améliorer, faible valeur perçue des fonctions actuelles.\nAction : proposer améliorations UX/UI structurantes.\nRésultat : repriorisation et plan d'actions.\nSuivi : rédaction des user-stories et partage en interne."
     },
     {
       "id": "864e1487-5e58-4c1b-b425-ba0c06f2048e",
@@ -170,30 +170,30 @@
       "type": "ACTION_ST_BERNARD",
       "heures": 6,
       "consultant_id": "ed68741a-710d-4d90-a657-58f98bde1c29",
-      "description": "Contexte : Fin de mission prévue pour début janvier\nAction : Réalisation d'un prototype HTML SIRH équivalent avec l'IA\nRésultat : Envie de tester l'IA soi-même\nSuivi : Retour sur les améliorations du prototype et aide à la montée en compétence sur l'IA",
+      "description": "Contexte : fin de mission prévue, envie d'automatiser des preuves de concept.\nAction : créer un prototype HTML fonctionnel avec support IA.\nRésultat : montée en compétence et premiers tests réalisés.\nSuivi : retours sur améliorations et accompagnement IA.",
       "created_at": "2025-10-23T13:34:19.879Z",
-      "title": "Prototypage d'une application SaaS SIRH Homère"
+      "title": "⚙️ Prototype SIRH + IA"
     },
     {
       "id": "87cce4f4-a49f-4ce1-b30e-8fd239ccacf9",
       "updated_at": "2025-10-23T17:08:05.923Z",
-      "title": "Prudent mais réceptif aux initiatives d'amélioration de son produit",
+      "title": "👍 Prudent mais ouvert aux améliorations produit",
       "type": "AVIS",
       "consultant_id": "1749ed39-98e5-48f5-8939-0b8004ef0f01",
       "date_publication": "2025-10-10",
       "guidee_id": "ec3d49be-bfee-4256-88bf-09c14cf7fa62",
       "created_at": "2025-10-23T17:08:05.923Z",
-      "description": "Contexte : Partage des outils Go-Live et présentation du produit. Peu d'intérêt sur le prototypage.\nForces : Respect des attendus, intérêt pour la Go-Roadmap, l'UX/UI et le feedback utilisateur, expertise sur PowerBI, méthodique, prudence\nFreins : Réticence sur l'IA, communication plus data, peu d'initiatives spontanés auprès des métiers à ce stade\nSuivi : Entretiens et discussions plus régulières avec le terrain. Vis ma vie @Léonard"
+      "description": "Contexte : présentation des outils Go-Live.\nForces : méthodique, maîtrise des livrables, sens produit.\nFreins : réserves vis-à-vis de l'IA, peu d'initiatives spontanées.\nSuivi : entretiens terrain réguliers, job-shadowing prévu."
     },
     {
       "id": "8ab95b70-ebff-4652-92bc-421403b1f8d2",
       "date_publication": "2025-07-22",
       "updated_at": "2025-10-23T15:15:44.356Z",
       "consultant_id": "844ac712-93fb-4fce-b344-4d6187873d2c",
-      "description": "Contexte : Absence d'indicateurs pour mesurer le succès du produit\nAction : Travail sur une Go-Roadmap MAESTRO avec des exemples concrets  \nRésultat : Prise de conscience de la nécessité d'avoir une démarche analytique orientée métier\nProchain : Compléter la Go-Roadmap",
+      "description": "Contexte : absence d'indicateurs clairs.\nAction : construction d'une roadmap métier avec exemples concrets.\nRésultat : prise de conscience sur la nécessité d'une démarche analytique.\nProchain : compléter la roadmap.",
       "created_at": "2025-10-22T10:46:12.887Z",
       "type": "ACTION_ST_BERNARD",
-      "title": "Roadmap orientée métier et KPIs",
+      "title": "📊 Roadmap métier & KPIs",
       "heures": 3,
       "guidee_id": "8e912d13-2d9e-4361-afde-c46318662e85"
     },
@@ -204,16 +204,16 @@
       "updated_at": "2025-10-24T13:08:56.945Z",
       "consultant_id": "dfdde439-de94-4f5e-ba57-b2a52af56ad6",
       "created_at": "2025-10-23T17:13:48.707Z",
-      "description": "Contexte : Fin de la prestation LEY\nForces : Capacité d'adaptation aux exigences du client, réactif, engagé, force de propositio,\nFreins : Difficultés à dire non ou à poser des limites au client, flux tendu, mal organisé, besoin de stimulation extérieure, difficultés à prioriser",
-      "title": "Réactif mais besoin de cadrage et de stimulation",
+      "description": "Contexte : fin de prestation.\nForces : adaptabilité, réactivité, esprit de proposition.\nFreins : difficulté à poser des limites, priorisation à améliorer.\nSuivi : cadrage et priorisation avec le manager de projet.",
+      "title": "🔄 Réactif mais besoin de cadrage",
       "type": "AVIS"
     },
     {
       "id": "a1c35e29-0fed-45d9-bfb4-8f18b2ccc47e",
-      "description": "Contexte : Suite au coaching sur l'utilisation de l'IA \nForces : Capacité d'apprentissage, de prise en compte des retours\nFreins : Manque des réflexes Material Design\nSuivi : Demander plusieurs propositions à l'IA et décrire les composants",
+      "description": "Contexte : suite au coaching IA.\nForces : apprentissage rapide, prise en compte des retours.\nFreins : réflexes design à stabiliser.\nSuivi : demander plusieurs propositions IA et documenter les composants.",
       "date_publication": "2025-10-16",
       "guidee_id": "c5b048a5-fd57-4aac-a303-1185f59c0d42",
-      "title": "Proactif et réactif sur la réalisation des maquettes et de l'IA",
+      "title": "🚀 Proactif sur maquettes + IA",
       "created_at": "2025-10-23T16:09:50.881Z",
       "type": "AVIS",
       "updated_at": "2025-10-23T16:10:41.403Z",
@@ -222,24 +222,24 @@
     {
       "id": "abcce75d-355d-459b-bc65-79810776ed0d",
       "consultant_id": "1749ed39-98e5-48f5-8939-0b8004ef0f01",
-      "description": "Satisfaction : 4/5\nForces : Autonomie et implication, communication claire, compréhension métier croissante, respect de la roadmap et des livrables, mieux collaborer avec les leads sur le terrain (en cours) \nFreins : Accepter les changements en cours de route, prendre du recul sur un travail déjà très abouti, s'ouvrir de nouvelles perspectives à partir d'une feuille blanche\nSource : Laura PO",
+      "description": "Satisfaction : 4/5\nForces : autonomie, communication claire, compréhension métier.\nFreins : rigidité face au changement, ouverture à de nouvelles perspectives.\nSource : représentant client.",
       "type": "VERBATIM",
       "created_at": "2025-10-23T13:19:06.877Z",
       "guidee_id": "ec3d49be-bfee-4256-88bf-09c14cf7fa62",
       "date_publication": "2025-10-07",
       "updated_at": "2025-10-24T11:47:09.739Z",
-      "title": "Satisfaction 4/5. Travail autonome, bonne maîtrise de la roadmap, très agréable et pertinent avec les utilisateurs."
+      "title": "⭐ Satisfaction 4/5 — bonnes pratiques et autonomie"
     },
     {
       "id": "af016a8a-0b52-42fc-bf3c-b99c61c5bc93",
-      "description": "Contexte : Présentation des livrables dans le cadre du point mensuel\nAction : Retours UI/UX et data sur le PowerBI pour prendre en compte les feedback utilisateurs\nRésultat : Prise en compte des retours\nSuivi : Demander d'avantage de feedback utilisateurs @Léonard",
+      "description": "Contexte : point mensuel sur livrables.\nAction : retours UI/UX et data sur dashboard.\nRésultat : prise en compte des feedbacks.\nSuivi : solliciter plus d'usagers pour feedbacks.",
       "date_publication": "2025-09-06",
       "guidee_id": "ec3d49be-bfee-4256-88bf-09c14cf7fa62",
       "type": "ACTION_ST_BERNARD",
       "heures": 2,
       "updated_at": "2025-10-23T15:19:13.018Z",
       "consultant_id": "1749ed39-98e5-48f5-8939-0b8004ef0f01",
-      "title": "Améliorations UI/UX sur PowerBI",
+      "title": "🔁 Améliorations UI/UX sur dashboard",
       "created_at": "2025-10-23T13:24:46.719Z"
     },
     {
@@ -247,8 +247,8 @@
       "heures": 8,
       "date_publication": "2025-08-29",
       "created_at": "2025-10-22T10:41:32.461Z",
-      "title": "Prototypage IA inspire discovery concret",
-      "description": "Contexte : Absence de discovery et de vision claire sur le produit\nAction : Réalisation de prototypes sur MAESTRO avec l'IA par @Quang\nRésultat : Inspiration et intérêt de @Livier pour les idées\nProchain : Reprendre sur un exemple pertinent au contexte de @Livier",
+      "title": "💡 Prototypage IA — discovery",
+      "description": "Contexte : manque de discovery et clarté produit.\nAction : prototypes IA pour inspirer les parties prenantes.\nRésultat : intérêt côté client.\nProchain : adapter un exemple concret au contexte métier.",
       "type": "ACTION_ST_BERNARD",
       "guidee_id": "8e912d13-2d9e-4361-afde-c46318662e85",
       "updated_at": "2025-10-23T15:15:35.485Z",
@@ -257,10 +257,10 @@
     {
       "id": "c0a79752-8231-456e-96e2-e607b1530698",
       "guidee_id": "c5b048a5-fd57-4aac-a303-1185f59c0d42",
-      "title": "Priorisation Go-Roadmap et KPIs",
+      "title": "🎯 Priorisation : roadmap & KPIs",
       "updated_at": "2025-10-23T15:15:20.822Z",
       "consultant_id": "2f81bcab-9ac2-4ccc-83f9-1039f7fafd3b",
-      "description": "Contexte : Vision produit floue avec absence de KPIs\nAction : Proposer et coacher sur le format Go-Roadmap\nRésultat : Prise de conscience de la priorisation des chantiers\nSuivi : Détailler les chantiers, les indicateurs de la Go-Roadmap",
+      "description": "Contexte : vision produit floue.\nAction : proposer canevas Go-Roadmap et coacher la priorisation.\nRésultat : prise de conscience et premières priorités identifiées.\nSuivi : détailler chantiers et indicateurs.",
       "created_at": "2025-10-23T12:49:17.480Z",
       "heures": 2,
       "type": "ACTION_ST_BERNARD",
@@ -271,9 +271,9 @@
       "date_publication": "2025-10-10",
       "type": "ALERTE",
       "consultant_id": "2f81bcab-9ac2-4ccc-83f9-1039f7fafd3b",
-      "title": "Incertitude de prolongement de mission",
+      "title": "⚠️ Incertitude sur la poursuite de mission",
       "created_at": "2025-10-23T16:34:24.719Z",
-      "description": "Contexte : Incertitude quand à la poursuite de la mission de Samuel avec l'arrivée de Sami et la priorisation de SCORE IA en discovery\nSymptômes : Un développeur revient sur SCORE, flous sur la roadmap de SCORE. On pense fiabilisation de la donnée par création de valeur.  \nSuivi : @Oliver discuter avec le décisionnaire Cyril",
+      "description": "Contexte : priorisation projet et arrivée d'un nouvel intervenant.\nSymptômes : incertitudes roadmap, repositionnement des priorités.\nSuivi : action par @account_manager pour clarifier la décision managériale.",
       "alerte_types": [
         "COMMERCE"
       ],
@@ -288,51 +288,51 @@
       "date_debut": "2025-09-01",
       "updated_at": "2025-10-24T10:51:55.698Z",
       "consultant_id": "dfdde439-de94-4f5e-ba57-b2a52af56ad6",
-      "description": "Objectif : Créer un engagement long terme du client SPECTRE LEY pour permettre le prolongement de la mission\nMission : Apporter une expertise PowerBI sur des documents de suivi interne\nAccompagnement : 1-2 fois par mois\nIndicateurs : Réduction du temps de démarchage et de suivi",
+      "description": "Objectif : consolider une relation client courte pour favoriser un prolongement.\nMission : expertise dashboards et reporting.\nAccompagnement : 1 à 2x / mois.\nIndicateurs : réduction du temps de suivi.",
       "created_at": "2025-10-23T15:06:22.223Z",
-      "resultat": "Résultat probable : Mission courte \nIndice de confiance : 80%\nOpportunités : Relation de confiance\nRisques : Client qui maîtrise PowerBI, besoins ponctuels d'expertise",
+      "resultat": "Projection : mission courte probable\nIndice de confiance : 80%\nOpportunités : relation de confiance\nRisques : client autonome sur les outils",
       "date_fin": "2025-10-31",
-      "nom": "Produire une vision produit sur une prestation courte"
+      "nom": "Conforter l'engagement sur mission courte"
     },
     {
       "id": "54eab822-1df6-4b35-b807-886620f640f5",
       "date_fin": "2026-01-03",
       "created_at": "2025-10-23T13:31:42.070Z",
-      "description": "Mission : PO par intérmi sur l'application desktop SIRH HOMERE. Dans un contexte de sortie d'une nouvelle application SaaS.\nContexte : Prolonger la mission chez EPICONCEPT\nAccompagnement : 1 fois tous les 1-3 semaines\nIndicateurs : Capacité à montrer la valeur ajoutée d'avoir un PO opérationnel",
+      "description": "Mission : PO intérimaire sur application SIRH.\nContexte : prolongation possible via accompagnement opérationnel.\nAccompagnement : 1 fois / 1-3 semaines.\nIndicateurs : capacité à produire valeur opérationnelle.",
       "consultant_id": "ed68741a-710d-4d90-a657-58f98bde1c29",
-      "nom": "Apporter une vision produit claire sur SIRH HOMERE",
+      "nom": "PO opérationnel sur SIRH",
       "updated_at": "2025-10-24T10:55:03.884Z",
       "date_debut": "2025-09-15",
-      "resultat": "Résultat probable : Fin de mission début 2026\nIndice de confiance : 60%\nOpportunités : Charge de travail élevée, Excellent relationnel avec le client, Valeur perçue et appréciée \nRisques : Budget limité, retour de l'ancienne PO, décision managériale de plus haut"
+      "resultat": "Projection : fin de mission début 2026\nIndice de confiance : 60%\nOpportunités : relation client solide\nRisques : budget contraint"
     },
     {
       "id": "8e912d13-2d9e-4361-afde-c46318662e85",
       "updated_at": "2025-10-24T10:58:49.973Z",
-      "description": "Objectif : devenir un PO plus opérationnel en vue d'une reconversion dans une nouvelle mission fin février\nContexte : profil PMO et commercial de formation; Consultant PMO SAFRAN\nAccompagnement prévu : une fois toutes les 2 semaines\nCompétences : #DataModeling #DesignPrototyping #DesignUserTesting #ProductUserStories\nIndicateurs : être autonome dans la rédaction des spécifications et dans les prises de décision avec les développeurs",
-      "resultat": "Résultat probable : Fin de mission fin février \nIndice de confiance : 80%\nOpportunités : Client qui apprécie le travail de @Livier, Budget\nRisques : Démotivation de @Livier, Positionnement PMO et non PO",
+      "description": "Objectif : transition vers un rôle PO plus opérationnel.\nContexte : profil PMO de formation, besoin d'autonomie en delivery.\nAccompagnement : toutes les 2 semaines.\nCompétences ciblées : #DataModeling #DesignPrototyping #ProductUserStories",
+      "resultat": "Projection : autonomie en delivery fin février\nIndice de confiance : 80%\nOpportunités : client favorable\nRisques : position PMO persistante",
       "consultant_id": "844ac712-93fb-4fce-b344-4d6187873d2c",
       "date_fin": "2026-02-28",
       "date_debut": "2025-06-01",
       "created_at": "2025-10-22T10:37:17.176Z",
-      "nom": "Développer les compétences PO en delivery"
+      "nom": "Renforcer posture PO en delivery"
     },
     {
       "id": "c5b048a5-fd57-4aac-a303-1185f59c0d42",
-      "nom": "Posture PO plus opérationnel et technique",
-      "description": "Objectif : Être à l'initiative sur les orientations fonctionnelles et force de propositions créatrices de valeur\nMission : Expertise de la connaissance fonctionnelle SCORE, pilote le développement de l'outil de gestion des contrats de maintenance\nAccompagnement : 1-2 fois par mois\nIndicateurs : Propositions plus élaborées centrées sur l'usage",
+      "nom": "Posture PO : technique & opérationnel",
+      "description": "Objectif : être force de proposition fonctionnelle et opérationnelle.\nMission : expertise fonctionnelle sur l'outil de gestion.\nAccompagnement : 1-2x / mois.\nIndicateurs : propositions orientées usage.",
       "date_fin": "2025-12-31",
       "date_debut": "2025-07-01",
       "consultant_id": "2f81bcab-9ac2-4ccc-83f9-1039f7fafd3b",
       "updated_at": "2025-10-24T11:01:00.252Z",
-      "resultat": "Résultat probable : Prolongement de 3 mois\nIndice de confiance : 50%\nOpportunités : posture d'expert fonctionnel et data, besoin de fiabilisation \nRisques : pas de visibilité sur le budget, arrivée d'un manager interne, projet SCORE laissé de côté au détriment de SCORE IA",
+      "resultat": "Projection : prolongement moyen terme\nIndice de confiance : 50%\nOpportunités : posture experte\nRisques : visibilité budgétaire limitée",
       "created_at": "2025-10-23T12:04:58.944Z"
     },
     {
       "id": "ec3d49be-bfee-4256-88bf-09c14cf7fa62",
-      "resultat": "Résultat probable : Poursuite de la mission\nIndice de confiance : 70%\nOpportunités : Expertise reconnue et apprécie, dépendance technique du client\nRisques : nouveau manager Jean-Philippe, pas de visibilité sur le budget",
+      "resultat": "Projection : poursuite de la mission probable\nIndice de confiance : 70%\nOpportunités : expertise reconnue\nRisques : changements managériaux",
       "date_debut": "2025-07-01",
-      "nom": "Être à l'aise face aux enjeux métiers",
-      "description": "Objectif : Aller chercher, communiquer, être force de proposition et faire preuve d'adaptation sur les problématiques métiers\nContexte : PDA sur le WORKSCOPE, l'outil de suivi des modifications des manuels de réparations des moteurs\nAccompagnement : 1x par mois\nIndicateurs : compréhension immédiate par les interlocuteurs, force d'adaptation",
+      "nom": "Conforter l'aisance sur enjeux métiers",
+      "description": "Objectif : être force de proposition et s'adapter aux enjeux métiers.\nContexte : suivi PDA et outils de suivi modifications.\nAccompagnement : 1x / mois.\nIndicateurs : compréhension immédiate et adaptabilité.",
       "consultant_id": "1749ed39-98e5-48f5-8939-0b8004ef0f01",
       "created_at": "2025-10-23T13:01:49.636Z",
       "updated_at": "2025-10-24T10:57:00.320Z",
@@ -341,13 +341,13 @@
   ],
   "params": {
     "sync_interval_minutes": 10,
-    "fin_mission_sous_jours": 60,
+    "fin_mission_sous_jours": 75,
     "stb_recent_jours": 30,
     "avis_manquant_depuis_jours": 60,
     "activites_recent_jours": 30,
     "activites_a_venir_jours": 30,
     "hashtags_catalog": "#ProductBacklog #ProductUserStories #ProductRoadmap #ProductOKR #ProductVision #DataAnalysis #DataVisualization #DataModeling #DataStorytelling #DataKPIs #DesignUX #DesignPrototyping #DesignUserTesting #DesignThinking #DesignSystem #TeamLeadership #TeamCommunication #TeamFacilitation #TeamCollaboration #TeamAlignment #TechSecurity #TechPowerBI #TechAPI #TechGPT #TechIntegration #CustomerInsights #CustomerTesting #CustomerValue #CustomerSupport #CustomerEngagement",
-    "mentions_catalog": "@Quang @Oliver",
+    "mentions_catalog": "@coach @client",
     "description_templates": {
       "activity:AVIS": "Contexte : (cadre ou événement observé)\nForces : (qualité ou réussite marquante)\nFreins : (fragilité ou axe d’attention)\nSuivi : (actions pour s'améliorer)",
       "activity:ACTION_ST_BERNARD": "Contexte : situation nécessitant soutien\nAction : geste concret du coach réalisée\nRésultat : effet observé immédiat perçu\nSuivi : prochaine étape prévue",
@@ -368,9 +368,9 @@
   },
   "meta": {
     "version": 6,
-    "updated_at": "2025-10-24T14:47:21.250Z",
-    "updated_at_iso": "2025-10-24T14:47:08.030Z",
-    "last_writer": "tranxq@gmail.com",
-    "last_reason": "debounce"
+    "updated_at": "2025-10-24T18:00:00.000Z",
+    "updated_at_iso": "2025-10-24T18:00:00.000Z",
+    "last_writer": "anonymizer@local",
+    "last_reason": "anonymisation"
   }
 }
