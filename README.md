@@ -12,13 +12,11 @@
 
 ## 1. Installation et environnements
 - **Instance de production** : publiée automatiquement depuis la branche `main` du dépôt [github.com/quangfr/sherpa](https://github.com/quangfr/sherpa). La base de donnée est hébergée sur Firebase **Firestore**. Un **worker Cloudflare** sert de proxy d'API pour masquer les secrets Firebase et n'autorise que les appels provenant de l'application Sherpa.
-- **Mode en ligne** : ouvrir [https://quangfr.github.io/sherpa](https://quangfr.github.io/sherpa). L'authentification Firebase déclenche ensuite la synchronisation Firestore (consultants, guidées, activités, paramètres).
+- **Mode en ligne** : ouvrir [https://quangfr.github.io/sherpa](https://quangfr.github.io/sherpa). La synchronisation des données se fait en temps réel (consultants, guidées, activités, paramètres).
 - **Mode hors ligne / sandbox locale** :
   1. Télécharger le dépôt (`Code` → `Download ZIP`) ou cloner puis ouvrir le dossier localement.
   2. Ouvrir `app.html` ou `index.html` directement dans le navigateur pour lancer l'application en sandbox. Aucune requête réseau n'est déclenchée ; les données sont lues/écrites dans `localStorage` (`SHERPA_STORE_V6`).
-  3. Utiliser le bouton `⬇️` (export JSON) pour sauvegarder la base locale et `📤`/`📥` pour importer/exporter un fichier `data.json`.
-  4. Le fichier `data.json` fournit un jeu de données anonymisées pour accélérer les tests locaux et valider les migrations hors connexion.
-- **Retour en ligne** : reconnecter l'application à Firestore en réactivant l'authentification (bouton `Se connecter`). Les écritures locales sont fusionnées grâce au diff client.
+  3. Pour récupérer la donnée de production, utiliser le bouton `⬇️` (export JSON) du mode en ligne, renommer `data.json` et mettre dans le répertoire locale ou réimporter depuis l'onglet `Paramètres`.
 
 ## 2. Collaboration et workflow Git/Codex
 - Lancer la session sur Codex depuis la branche `main`
