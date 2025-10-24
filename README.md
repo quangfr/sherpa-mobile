@@ -20,7 +20,7 @@
 
 ## 2. Collaboration et workflow Git/Codex
 - Lancer la session sur Codex depuis la branche `main`
-- Avant le merge vers `main`, vérifier s'il y a eu des évolutions entre temps. Demander Codex de les récupérer pour éliminer les risques de conflits.
+- Avant le merge vers `main`, s'il y a eu des évolutions entre temps, demander Codex de les récupérer pour éliminer les risques de conflits.
 - Après le merge, patienter **1 à 2 minutes** : GitHub Pages reconstruit automatiquement le site (`/app.html`). Valider ensuite l'URL publique.
 - Documenter avec Codex chaque évolution significative depuis la dernière modification (README, changelog) afin de faciliter la collaboration.
 
