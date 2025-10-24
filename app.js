@@ -64,6 +64,22 @@ const PROLONGEMENT_PROBABILITIES={
   NON:{label:'Non',className:'prob-non'}
 };
 const DEFAULT_PROLONGEMENT_PROBABILITY='PROBABLE';
+const ALERT_STATUSES={
+  MAJEUR:'MAJEUR',
+  MINEUR:'MINEUR',
+  INACTIF:'INACTIF'
+};
+const DEFAULT_ALERT_STATUS=ALERT_STATUSES.MINEUR;
+const ALERT_STATUS_LABELS={
+  [ALERT_STATUSES.MAJEUR]:'Majeur',
+  [ALERT_STATUSES.MINEUR]:'Mineur',
+  [ALERT_STATUSES.INACTIF]:'Inactif'
+};
+const ALERT_STATUS_PRIORITY={
+  [ALERT_STATUSES.MAJEUR]:3,
+  [ALERT_STATUSES.MINEUR]:2,
+  [ALERT_STATUSES.INACTIF]:1
+};
 const DESCRIPTION_TEMPLATE_KEYS={
   activity:{
     ACTION_ST_BERNARD:'activity:ACTION_ST_BERNARD',
@@ -162,7 +178,6 @@ const FIRESTORE_COLLECTIONS={
   activities:'activities',
   guidees:'guidees',
   params:'params',
-  thematiques:'thematiques',
   meta:'meta'
 };
 const FIRESTORE_PARAMS_DOC='app';
@@ -201,6 +216,10 @@ function parseHashtagCatalog(text){
     .split(/\s+/)
     .map(normalizeHashtag)
     .filter(Boolean);
+}
+function normalizeAlertStatus(value){
+  const key=String(value||'').toUpperCase();
+  return ALERT_STATUSES[key]||null;
 }
 function normalizeMention(raw){
   if(!raw) return '';
@@ -719,23 +738,6 @@ const DEFAULT_PARAMS={
   ai_activity_context_prompt:DEFAULT_ACTIVITY_CONTEXT_PROMPT,
   ai_title_prompt:DEFAULT_ACTIVITY_TITLE_PROMPT
 };
-const DEFAULT_THEMATIQUES=[
-  {id:'le-cardinal',nom:'Le Cardinal',emoji:'🧊',color:'#3b82f6'},
-  {id:'robert-jr',nom:'Robert Jr',emoji:'🗣️',color:'#ec4899'},
-  {id:'gutenberg',nom:'Gutenberg',emoji:'📖',color:'#6366f1'},
-  {id:'indelebile',nom:'Indélébile',emoji:'⚓',color:'#0ea5e9'},
-  {id:'protocop',nom:'Protocop',emoji:'⚡',color:'#f97316'},
-  {id:'tarantino',nom:'Tarantino',emoji:'🎬',color:'#facc15'},
-  {id:'goal-digger',nom:'Goal Digger',emoji:'🎯',color:'#22c55e'},
-  {id:'promptzilla',nom:'Promptzilla',emoji:'🤖',color:'#14b8a6'},
-  {id:'soulgorithm',nom:'Soulgorithm',emoji:'💡',color:'#a855f7'},
-  {id:'polene',nom:'Pôlène',emoji:'🐝',color:'#f59e0b'},
-  {id:'autre',nom:'Autre',emoji:'🧭',color:'#6b7280'}
-];
-const getThematique=(id)=>{
-  const list=(store?.thematiques)||DEFAULT_THEMATIQUES;
-  return list.find(t=>t.id===id)||list.find(t=>t.id==='autre')||null;
-};
 let store=load();
 let initialStoreSnapshot=JSON.parse(JSON.stringify(store));
 let lastSessionDiff={};
@@ -768,18 +770,6 @@ let authRecoveryTimer=null;
 let authRecoveryInFlight=false;
 let lastSyncError=0;
 /* LOAD / SAVE */
-function ensureThematiqueIds(arr){
-  const taken=new Set();
-  return arr.map(t=>{
-    let id=t.id?.trim();
-    if(!id){
-      id=esc(t.nom||'autre').toLowerCase().replace(/[^a-z0-9]+/g,'-')||'autre';
-      if(taken.has(id)){ id+=`-${Math.random().toString(36).slice(2,6)}`; }
-    }
-    taken.add(id);
-    return {...t,id};
-  });
-}
 function migrateStore(data){
   const migrated={...data};
   const incomingParams=typeof data?.params==='object' && data.params?data.params:{};
@@ -846,7 +836,6 @@ function migrateStore(data){
   delete migrated.params.openai_guidee_prompt;
   delete migrated.params.openai_activity_prompts;
   delete migrated.params.delai_alerte_jours;
-  migrated.thematiques=ensureThematiqueIds(data.thematiques && data.thematiques.length?data.thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})));
   if(Array.isArray(migrated.consultants)){
     migrated.consultants=migrated.consultants.map(c=>{
       const copy={...c};
@@ -869,9 +858,21 @@ function migrateStore(data){
         const firstLine=String(updated.description||'').split(/\r?\n/).find(line=>line.trim())||'';
         updated.title=firstLine.trim().slice(0,160) || 'Sans titre';
       }
-      if(updated.type==='ALERTE' && updated.alerte_active===undefined){
-        updated.alerte_active=true;
+      if(updated.type==='ALERTE'){
+        const normalized=normalizeAlertStatus(updated.alerte_statut);
+        if(normalized){
+          updated.alerte_statut=normalized;
+        }else if(updated.alerte_active===false){
+          updated.alerte_statut=ALERT_STATUSES.INACTIF;
+        }else if(updated.alerte_active!==undefined){
+          updated.alerte_statut=ALERT_STATUSES.MAJEUR;
+        }else{
+          updated.alerte_statut=DEFAULT_ALERT_STATUS;
+        }
+      }else{
+        delete updated.alerte_statut;
       }
+      delete updated.alerte_active;
       if(updated.type!=='PROLONGEMENT'){
         delete updated.probabilite;
       }else{
@@ -881,7 +882,15 @@ function migrateStore(data){
       return updated;
     });
   }
+  if(Array.isArray(migrated.guidees)){
+    migrated.guidees=migrated.guidees.map(g=>{
+      const copy={...g};
+      delete copy.thematique_id;
+      return copy;
+    });
+  }
   delete migrated.objectifs;
+  delete migrated.thematiques;
   const incomingMeta=data.meta||{};
   const cleanedMeta={...incomingMeta};
   delete cleanedMeta.github_repo;
@@ -891,7 +900,7 @@ function migrateStore(data){
 function load(){
 const raw=localStorage.getItem(LS_KEY);
 if(raw){ try{ const parsed=JSON.parse(raw); return migrateStore(parsed);}catch{ console.warn('LocalStorage invalide, on repart vide.'); } }
-const empty={consultants:[],activities:[],guidees:[],thematiques:DEFAULT_THEMATIQUES.map(t=>({...t})),params:{...DEFAULT_PARAMS},meta:{version:6.0,updated_at:nowISO()}};
+const empty={consultants:[],activities:[],guidees:[],params:{...DEFAULT_PARAMS},meta:{version:6.0,updated_at:nowISO()}};
 localStorage.setItem(LS_KEY, JSON.stringify(empty));
 return empty;
 }
@@ -1024,8 +1033,18 @@ const p=store.params||DEFAULT_PARAMS, today=new Date();
 const recentDays=Math.max(1,Number(p.activites_recent_jours)||30);
 const upcomingDays=Math.max(1,Number(p.activites_a_venir_jours)||30);
 const hasRecent=(cid,type,days)=>store.activities.some(a=>a.consultant_id===cid && a.type===type && parseDate(a.date_publication)>=addDays(today,-days));
-const alerteList = store.consultants.filter(c => store.activities.some(a=>a.consultant_id===c.id && a.type==='ALERTE' && a.alerte_active!==false));
-const finList = store.consultants.filter(c=> c.date_fin && ((d=>d>=0 && d<=p.fin_mission_sous_jours)(daysDiff(parseDate(c.date_fin),today))));
+const alerteList = store.consultants.filter(c=>{
+  const status=getConsultantAlertStatus(c.id);
+  return status && status!==ALERT_STATUSES.INACTIF;
+});
+const finList = store.consultants.filter(c=>{
+  if(!c.date_fin) return false;
+  const endDate=parseDate(c.date_fin);
+  if(!endDate) return false;
+  const diff=daysDiff(endDate,today);
+  if(!Number.isFinite(diff)) return false;
+  return diff<=p.fin_mission_sous_jours;
+});
 const stbList = store.consultants.filter(c=>!hasRecent(c.id,'ACTION_ST_BERNARD',p.stb_recent_jours));
 const avisList = store.consultants.filter(c=>!hasRecent(c.id,'AVIS',p.avis_manquant_depuis_jours));
 $('db-fin-x').textContent=p.fin_mission_sous_jours;
@@ -1109,14 +1128,36 @@ let state={
   reporting:getDefaultReportingRange()
 };
 /* CONSULTANTS */
+function getConsultantAlertStatus(consultantId){
+  if(!consultantId) return null;
+  const alerts=(store.activities||[])
+    .filter(a=>a.consultant_id===consultantId && a.type==='ALERTE')
+    .map(a=>normalizeAlertStatus(a.alerte_statut))
+    .filter(Boolean);
+  if(!alerts.length) return null;
+  let best=null;
+  alerts.forEach(status=>{
+    if(!best || ALERT_STATUS_PRIORITY[status]>ALERT_STATUS_PRIORITY[best]){
+      best=status;
+    }
+  });
+  return best;
+}
 function statusOf(c){
-const p=store.params||DEFAULT_PARAMS, today=new Date();
-const hasSTBRecent = store.activities.some(a=>a.consultant_id===c.id && a.type==='ACTION_ST_BERNARD' && parseDate(a.date_publication)>=addDays(today,-p.stb_recent_jours));
-const hasAvisRecent = store.activities.some(a=>a.consultant_id===c.id && a.type==='AVIS' && parseDate(a.date_publication)>=addDays(today,-p.avis_manquant_depuis_jours));
-const hasActiveAlert = store.activities.some(a=>a.consultant_id===c.id && a.type==='ALERTE' && a.alerte_active!==false);
-const past = c.date_fin? (daysDiff(parseDate(c.date_fin),today)<0):false;
-if(past || hasActiveAlert) return 'r';
-return (hasSTBRecent || hasAvisRecent) ? 'g' : 'y';
+  const p=store.params||DEFAULT_PARAMS;
+  const today=new Date();
+  const hasSTBRecent=store.activities.some(a=>a.consultant_id===c.id && a.type==='ACTION_ST_BERNARD' && parseDate(a.date_publication)>=addDays(today,-p.stb_recent_jours));
+  const hasAvisRecent=store.activities.some(a=>a.consultant_id===c.id && a.type==='AVIS' && parseDate(a.date_publication)>=addDays(today,-p.avis_manquant_depuis_jours));
+  const alertStatus=getConsultantAlertStatus(c.id);
+  const endDate=c.date_fin?parseDate(c.date_fin):null;
+  const diff=endDate?daysDiff(endDate,today):null;
+  const isPast=diff!==null && diff<0;
+  const withinThreshold=diff!==null && diff>=0 && diff<=p.fin_mission_sous_jours;
+  if(alertStatus===ALERT_STATUSES.MAJEUR) return 'r';
+  if(isPast) return 'gray';
+  if(alertStatus===ALERT_STATUSES.MINEUR) return 'y';
+  if(withinThreshold) return 'y';
+  return (hasSTBRecent || hasAvisRecent)?'g':'y';
 }
 const selectConsultant=$('filter-consultant');
 function renderConsultantOptions(){
@@ -1934,7 +1975,8 @@ function renderGuideeTimeline(){
       const verb=ev.type==='start'?'Début de':'Fin de';
       const gid=ev.guidee?.id||'';
       const filterAttr=gid?` data-filter-guidee="${gid}"`:'';
-      const guideeLabel=esc(ev.guidee?.nom||'Sans titre');
+      const rawGuideeName=(ev.guidee?.nom||'Sans titre').trim()||'Sans titre';
+      const guideeLabel=esc(`🧭 ${rawGuideeName}`);
       const clickableName=gid?`<span class="click-span"${filterAttr}>${guideeLabel}</span>`:guideeLabel;
       const consultantLabel=esc((ev.consultant?.nom||'').trim()||'Consultant inconnu');
       metaPrimaryPieces.push(`<span class="bold">${consultantLabel} • ${verb} ${clickableName}</span>`);
@@ -2160,7 +2202,7 @@ function renderReporting(){
       .filter(a=>a.type==='AVIS' && a.consultant_id===c.id)
       .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''))[0]||null;
     const activeAlert=(store.activities||[])
-      .filter(a=>a.type==='ALERTE' && a.consultant_id===c.id && a.alerte_active!==false)
+      .filter(a=>a.type==='ALERTE' && a.consultant_id===c.id && normalizeAlertStatus(a.alerte_statut)!==ALERT_STATUSES.INACTIF)
       .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''))[0]||null;
     return {
       consultant:{id:c.id||'',name:c.nom||'—'},
@@ -2315,6 +2357,7 @@ function renderReporting(){
       const probabilityLabel=a.type==='PROLONGEMENT'
         ? (PROLONGEMENT_PROBABILITIES[a.probabilite]?.label||'—')
         : '—';
+      const alertStatus=normalizeAlertStatus(a.alerte_statut);
       return {
         type:a.type,
         typeLabel:ACTIVITY_LABELS[a.type]||a.type,
@@ -2332,7 +2375,7 @@ function renderReporting(){
         descriptionLines,
         probabilityHtml:a.type==='PROLONGEMENT'?renderProbabilityBadge(a.probabilite):'—',
         probabilityLabel,
-        statusLabel:a.type==='ALERTE' ? (a.alerte_active===false?'Non':'Actif') : '—',
+        statusLabel:a.type==='ALERTE' ? (alertStatus?ALERT_STATUS_LABELS[alertStatus]:'—') : '—',
       };
     });
   const renderConsultantRef=(ref,interactive=true)=>{
@@ -2462,14 +2505,14 @@ function renderReporting(){
   if(missionsData.length){
     missionsData.forEach(m=>{
       const guideeLabel=m.guidee ? `${m.guidee.name}${m.guidee.dateRange?` (${m.guidee.dateRange})`:''}` : '—';
-      missionsTextLines.push(`Consultant : ${m.consultant.name||'—'}`);
-      missionsTextLines.push(`Titre : ${m.missionTitle||'—'}`);
-      missionsTextLines.push(`Fin de mission : ${m.missionEndText||'—'}`);
-      missionsTextLines.push(`Prolongement : ${m.prolongement?.label||'—'}`);
-      missionsTextLines.push(`Guidée en cours : ${guideeLabel}`);
-      missionsTextLines.push(`Dernier verbatim : ${m.verbatim?.label||'—'}`);
-      missionsTextLines.push(`Dernier avis : ${m.avis?.label||'—'}`);
-      missionsTextLines.push(`Alerte en cours : ${m.alert?.label||'—'}`);
+      missionsTextLines.push(`CONSULTANT : ${m.consultant.name||'—'}`);
+      missionsTextLines.push(`TITRE : ${m.missionTitle||'—'}`);
+      missionsTextLines.push(`FIN DE MISSION : ${m.missionEndText||'—'}`);
+      missionsTextLines.push(`PROLONGEMENT : ${m.prolongement?.label||'—'}`);
+      missionsTextLines.push(`GUIDÉE EN COURS : ${guideeLabel}`);
+      missionsTextLines.push(`DERNIER VERBATIM : ${m.verbatim?.label||'—'}`);
+      missionsTextLines.push(`DERNIER AVIS : ${m.avis?.label||'—'}`);
+      missionsTextLines.push(`ALERTE EN COURS : ${m.alert?.label||'—'}`);
       missionsTextLines.push('');
     });
     while(missionsTextLines.length && missionsTextLines[missionsTextLines.length-1]==='') missionsTextLines.pop();
@@ -2477,11 +2520,11 @@ function renderReporting(){
   const actionsTextLines=[];
   if(actionsData.length){
     actionsData.forEach(action=>{
-      actionsTextLines.push(`Consultant : ${action.participantsLabel||'—'}`);
-      actionsTextLines.push(`Date : ${action.date}`);
-      actionsTextLines.push(`Durée : ${action.hours}`);
-      actionsTextLines.push(`Titre : ${action.title}`);
-      actionsTextLines.push('Description :');
+      actionsTextLines.push(`CONSULTANT : ${action.participantsLabel||'—'}`);
+      actionsTextLines.push(`DATE : ${action.date}`);
+      actionsTextLines.push(`DURÉE : ${action.hours}`);
+      actionsTextLines.push(`TITRE : ${action.title}`);
+      actionsTextLines.push('DESCRIPTION :');
       if(action.descriptionLines.length){
         action.descriptionLines.forEach(line=>{
           actionsTextLines.push(line);
@@ -2496,22 +2539,22 @@ function renderReporting(){
   const guideesTextLines=[];
   if(guideesDataList.length){
     guideesDataList.forEach(item=>{
-      guideesTextLines.push(`Consultant : ${item.consultant?.name||'—'}`);
-      guideesTextLines.push('Description consultant :');
+      guideesTextLines.push(`CONSULTANT : ${item.consultant?.name||'—'}`);
+      guideesTextLines.push('DESCRIPTION CONSULTANT :');
       if(item.consultantDescriptionLines.length){
         item.consultantDescriptionLines.forEach(line=>guideesTextLines.push(line));
       }else{
         guideesTextLines.push('—');
       }
-      guideesTextLines.push(`Guidée : ${item.name||'Sans titre'}`);
-      guideesTextLines.push(`Dates : ${item.startText||'—'} → ${item.endText||'—'}`);
-      guideesTextLines.push('Description guidée :');
+      guideesTextLines.push(`GUIDÉE : ${item.name||'Sans titre'}`);
+      guideesTextLines.push(`DATES : ${item.startText||'—'} → ${item.endText||'—'}`);
+      guideesTextLines.push('DESCRIPTION GUIDÉE :');
       if(item.descriptionLines.length){
         item.descriptionLines.forEach(line=>guideesTextLines.push(line));
       }else{
         guideesTextLines.push('—');
       }
-      guideesTextLines.push('Résultat :');
+      guideesTextLines.push('RÉSULTAT :');
       if(item.resultLines.length){
         item.resultLines.forEach(line=>guideesTextLines.push(line));
       }else{
@@ -2524,13 +2567,13 @@ function renderReporting(){
   const highlightsTextLines=[];
   if(highlightsData.length){
     highlightsData.forEach(item=>{
-      highlightsTextLines.push(`Type : ${item.typeLabel}`);
-      highlightsTextLines.push(`Consultants : ${item.participantsLabel||'—'}`);
-      highlightsTextLines.push(`Date : ${item.date}`);
-      highlightsTextLines.push(`Probabilité : ${item.probabilityLabel}`);
-      highlightsTextLines.push(`Statut : ${item.statusLabel}`);
-      highlightsTextLines.push(`Titre : ${item.title}`);
-      highlightsTextLines.push('Description :');
+      highlightsTextLines.push(`TYPE : ${item.typeLabel}`);
+      highlightsTextLines.push(`CONSULTANTS : ${item.participantsLabel||'—'}`);
+      highlightsTextLines.push(`DATE : ${item.date}`);
+      highlightsTextLines.push(`PROBABILITÉ : ${item.probabilityLabel}`);
+      highlightsTextLines.push(`STATUT : ${item.statusLabel}`);
+      highlightsTextLines.push(`TITRE : ${item.title}`);
+      highlightsTextLines.push('DESCRIPTION :');
       if(item.descriptionLines.length){
         item.descriptionLines.forEach(line=>highlightsTextLines.push(line));
       }else{
@@ -2543,10 +2586,10 @@ function renderReporting(){
   const cordeeTextLines=[];
   if(cordeeData.length){
     cordeeData.forEach(item=>{
-      cordeeTextLines.push(`Consultant : ${item.participantsLabel||'—'}`);
-      cordeeTextLines.push(`Date : ${item.date}`);
-      cordeeTextLines.push(`Titre : ${item.title}`);
-      cordeeTextLines.push('Description :');
+      cordeeTextLines.push(`CONSULTANTS : ${item.participantsLabel||'—'}`);
+      cordeeTextLines.push(`DATE : ${item.date}`);
+      cordeeTextLines.push(`TITRE : ${item.title}`);
+      cordeeTextLines.push('DESCRIPTION :');
       if(item.descriptionLines.length){
         item.descriptionLines.forEach(line=>{
           cordeeTextLines.push(line);
@@ -3064,8 +3107,8 @@ const faDesc=$('fa-desc');
 const faTitle=$('fa-title');
 const faProbabilityWrap=$('fa-probability-wrap');
 const faProbability=$('fa-probability');
-const faAlertWrap=$('fa-alert-active-wrap');
-const faAlertActive=$('fa-alert-active');
+const faAlertWrap=$('fa-alert-status-wrap');
+const faAlertStatus=$('fa-alert-status');
 const faTitleAI=$('fa-title-ai');
 const btnFaGoto=$('fa-goto-consultant');
 const btnFaGotoGuidee=$('fa-goto-guidee');
@@ -3096,7 +3139,7 @@ function snapshotActivityForm(){
     heures:faHeures?.value||'',
     guidee_id:faGuidee?.value||'',
     probability:(faProbability?.value||'').trim().toUpperCase(),
-    alertActive:faAlertActive?.checked?'1':'0'
+    alertStatus:(faAlertStatus?.value||'').trim().toUpperCase()
   };
 }
 function normalizeActivitySnapshot(snap){
@@ -3111,7 +3154,7 @@ function normalizeActivitySnapshot(snap){
     heures:'',
     guidee_id:'',
     probability:'',
-    alertActive:'1'
+    alertStatus:DEFAULT_ALERT_STATUS
   };
   if(type==='ACTION_ST_BERNARD'){
     normalized.heures=String(base.heures??'').trim();
@@ -3121,7 +3164,7 @@ function normalizeActivitySnapshot(snap){
     normalized.probability=(base.probability||'').trim().toUpperCase();
   }
   if(type==='ALERTE'){
-    normalized.alertActive=base.alertActive==='0'?'0':'1';
+    normalized.alertStatus=normalizeAlertStatus(base.alertStatus)||DEFAULT_ALERT_STATUS;
   }
   return normalized;
 }
@@ -3192,8 +3235,12 @@ faType.onchange=()=>{
   }else if(faProbability){
     faProbability.value='';
   }
-  if(!isAlerte && faAlertActive){
-    faAlertActive.checked=true;
+  if(isAlerte){
+    if(faAlertStatus && !normalizeAlertStatus(faAlertStatus.value)){
+      faAlertStatus.value=DEFAULT_ALERT_STATUS;
+    }
+  }else if(faAlertStatus){
+    faAlertStatus.value=DEFAULT_ALERT_STATUS;
   }
   applyActivityTemplateAutofill();
   updateActivitySaveVisibility();
@@ -3266,8 +3313,7 @@ faOpenAI?.addEventListener('click',async()=>{
     guidee:{
       id:guidee?.id||'',
       name:guidee?.nom||'',
-      description:guidee?.description||'',
-      thematique_id:guidee?.thematique_id||''
+      description:guidee?.description||''
     },
     guide_description:guidee?.description||'',
     guide_finalite:guideResultText?`\n${guideResultText}`:'',
@@ -3334,12 +3380,12 @@ faDesc.dataset.autofill='true';
 if(faTitle) faTitle.value='';
 faType.value='ACTION_ST_BERNARD'; faHeuresWrap.classList.remove('hidden'); faHeures.value='0';
 if(faProbability) faProbability.value='';
-if(faAlertActive) faAlertActive.checked=true;
+if(faAlertStatus) faAlertStatus.value=DEFAULT_ALERT_STATUS;
 if(id){
 const a=store.activities.find(x=>x.id===id); if(!a) return;
 faConsult.value=a.consultant_id; faType.value=a.type; if(faDate) faDate.value=a.date_publication||''; faDesc.value=a.description||''; if(faTitle) faTitle.value=a.title||''; faHeures.value=String(a.heures??0);
  if(faProbability) faProbability.value=String(a.probabilite||'').toUpperCase();
- if(faAlertActive) faAlertActive.checked=a.alerte_active!==false;
+ if(faAlertStatus) faAlertStatus.value=normalizeAlertStatus(a.alerte_statut)||DEFAULT_ALERT_STATUS;
  faDesc.dataset.autofill='false';
 updateFaGuideeOptions(a.guidee_id||'');
 faType.onchange();
@@ -3361,16 +3407,16 @@ const isProlongement=faType.value==='PROLONGEMENT';
 const isAlerte=faType.value==='ALERTE';
 const heuresValue=isSTB ? Number(faHeures.value??0) : undefined;
 const probabilityValue=isProlongement ? (faProbability?.value||'').toUpperCase() : '';
-const alertActive=isAlerte ? (faAlertActive?.checked!==false) : undefined;
+const alertStatus=isAlerte ? (normalizeAlertStatus(faAlertStatus?.value)||DEFAULT_ALERT_STATUS) : undefined;
 const titleValue=(faTitle?.value||'').trim();
 const data={ consultant_id:faConsult.value, type:faType.value, date_publication:faDate?.value||'', title:titleValue, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined };
 if(isProlongement && PROLONGEMENT_PROBABILITIES[probabilityValue]){ data.probabilite=probabilityValue; }
-if(isAlerte){ data.alerte_active=alertActive; }
+if(isAlerte){ data.alerte_statut=alertStatus; }
 const heuresInvalid=isSTB && (!Number.isFinite(heuresValue) || heuresValue<0);
 const probabilityInvalid=isProlongement && !PROLONGEMENT_PROBABILITIES[probabilityValue];
 const missing = !data.consultant_id || !data.type || !data.date_publication || !data.title || heuresInvalid || probabilityInvalid || (isSTB && !data.guidee_id);
 if(!isProlongement){ delete data.probabilite; }
-if(!isAlerte){ delete data.alerte_active; }
+if(!isAlerte){ delete data.alerte_statut; }
 if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
 if(currentActivityId){ Object.assign(store.activities.find(x=>x.id===currentActivityId),data,{updated_at:nowISO()}); }else{ store.activities.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
@@ -3503,8 +3549,6 @@ function buildGuideePayload(){
   if(!snap.consultant_id || !snap.nom) return null;
   const dateDebut=snap.date_debut || todayStr();
   const dateFin=snap.date_fin || dateDebut;
-  const existing=currentGuideeId?store.guidees.find(x=>x.id===currentGuideeId):null;
-  const thematiqueId=existing?.thematique_id || 'autre';
   return {
     consultant_id:snap.consultant_id,
     nom:snap.nom,
@@ -3512,7 +3556,6 @@ function buildGuideePayload(){
     resultat:snap.resultat||undefined,
     date_debut:dateDebut,
     date_fin:dateFin,
-    thematique_id:thematiqueId,
     updated_at:nowISO()
   };
 }
@@ -3546,7 +3589,7 @@ function openGuideeModal(id=null,options={}){
   const preferred=defaultConsultantId && optionValues.includes(defaultConsultantId)
     ? defaultConsultantId
     : fgConsult.options[0]?.value||'';
-  const g=id? store.guidees.find(x=>x.id===id) : {id:uid(),nom:'',description:'',resultat:'',consultant_id:preferred,date_debut:todayStr(),date_fin:'' ,thematique_id:'autre'};
+  const g=id? store.guidees.find(x=>x.id===id) : {id:uid(),nom:'',description:'',resultat:'',consultant_id:preferred,date_debut:todayStr(),date_fin:''};
   const templateGuidee=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee);
   const templateResult=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee_result);
   if(fgDesc) fgDesc.placeholder=templateGuidee||'';
@@ -3796,8 +3839,6 @@ function computeSessionDiff(){
   if(guideesDiff.length) diff.guidees=guideesDiff;
   const paramsDiff=diffParamsObject(store.params||{}, initialStoreSnapshot.params||{});
   if(Object.keys(paramsDiff).length) diff.params=paramsDiff;
-  const thematiquesDiff=diffArrayById(store.thematiques||[], initialStoreSnapshot.thematiques||[]);
-  if(thematiquesDiff.length) diff.thematiques=thematiquesDiff;
   const metaDiff=diffParamsObject(store.meta||{}, initialStoreSnapshot.meta||{});
   if(Object.keys(metaDiff).length) diff.meta=metaDiff;
   return diff;
@@ -3872,7 +3913,7 @@ function mapDocToItem(doc){
 }
 function buildFullStoreDiff(){
   const diff={};
-  ['consultants','activities','guidees','thematiques'].forEach(key=>{
+  ['consultants','activities','guidees'].forEach(key=>{
     const list=store?.[key];
     if(Array.isArray(list) && list.length){
       diff[key]=list.map(item=>({ ...deepClone(item), _status:'created'}));
@@ -4107,7 +4148,6 @@ async function saveStoreToFirestore(reason='auto', diffOverride=null){
   if(diff.consultants) applyArrayDiff(FIRESTORE_COLLECTIONS.consultants,diff.consultants);
   if(diff.activities) applyArrayDiff(FIRESTORE_COLLECTIONS.activities,diff.activities);
   if(diff.guidees) applyArrayDiff(FIRESTORE_COLLECTIONS.guidees,diff.guidees);
-  if(diff.thematiques) applyArrayDiff(FIRESTORE_COLLECTIONS.thematiques,diff.thematiques);
   if(diff.params){
     const paramsRef=firebaseDb.collection(FIRESTORE_COLLECTIONS.params).doc(FIRESTORE_PARAMS_DOC);
     const payload=cleanFirestoreData(diff.params);
@@ -4188,7 +4228,6 @@ async function overwriteFirestoreFromLocal(){
     {key:'consultants',collection:FIRESTORE_COLLECTIONS.consultants},
     {key:'activities',collection:FIRESTORE_COLLECTIONS.activities},
     {key:'guidees',collection:FIRESTORE_COLLECTIONS.guidees},
-    {key:'thematiques',collection:FIRESTORE_COLLECTIONS.thematiques}
   ];
   const buildLocalList=(key)=>{
     const list=Array.isArray(store?.[key])?store[key]:[];
@@ -4300,15 +4339,14 @@ async function loadRemoteStore(options={}){
     setSyncStatus(manual?'Rafraîchissement depuis Firestore…':'Chargement des données depuis Firestore…','warning');
   }
   try{
-    const [consultantsSnap,activitiesSnap,guideesSnap,thematiquesSnap,paramsDoc,metaDoc]=await Promise.all([
+    const [consultantsSnap,activitiesSnap,guideesSnap,paramsDoc,metaDoc]=await Promise.all([
       firebaseDb.collection(FIRESTORE_COLLECTIONS.consultants).get(),
       firebaseDb.collection(FIRESTORE_COLLECTIONS.activities).get(),
       firebaseDb.collection(FIRESTORE_COLLECTIONS.guidees).get(),
-      firebaseDb.collection(FIRESTORE_COLLECTIONS.thematiques).get(),
       firebaseDb.collection(FIRESTORE_COLLECTIONS.params).doc(FIRESTORE_PARAMS_DOC).get(),
       firebaseDb.collection(FIRESTORE_COLLECTIONS.meta).doc(FIRESTORE_META_DOC).get()
     ]);
-    const hasRemoteData=!consultantsSnap.empty || !activitiesSnap.empty || !guideesSnap.empty || !thematiquesSnap.empty || (paramsDoc.exists && Object.keys(paramsDoc.data()||{}).length>0);
+    const hasRemoteData=!consultantsSnap.empty || !activitiesSnap.empty || !guideesSnap.empty || (paramsDoc.exists && Object.keys(paramsDoc.data()||{}).length>0);
     if(!hasRemoteData){
       remoteReady=true;
       if(showFeedback){
@@ -4325,7 +4363,6 @@ async function loadRemoteStore(options={}){
       consultants:mapCollection(consultantsSnap),
       activities:mapCollection(activitiesSnap),
       guidees:mapCollection(guideesSnap),
-      thematiques:mapCollection(thematiquesSnap),
       params:{...DEFAULT_PARAMS,...cleanFirestoreData(paramsDoc.exists?paramsDoc.data():{})},
       meta:cleanFirestoreData(metaDoc.exists?metaDoc.data():{})
     };
