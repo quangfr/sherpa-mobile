@@ -248,6 +248,9 @@ dialog::backdrop{background:#0006}
 .consultant-chip .consultant-name{font-weight:600;}
 .consultant-chip-bold .consultant-name{font-weight:700;}
 .consultant-chip .btn{padding:2px 6px;font-size:12px;}
+.consultant-chip .boond-link{display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1;text-decoration:none;padding:0 2px;border-radius:6px;}
+.consultant-chip .boond-link:hover{background:var(--hover);}
+.consultant-chip .boond-link:focus{outline:2px solid var(--accent);outline-offset:2px;}
 .activity-title .activity-meta-inline{display:inline-flex;align-items:center;gap:6px;margin-left:8px;font-size:12px;color:var(--muted)}
 .activity-title .activity-meta-inline .activity-guidee-chip{font-weight:600;}
 .mobile-desc{margin-top:4px;display:flex;flex-direction:column;gap:4px}
@@ -294,10 +297,10 @@ tr.selected .row-edit{display:inline-flex}
 .desktop-only{display:revert}
 .mobile-only{display:none}
 @media (max-width:520px){
-main{height:calc(100vh - var(--headH));min-height:calc(100vh - var(--headH));overflow:hidden}
-.view{height:100%}
-#activities-table thead{display:none}
-#activities-table colgroup{display:none}
+  main{height:calc(100vh - var(--headH));min-height:calc(100vh - var(--headH));overflow:hidden}
+  .view{height:100%}
+  #activities-table thead{display:none}
+  #activities-table colgroup{display:none}
 #activities-table tr{display:block;border:1px solid var(--border);border-radius:10px;margin:8px 0;background:var(--card);padding:8px}
 #activities-table td{display:block;border-top:none;padding:2px 0}
 #activities-table td.desktop-only{display:none!important}
@@ -315,11 +318,13 @@ main{height:calc(100vh - var(--headH));min-height:calc(100vh - var(--headH));ove
 .header-main .btn.primary{order:2;margin-left:auto}
 .header-main button:not(.primary){order:3;flex:0 0 auto}
 .header-main .btn{white-space:nowrap}
-.filters-line{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}
-.thematique-row{flex-direction:column;align-items:stretch}
-.thematique-row .them-delete{margin-left:0;align-self:flex-end}
-.filters-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-.filter-select{min-height:34px;font-size:12px}
+  .filters-line{width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .thematique-row{flex-direction:column;align-items:stretch}
+  .thematique-row .them-delete{margin-left:0;align-self:flex-end}
+  .filters-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .filter-select{min-height:28px;font-size:12px;padding:2px 6px}
+  .guidee-filters{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}
+  .guidee-filters select{min-height:28px;padding:2px 6px;font-size:12px;min-width:0;width:auto;flex:0 0 auto}
 }
 .guidee-progress{position:static;display:flex;align-items:center;gap:8px;padding:4px 0 0;background:transparent;border-top:none;--progress-color:var(--accent)}
 #guidee-pane .guidee-progress{padding:4px 0 0}

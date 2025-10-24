@@ -1472,15 +1472,20 @@ function renderConsultantChip(consultant,{selected=false,includeIcon=false,bold=
   const id=(consultant?.id||consultant?.consultant_id||'').toString().trim();
   const rawName=(consultant?.nom??consultant?.name??'');
   const name=(rawName||'').toString().trim();
+  const boondIdRaw=consultant?.boond_id??consultant?.boond??'';
+  const boondId=boondIdRaw?.toString().trim();
   const classes=['consultant-chip'];
   if(bold) classes.push('consultant-chip-bold');
   const label=name?esc(name):esc(fallback);
   const showIcon=includeIcon && (name || fallback!=='—');
   const icon=showIcon? '👤 ' : '';
+  const boondLink=(selected && boondId)
+    ? `<a class="boond-link" href="https://ui.boondmanager.com/resources/${encodeURIComponent(boondId)}/overview" target="_blank" rel="noopener" title="Lien vers Boondmanager" aria-label="Lien vers Boondmanager">🟧</a>`
+    : '';
   const editButton=(selected && id)
     ? `<button type="button" class="btn ghost small row-edit" data-edit-consultant="${esc(id)}" title="Éditer le consultant" aria-label="Éditer le consultant">✏️</button>`
     : '';
-  return `<span class="${classes.join(' ')}">${icon}<span class="consultant-name">${label}</span>${editButton}</span>`;
+  return `<span class="${classes.join(' ')}">${icon}<span class="consultant-name">${label}</span>${boondLink}${editButton}</span>`;
 }
 function renderActivities(){
 refreshMonthOptions();
