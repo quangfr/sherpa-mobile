@@ -16,7 +16,8 @@ function formatDateInput(date){
 }
 function getDefaultReportingRange(){
   const end=new Date();
-  const start=addDays(end,-30);
+  const julyStart=new Date(Date.UTC(2025,6,1));
+  const start=end<julyStart?end:julyStart;
   return {startDate:formatDateInput(start),endDate:formatDateInput(end)};
 }
 const isMobile=()=>window.innerWidth<=520;
@@ -544,7 +545,8 @@ const DEFAULT_PARAMS={
   mentions_catalog:DEFAULT_MENTION_CATALOG,
   description_templates:{...DEFAULT_DESCRIPTION_TEMPLATES},
   ai_prompt:DEFAULT_COMMON_DESCRIPTION_PROMPT,
-  ai_activity_context_prompt:DEFAULT_ACTIVITY_CONTEXT_PROMPT
+  ai_activity_context_prompt:DEFAULT_ACTIVITY_CONTEXT_PROMPT,
+  ai_title_prompt:DEFAULT_ACTIVITY_TITLE_PROMPT
 };
 const DEFAULT_THEMATIQUES=[
   {id:'le-cardinal',nom:'Le Cardinal',emoji:'🧊',color:'#3b82f6'},
@@ -645,12 +647,16 @@ function migrateStore(data){
   const aiActivityContextRaw=typeof incomingParams.ai_activity_context_prompt==='string'
     ? incomingParams.ai_activity_context_prompt.trim()
     : '';
+  const aiTitlePromptRaw=typeof incomingParams.ai_title_prompt==='string'
+    ? incomingParams.ai_title_prompt.trim()
+    : '';
   migrated.params={
     ...DEFAULT_PARAMS,
     ...incomingParams,
     description_templates:{...mergedTemplates},
     ai_prompt:aiPromptRaw||DEFAULT_COMMON_DESCRIPTION_PROMPT,
-    ai_activity_context_prompt:aiActivityContextRaw||DEFAULT_ACTIVITY_CONTEXT_PROMPT
+    ai_activity_context_prompt:aiActivityContextRaw||DEFAULT_ACTIVITY_CONTEXT_PROMPT,
+    ai_title_prompt:aiTitlePromptRaw||DEFAULT_ACTIVITY_TITLE_PROMPT
   };
   delete migrated.params.openai_prompts;
   delete migrated.params.openai_activity_prompt;
@@ -1306,6 +1312,7 @@ const templateEditor=$('template-editor');
 const btnResetTemplate=$('btn-reset-template');
 const promptEditor=$('prompt-editor');
 const promptActivityContextEditor=$('prompt-activity-context');
+const promptTitleEditor=$('prompt-title');
 const btnResetPrompt=$('btn-reset-prompt');
 const btnImportJson=$('btn-import-json');
 const btnExportJson=$('btn-export-json');
@@ -1397,6 +1404,11 @@ function getActivityContextPromptTemplate(){
     : '';
   return raw||DEFAULT_ACTIVITY_CONTEXT_PROMPT;
 }
+function getActivityTitlePromptTemplate(){
+  const params=store?.params||DEFAULT_PARAMS;
+  const raw=typeof params.ai_title_prompt==='string'?params.ai_title_prompt.trim():'';
+  return raw||DEFAULT_ACTIVITY_TITLE_PROMPT;
+}
 function persistTemplateEditorValue(){
   if(!templateEditor) return;
   if(templateEditor.dataset.initialized!=='true') return;
@@ -1426,6 +1438,7 @@ function renderTemplateEditor(){
   }
   templateEditor.value=getDescriptionTemplate(state.templates.selected);
   templateEditor.dataset.initialized='true';
+  updateDescriptionPlaceholders();
 }
 function renderPromptEditor(){
   if(promptEditor){
@@ -1433,6 +1446,9 @@ function renderPromptEditor(){
   }
   if(promptActivityContextEditor){
     promptActivityContextEditor.value=getActivityContextPromptTemplate();
+  }
+  if(promptTitleEditor){
+    promptTitleEditor.value=getActivityTitlePromptTemplate();
   }
 }
 function updateGuideeEditButton(targetId=''){
@@ -1736,7 +1752,8 @@ function renderGuideeTimeline(){
       const filterAttr=gid?` data-filter-guidee="${gid}"`:'';
       const guideeLabel=esc(ev.guidee?.nom||'Sans titre');
       const clickableName=gid?`<span class="click-span"${filterAttr}>${guideeLabel}</span>`:guideeLabel;
-      metaPrimaryPieces.push(`<span class="bold">${verb} ${clickableName}</span>`);
+      const consultantLabel=esc((ev.consultant?.nom||'').trim()||'Consultant inconnu');
+      metaPrimaryPieces.push(`<span class="bold">${consultantLabel} • ${verb} ${clickableName}</span>`);
     }
     const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-date" title="${rawDate}"><span class="sub">${friendlyDateHtml}</span>${editButtons.join('')}</div><div class="timeline-meta-primary">${metaPrimaryPieces.join(' ')}</div></div>`;
     let bodyHtml='';
@@ -2645,6 +2662,9 @@ async function saveParamsChanges(button=btnSaveParams){
     if(promptActivityContextEditor){
       params.ai_activity_context_prompt=(promptActivityContextEditor.value||'').trim()||DEFAULT_ACTIVITY_CONTEXT_PROMPT;
     }
+    if(promptTitleEditor){
+      params.ai_title_prompt=(promptTitleEditor.value||'').trim()||DEFAULT_ACTIVITY_TITLE_PROMPT;
+    }
     save('settings-manual-save');
     restartAutoSync();
     await syncIfDirty('settings-manual-save');
@@ -2711,6 +2731,7 @@ btnResetPrompt?.addEventListener('click',async()=>{
     if(!store.params) store.params={...DEFAULT_PARAMS};
     store.params.ai_prompt=DEFAULT_COMMON_DESCRIPTION_PROMPT;
     store.params.ai_activity_context_prompt=DEFAULT_ACTIVITY_CONTEXT_PROMPT;
+    store.params.ai_title_prompt=DEFAULT_ACTIVITY_TITLE_PROMPT;
     renderPromptEditor();
     save('prompt-reset');
     restartAutoSync();
@@ -2742,6 +2763,7 @@ btnResetPrompt?.addEventListener('click',async()=>{
 templateEditor?.addEventListener('input',()=>markSettingsPartDirty('template'));
 promptEditor?.addEventListener('input',()=>markSettingsPartDirty('prompt'));
 promptActivityContextEditor?.addEventListener('input',()=>markSettingsPartDirty('prompt'));
+promptTitleEditor?.addEventListener('input',()=>markSettingsPartDirty('prompt'));
 window.addEventListener('beforeunload',event=>{
   if(settingsDirty){
     event.preventDefault();
@@ -2819,6 +2841,17 @@ const faDate=$('fa-date');
 const faForm=$('form-activity');
 const faSaveBtn=$$('#dlg-activity .actions [value="ok"]');
 let activityInitialSnapshot=null;
+function updateActivityDescriptionPlaceholder(templateOverride){
+  if(!faDesc || !faType) return;
+  let template='';
+  if(templateOverride!==undefined){
+    template=templateOverride||'';
+  }else{
+    const key=DESCRIPTION_TEMPLATE_KEYS.activity[faType.value]||'';
+    template=key?getDescriptionTemplate(key):'';
+  }
+  faDesc.placeholder=template||'';
+}
 function snapshotActivityForm(){
   return {
     consultant_id:faConsult?.value||'',
@@ -2892,6 +2925,7 @@ function applyActivityTemplateAutofill(force=false){
   if(!faDesc || !faType) return;
   const key=DESCRIPTION_TEMPLATE_KEYS.activity[faType.value]||'';
   const template=key?getDescriptionTemplate(key):'';
+  updateActivityDescriptionPlaceholder(template);
   const shouldApply=force || faDesc.dataset.autofill==='true' || !faDesc.value.trim();
   if(shouldApply){
     faDesc.value=template;
@@ -3014,7 +3048,8 @@ faTitleAI?.addEventListener('click',async()=>{
   if(!description){ alert('Renseignez la description pour suggérer un titre.'); return; }
   const consultant=store.consultants.find(c=>c.id===faConsult.value)||null;
   const typeMeta=TYPE_META[faType.value]||{label:faType.value};
-  const prompt=fillPromptTemplate(DEFAULT_ACTIVITY_TITLE_PROMPT,{
+  const titlePromptTemplate=getActivityTitlePromptTemplate();
+  const prompt=fillPromptTemplate(titlePromptTemplate,{
     activity:{
       description:description,
       type_label:typeMeta.label||faType.value
@@ -3132,6 +3167,14 @@ const fgResult=$('fg-result');
 const fgOpenAI=$('fg-openai');
 const fgResultAI=$('fg-result-ai');
 const fgTitleAI=$('fg-title-ai');
+function updateGuideeDescriptionPlaceholders(){
+  if(fgDesc){
+    fgDesc.placeholder=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee)||'';
+  }
+  if(fgResult){
+    fgResult.placeholder=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee_result)||'';
+  }
+}
 const btnFgEditConsultant=$('fg-edit-consultant');
 const fgForm=$('form-guidee');
 const fgSaveBtn=$$('#dlg-guidee .actions [value="ok"]');
@@ -3272,6 +3315,8 @@ function openGuideeModal(id=null,options={}){
   const g=id? store.guidees.find(x=>x.id===id) : {id:uid(),nom:'',description:'',resultat:'',consultant_id:preferred,date_debut:todayStr(),date_fin:'' ,thematique_id:'autre'};
   const templateGuidee=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee);
   const templateResult=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee_result);
+  if(fgDesc) fgDesc.placeholder=templateGuidee||'';
+  if(fgResult) fgResult.placeholder=templateResult||'';
   fgConsult.value=g?.consultant_id||preferred||'';
   fgNom.value=g?.nom||'';
   if(id){
@@ -3350,9 +3395,19 @@ const fcBoond=$('fc-boond');
 const fcFin=$('fc-fin');
 const fcOpenAI=$('fc-openai');
 const btnFcGoto=$('fc-goto-guidees');
+function updateConsultantDescriptionPlaceholder(){
+  if(fcDesc){
+    fcDesc.placeholder=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.consultant)||'';
+  }
+}
 const btnFcBoondLink=$('fc-boond-link');
 const fcForm=$('form-consultant');
 const fcSaveBtn=$$('#dlg-consultant .actions [value="ok"]');
+function updateDescriptionPlaceholders(){
+  updateActivityDescriptionPlaceholder();
+  updateGuideeDescriptionPlaceholders();
+  updateConsultantDescriptionPlaceholder();
+}
 let consultantInitialSnapshot=null;
 attachHashtagAutocomplete(fcDesc);
 fcDesc?.addEventListener('input',()=>{ fcDesc.dataset.autofill='false'; });
@@ -3428,6 +3483,7 @@ if(fcTitre) fcTitre.value=c?.titre_mission||'';
 if(fcFin) fcFin.value=c?.date_fin||'';
 if(fcBoond) fcBoond.value=c?.boond_id||'';
 if(fcDesc){
+  fcDesc.placeholder=templateConsultant||'';
   if(id){
     fcDesc.value=c?.description||'';
     fcDesc.dataset.autofill='false';
