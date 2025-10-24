@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>SHERPA — MVP v6.0.0</title><link rel="stylesheet" href="app.css"/><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script></head><body>
 <div class="auth-gate hidden" id="auth-gate"><div class="auth-card"><h1>Bienvenue sur Sherpa</h1><p class="auth-sub">Connectez-vous pour accéder à vos données.</p><form class="auth-password" id="password-login-form"><label for="password-email">Connexion email</label><input id="password-email" type="email" placeholder="vous@example.com" autocomplete="email" required/><label for="password-password">Mot de passe</label><input id="password-password" type="password" placeholder="Votre mot de passe" autocomplete="current-password" required/><div class="auth-actions"><button class="btn primary" type="submit">Se connecter</button><button class="btn" type="button" id="btn-offline-mode">Mode hors-ligne</button></div></form><button class="auth-link" type="button" id="btn-password-reset">Mot de passe oublié ?</button><div class="auth-feedback" id="password-feedback"></div><div class="auth-feedback error" id="auth-error"></div></div></div>
-<header><div class="wrap header-bar"><nav class="tabs" id="tabs"></nav><div class="header-actions"><button class="btn small" id="btn-sync-indicator" title="Synchronisation">⚠️</button><div class="auth-user hidden" id="auth-user"><button class="btn small" type="button" id="btn-sign-out" aria-label="Se déconnecter">🔒<span class="sr-only">Se déconnecter</span></button></div></div></div></header>
+<header><div class="wrap header-bar"><nav class="tabs" id="tabs"></nav><div class="header-actions"><button class="btn small hidden" type="button" id="btn-offline-import" title="Importer un fichier JSON local">⬆️<span class="sr-only">Importer un fichier de données</span></button><button class="btn small" id="btn-sync-indicator" title="Synchronisation">⚠️</button><div class="auth-user hidden" id="auth-user"><button class="btn small" type="button" id="btn-sign-out" aria-label="Se déconnecter">🔒<span class="sr-only">Se déconnecter</span></button></div></div></div></header>
 <main class="wrap">
 <!-- DASHBOARD -->
 <section class="view" id="view-dashboard">
@@ -143,8 +143,8 @@
     <div class="backup-block">
       <div class="subtitle">Backup</div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
-        <button class="btn small" id="btn-import-json">📤 Import JSON</button>
-        <button class="btn small" id="btn-export-json">📥 Export JSON</button>
+        <button class="btn small" id="btn-import-json">⬆️ Import JSON</button>
+        <button class="btn small" id="btn-export-json">⬇️ Export JSON</button>
         <button class="btn small" id="btn-reset-firestore" title="Écrase Firestore avec la donnée locale">🔥 Reset Firestore</button>
         <button class="btn small" id="btn-reset-local" title="Remplace la donnée locale par Firestore">🗑️ Reset Local</button>
       </div>

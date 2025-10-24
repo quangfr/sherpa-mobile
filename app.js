@@ -1705,6 +1705,7 @@ const promptEditor=$('prompt-editor');
 const promptActivityContextEditor=$('prompt-activity-context');
 const promptTitleEditor=$('prompt-title');
 const btnResetPrompt=$('btn-reset-prompt');
+const btnOfflineImport=$('btn-offline-import');
 const btnImportJson=$('btn-import-json');
 const btnExportJson=$('btn-export-json');
 const btnResetFirestore=$('btn-reset-firestore');
@@ -3359,6 +3360,13 @@ window.addEventListener('beforeunload',event=>{
   }
 });
 btnExportJson?.addEventListener('click',()=>{ exportStoreToFile('sherpa-backup'); });
+btnOfflineImport?.addEventListener('click',()=>{
+  if(!isOfflineMode()){
+    alert('Disponible uniquement en mode hors-ligne.');
+    return;
+  }
+  promptJsonImport();
+});
 btnImportJson?.addEventListener('click',()=>{ promptJsonImport(); });
 
 function normalizeBackupCandidate(candidate, baseHref=window.location.href){
@@ -3496,6 +3504,10 @@ function enableOfflineMode(options={}){
   btnResetFirestore?.setAttribute('disabled','true');
   btnResetLocal?.setAttribute('disabled','true');
   btnRefreshRemote?.setAttribute('disabled','true');
+  if(btnOfflineImport){
+    btnOfflineImport.classList.remove('hidden');
+    btnOfflineImport.removeAttribute('disabled');
+  }
   if(btnOfflineMode) btnOfflineMode.disabled=true;
   setSyncStatus('Mode hors-ligne activé — les données restent locales.','info');
   updateSyncIndicator();
