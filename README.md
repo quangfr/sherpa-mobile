@@ -1,7 +1,7 @@
 # Sherpa — Guide fonctionnel et pratiques d'équipe (v6)
 
 ## 1. Installation et environnements
-- **Instance de production** : publiée automatiquement depuis la branche `main` du dépôt [github.com/quangfr/sherpa](https://github.com/quangfr/sherpa). La configuration Firebase **Firestore** doit être renseignée dans `app.js` (bloc `firebaseConfig`) avec les identifiants de l'instance de production. Un **worker Cloudflare** sert de proxy d'API pour masquer les secrets Firebase et n'autorise que les appels provenant de l'application Sherpa.
+- **Instance de production** : publiée automatiquement depuis la branche `main` du dépôt [github.com/quangfr/sherpa](https://github.com/quangfr/sherpa). La base de donnée est hébergée sur Firebase **Firestore**. Un **worker Cloudflare** sert de proxy d'API pour masquer les secrets Firebase et n'autorise que les appels provenant de l'application Sherpa.
 - **Mode en ligne** : ouvrir `https://quangfr.github.io/sherpa/app.html`. L'authentification Firebase déclenche ensuite la synchronisation Firestore (consultants, guidées, activités, paramètres).
 - **Mode hors ligne / sandbox locale** :
   1. Télécharger le dépôt (`Code` → `Download ZIP`) ou cloner puis ouvrir le dossier localement.
