@@ -51,5 +51,15 @@ Sherpa est un cockpit "local-first" destiné aux Product Owners, coachs et manag
 - **IA** : intégration OpenAI (prompts communs/contexte/titre) via endpoints proxy `faOpenAI` et `fcOpenAI`, désactivée hors ligne.
 - **Robustesse** : échappement via `esc()`, debouncing de sync (`scheduleAutoSync`), coordination multi-onglets (`SHERPA_SYNC_SESSION`), reprise automatique après perte d'auth.
 
+## 4. Changelog
+
+### Version 6 — dernières évolutions
+- Mode hors ligne clarifié : ouverture directe des fichiers `app.html` ou `index.html`, sauvegarde locale en un clic (`⬇️`) et navettes `📤`/`📥` pour partager un export JSON anonymisé lors des tests ou des migrations. Tout fonctionne sans connexion et se resynchronise dès que l'on se reconnecte. 
+- Vue d'ensemble des missions enrichie : l'onglet `👥 Sherpa` met en avant les situations à risque (alertes actives, fins de mission proches, actions STB/avis manquants) et permet d'ouvrir des fiches consultants préparées par l'assistant IA.
+- Parcours des activités fluidifié : filtres cumulables par personne, type, hashtag ou mois, badges lisibles (heures, probabilité, statut d'alerte) et suggestions automatiques pour les hashtags/mentions afin d'harmoniser le vocabulaire.
+- Guidées visualisées en timeline : progression calculée automatiquement, badges de statut colorés et formulaires assistés par l'IA pour poser le cadre comme pour rédiger le résultat.
+- Reporting instantané : un document déjà formaté (texte ou HTML) prêt à copier, couvrant missions, actions, alertes, avis, verbatims, prolongements et cordées sur la période par défaut (du 1ᵉʳ juillet 2025 à aujourd'hui).
+- Synchronisation plus sereine : connexion Firebase protégée par un proxy, reprise automatique après coupure, diff client pour fusionner les modifications et onglets coordonnés via `SHERPA_SYNC_SESSION`/`SHERPA_SIGNOUT_BROADCAST`.
+
 ---
 Ce document remplace l'ancien README et sert de référence fonctionnelle et opérationnelle pour l'équipe Sherpa (v6).
