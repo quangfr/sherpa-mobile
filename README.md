@@ -11,11 +11,10 @@
 - **Retour en ligne** : reconnecter l'application à Firestore en réactivant l'authentification (bouton `Se connecter`). Les écritures locales sont fusionnées grâce au diff client.
 
 ## 2. Collaboration et workflow Git/Codex
-- Travailler uniquement sur des branches dédiées (`feature/...`). Avant chaque session Codex ou développement manuel, **pull** les dernières modifications de `main` : `git checkout main && git pull` puis rebaser/merger votre branche.
-- Vérifier qu'aucun autre membre n'a poussé sur `main` entre votre dernière synchronisation et votre merge. En cas de doute, recharger `main` et rejouer les tests/sauvegardes.
-- Lors du merge vers `main`, récupérer les dernières évolutions locales (`git fetch origin && git rebase origin/main` ou `git merge origin/main`) pour éliminer les conflits avant ouverture de PR.
+- Lancer la session sur Codex depuis la branche `main`
+- Avant le merge vers `main`, vérifier s'il y a eu des évolutions entre temps. Demander Codex de les récupérer pour éliminer les risques de conflits.
 - Après le merge, patienter **1 à 2 minutes** : GitHub Pages reconstruit automatiquement le site (`/app.html`). Valider ensuite l'URL publique.
-- Documenter chaque évolution significative (README, changelog interne) afin de faciliter l'assistance Codex.
+- Documenter chaque évolution significative (README, changelog) afin de faciliter l'assistance Codex.
 
 ## 3. Description fonctionnelle (v6)
 ### Contexte
