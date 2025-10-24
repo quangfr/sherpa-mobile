@@ -619,7 +619,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Soulgorithm : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "6ea5bc34-bf6b-47b0-936b-5a0b7c8fa786",
@@ -688,7 +691,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Pôlène : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "415d4ebd-5ce1-4d8f-85d1-57a28b44e666",
@@ -768,7 +774,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Goal Digger : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "926f7757-dfdd-4a04-87f0-2e1812af66a0",
@@ -791,7 +800,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Goal Digger : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "6d9af315-f940-478e-bfd4-bd5bc909c920",
@@ -871,7 +883,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Protocop : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "7fd51cbd-df50-4756-bf67-72f2ad8dc499",
@@ -940,7 +955,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "8b182e04-a90d-42b3-9b3a-a41831d69956",
@@ -974,7 +992,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "5e427d76-c07f-426f-8670-29e40ec633d0",
@@ -1077,7 +1098,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Le Cardinal : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "50fc664d-420f-4fdd-9e58-f1bcbf474ba3",
@@ -1135,7 +1159,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Gutenberg : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "d1d80787-f028-4f84-a6ec-12c30451f783",
@@ -1158,7 +1185,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Gutenberg : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "14b65351-a2ef-42f3-a9c0-cbc3420a7c43",
@@ -1273,7 +1303,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Soulgorithm : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "0eefece4-28e1-4748-98b2-bf29133f518c",
@@ -1341,7 +1374,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Pôlène : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "b50faa8a-419a-4329-9da3-a753605e0a5d",
@@ -1377,7 +1413,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Pôlène : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "14b5cd09-4a94-45c2-b212-608ff1d057e5",
@@ -1516,7 +1555,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Protocop : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "b88806bb-cb2e-48c3-a7c2-734bb0b8ae73",
@@ -1563,7 +1605,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Protocop : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "06ebc357-e89b-425b-af49-d1d232c3c461",
@@ -1666,7 +1711,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "6ec6d65d-8e82-4eac-bc31-dbac22e5ab9e",
@@ -1723,7 +1771,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Le Cardinal : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "c5628f81-9e44-4c3a-98f8-cf24ffd4dbbd",
@@ -2213,7 +2264,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Protocop : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "ea6b71c7-aa65-4bee-a246-212e11a0c18c",
@@ -2281,7 +2335,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Soulgorithm : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "88fc28e1-e139-46cb-b6fe-331bbacdef5f",
@@ -2337,7 +2394,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Soulgorithm : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "45a454c7-5772-42de-b502-85d6751830c3",
@@ -2349,7 +2409,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "ae1a46ee-cb10-46e0-8c91-d3b7a4f8b4e0",
@@ -2372,7 +2435,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Pôlène : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "3a3b1a25-4cc7-4043-ae3b-c7557208dc53",
@@ -2428,7 +2494,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Le Cardinal : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "ecdcd280-d480-4d6b-8e00-dbc4eb034885",
@@ -2484,7 +2553,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Goal Digger : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "cb830fea-5691-4021-a8da-1f5e98830a6d",
@@ -2518,7 +2590,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Goal Digger : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "c68b7b07-a109-43c7-b875-e90e45aa5083",
@@ -2541,7 +2616,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Protocop : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "36c074bf-eb38-4bae-8157-ef4f4e4a885f",
@@ -2586,7 +2664,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "2adea123-c61d-4413-9031-4d6a9cb34e42",
@@ -2620,7 +2701,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "486ca1e3-9af2-4b03-bc11-e4903581991d",
@@ -2688,7 +2772,10 @@
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
       "title": "Alerte Gutenberg : signal critique détecté sur la guidée.",
-      "alerte_statut": "MAJEUR"
+      "alerte_statut": "MAJEUR",
+      "alerte_types": [
+        "COMMERCE"
+      ]
     },
     {
       "id": "5543d9a7-a514-4f49-8f6e-d743679b5d0e",

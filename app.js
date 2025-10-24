@@ -80,6 +80,20 @@ const ALERT_STATUS_PRIORITY={
   [ALERT_STATUSES.MINEUR]:2,
   [ALERT_STATUSES.INACTIF]:1
 };
+const ALERT_TYPES={
+  COMMERCE:'COMMERCE',
+  RH:'RH'
+};
+const ALERT_TYPE_LABELS={
+  [ALERT_TYPES.COMMERCE]:'Commerce',
+  [ALERT_TYPES.RH]:'Ressources humaines'
+};
+const ALERT_TYPE_SHORT={
+  [ALERT_TYPES.COMMERCE]:'CO',
+  [ALERT_TYPES.RH]:'RH'
+};
+const ALERT_TYPE_ORDER=[ALERT_TYPES.COMMERCE,ALERT_TYPES.RH];
+const DEFAULT_ALERT_TYPES=[ALERT_TYPES.COMMERCE];
 const DESCRIPTION_TEMPLATE_KEYS={
   activity:{
     ACTION_ST_BERNARD:'activity:ACTION_ST_BERNARD',
@@ -220,6 +234,39 @@ function parseHashtagCatalog(text){
 function normalizeAlertStatus(value){
   const key=String(value||'').toUpperCase();
   return ALERT_STATUSES[key]||null;
+}
+function normalizeAlertType(value){
+  const key=String(value||'').toUpperCase();
+  return ALERT_TYPES[key]||null;
+}
+function normalizeAlertTypes(input){
+  const values=Array.isArray(input)?input:(input!==undefined&&input!==null?[input]:[]);
+  const seen=new Set();
+  const normalized=[];
+  values.forEach(val=>{
+    const type=normalizeAlertType(val);
+    if(type && !seen.has(type)){
+      seen.add(type);
+      normalized.push(type);
+    }
+  });
+  if(!normalized.length) return [];
+  normalized.sort((a,b)=>{
+    const ai=ALERT_TYPE_ORDER.indexOf(a);
+    const bi=ALERT_TYPE_ORDER.indexOf(b);
+    return (ai===-1?Infinity:ai)-(bi===-1?Infinity:bi);
+  });
+  return normalized;
+}
+function formatAlertTypesShort(types){
+  const normalized=normalizeAlertTypes(types);
+  if(!normalized.length) return '';
+  return normalized.map(type=>ALERT_TYPE_SHORT[type]||type).join('/');
+}
+function formatAlertTypesLabel(types){
+  const normalized=normalizeAlertTypes(types);
+  if(!normalized.length) return '';
+  return normalized.map(type=>ALERT_TYPE_LABELS[type]||type).join(' & ');
 }
 function normalizeMention(raw){
   if(!raw) return '';
@@ -451,6 +498,10 @@ function formatAIError(err){
 async function invokeAIHelper(button, textarea, prompt){
   if(!button || !textarea || !prompt) return;
   if(button.disabled) return;
+  if(isOfflineMode()){
+    alert('Assistant indisponible en mode hors-ligne.');
+    return;
+  }
   button.disabled=true;
   const originalLabel=button.textContent;
   button.textContent='…';
@@ -477,6 +528,7 @@ const deepClone=(obj)=>JSON.parse(JSON.stringify(obj));
 const authGate=$('auth-gate');
 const authUserWrap=$('auth-user');
 const btnSignOut=$('btn-sign-out');
+const btnOfflineMode=$('btn-offline-mode');
 const passwordLoginForm=$('password-login-form');
 const passwordEmailInput=$('password-email');
 const passwordPasswordInput=$('password-password');
@@ -517,6 +569,12 @@ function togglePasswordControls(disabled){
 function toggleAuthGate(show){
   if(!authGate) return;
   authGate.classList.toggle('hidden',!show);
+}
+function isOfflineMode(){
+  return offlineMode;
+}
+function isFirestoreAvailable(){
+  return FIRESTORE_ENABLED && !isOfflineMode();
 }
 function isSyncSuspended(){
   return syncSuspensions.size>0;
@@ -640,6 +698,7 @@ async function attemptAuthRecovery(){
   }
 }
 function forceAuthGate(message='Travail hors connexion — connectez-vous pour synchroniser.', variant='info'){
+  if(isOfflineMode()) return;
   cancelAuthRecoveryTimer();
   authRecoveryInFlight=false;
   syncSuspensions.clear();
@@ -665,13 +724,17 @@ function isRemoteDataStale(){
 }
 function shouldBlockUsage(){
   if(authGateForced) return true;
-  if(!FIRESTORE_ENABLED) return false;
+  if(!isFirestoreAvailable()) return false;
   if(!currentUser) return !hasOfflineDataAvailable();
   if(!remoteReady) return true;
   return isRemoteDataStale();
 }
 function updateUsageGate(options={}){
   const {silent=false}=options;
+  if(isOfflineMode()){
+    toggleAuthGate(false);
+    return;
+  }
   const locked=shouldBlockUsage();
   toggleAuthGate(locked);
   if(silent || !locked || !currentUser) return;
@@ -748,6 +811,8 @@ let firebaseReady=false;
 let currentUser=null;
 let authGateForced=false;
 let remoteReady=false;
+let offlineMode=false;
+let offlineAutoLoadAttempted=false;
 let isRemoteLoadInFlight=false;
 let remoteLoadQueuedOptions=null;
 let autoSyncTimeout=null;
@@ -869,8 +934,11 @@ function migrateStore(data){
         }else{
           updated.alerte_statut=DEFAULT_ALERT_STATUS;
         }
+        const normalizedTypes=normalizeAlertTypes(updated.alerte_types);
+        updated.alerte_types=normalizedTypes.length?normalizedTypes:[...DEFAULT_ALERT_TYPES];
       }else{
         delete updated.alerte_statut;
+        delete updated.alerte_types;
       }
       delete updated.alerte_active;
       if(updated.type!=='PROLONGEMENT'){
@@ -1075,7 +1143,8 @@ const renderAlertList=()=>{
     row.classList.add('db-row','clickable-row');
     row.tabIndex=0;
     const statusBadge=renderAlertStatusBadge(status);
-    row.innerHTML=`<div class="row space" style="gap:6px"><div class="row" style="gap:6px"><span class="dot ${statusOf(consultant)}" title="État"></span><span class="linklike">${esc(consultant.nom||'—')}</span>${statusBadge?` ${statusBadge}`:''}</div><span class="sub">/ ${esc(consultant.titre_mission||'—')}</span></div>`;
+    const typeBadge=renderAlertTypeBadge(alert.alerte_types);
+    row.innerHTML=`<div class="row space" style="gap:6px"><div class="row" style="gap:6px"><span class="dot ${statusOf(consultant)}" title="État"></span><span class="linklike">${esc(consultant.nom||'—')}</span>${typeBadge?` ${typeBadge}`:''}${statusBadge?` ${statusBadge}`:''}</div><span class="sub">/ ${esc(consultant.titre_mission||'—')}</span></div>`;
     const navigate=()=>{
       if(alert.guidee_id){
         gotoGuideeTimeline(alert.guidee_id,alert.id||'');
@@ -1378,6 +1447,19 @@ function renderProbabilityBadge(value){
   if(meta.className) classes.push(meta.className);
   return `<span class="${classes.join(' ')}">${esc(meta.label)}</span>`;
 }
+function renderAlertTypeBadge(types){
+  const normalized=normalizeAlertTypes(types);
+  if(!normalized.length) return '';
+  const short=formatAlertTypesShort(normalized);
+  const label=formatAlertTypesLabel(normalized)||short;
+  let className='alert-type-badge';
+  if(normalized.length>1){
+    className+=' type-mixed';
+  }else{
+    className+=` type-${normalized[0].toLowerCase()}`;
+  }
+  return `<span class="${className}" title="${esc(label)}">${esc(short)}</span>`;
+}
 function renderAlertStatusBadge(value){
   const normalized=normalizeAlertStatus(value)||DEFAULT_ALERT_STATUS;
   if(!normalized) return '';
@@ -1469,6 +1551,7 @@ const meta=TYPE_META[a.type]||{emoji:'❓',pill:'',label:a.type};
 const typeColor=TYPE_COLORS[a.type]||'var(--accent)';
 const heuresBadge = a.type==='ACTION_ST_BERNARD' ? `<span class="hours-badge"><b>${esc(formatHours(a.heures??0))}h</b></span>`:'';
 const probabilityBadge = a.type==='PROLONGEMENT' ? renderProbabilityBadge(a.probabilite) : '';
+const alertTypeBadge = a.type==='ALERTE' ? renderAlertTypeBadge(a.alerte_types) : '';
 const alertStatusBadge = a.type==='ALERTE' ? renderAlertStatusBadge(a.alerte_statut||DEFAULT_ALERT_STATUS) : '';
 const descText=(a.description||'').trim();
 const descHtml=esc(descText);
@@ -1484,7 +1567,7 @@ const beneficiariesBadge=beneficiariesNames.length
   : '';
 const headerPieces=[beneficiariesBadge].filter(Boolean);
 const metaInline=headerPieces.length?` <span class="activity-meta-inline">${headerPieces.join(' ')}</span>`:'';
-const leadingBadgesPieces=[alertStatusBadge,heuresBadge,probabilityBadge].filter(Boolean);
+const leadingBadgesPieces=[alertTypeBadge,alertStatusBadge,heuresBadge,probabilityBadge].filter(Boolean);
 const leadingBadges=leadingBadgesPieces.join(' ');
 const titleLine=`<div class="activity-title">${leadingBadges?`${leadingBadges} `:''}<span class="activity-title-text">${titleHtml}</span>${metaInline}</div>`;
 const descLine=descText
@@ -1628,6 +1711,71 @@ let lastReportingText='';
 let lastReportingHtml='';
 let reportingCopyTextResetTimer=null;
 let reportingCopyHtmlResetTimer=null;
+function exportStoreToFile(prefix='sherpa-backup'){
+  try{
+    const payload=JSON.stringify(store,null,2);
+    const blob=new Blob([payload],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url;
+    const stamp=todayStr();
+    link.download=`${prefix}-${stamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }catch(err){
+    console.error('Export JSON error:',err);
+    alert('Export impossible.');
+  }
+}
+function promptJsonImport(options={}){
+  const {onApply=null,quiet=false,showAlert=!quiet} = options;
+  return new Promise(resolve=>{
+    const input=document.createElement('input');
+    input.type='file';
+    input.accept='application/json';
+    const cleanup=()=>{ input.remove(); };
+    input.addEventListener('change',()=>{
+      const file=input.files?.[0];
+      if(!file){ cleanup(); resolve(false); return; }
+      if(!quiet){
+        const confirmed=confirm(`Importer « ${file.name} » et remplacer les données locales ?`);
+        if(!confirmed){ cleanup(); resolve(false); return; }
+      }
+      const reader=new FileReader();
+      reader.onload=()=>{
+        cleanup();
+        try{
+          const content=typeof reader.result==='string'?reader.result:'';
+          const parsed=JSON.parse(content);
+          applyIncomingStore(parsed,file.name||'import',{alert:showAlert});
+          if(typeof onApply==='function') onApply(parsed);
+          resolve(true);
+        }catch(err){
+          console.error('Import JSON error:',err);
+          alert('Import impossible : fichier invalide.');
+          resolve(false);
+        }
+      };
+      reader.onerror=()=>{
+        cleanup();
+        console.error('Import JSON read error:',reader.error);
+        alert('Lecture du fichier impossible.');
+        resolve(false);
+      };
+      reader.readAsText(file);
+    },{once:true});
+    document.body.appendChild(input);
+    try{
+      input.click();
+    }catch(err){
+      cleanup();
+      console.error('Ouverture du sélecteur de fichier impossible:',err);
+      resolve(false);
+    }
+  });
+}
 function updateSettingsDirty(){
   settingsDirty=!!(settingsDirtyState.general||settingsDirtyState.template||settingsDirtyState.prompt);
   if(btnSaveParams){
@@ -1909,6 +2057,7 @@ function renderGuideeTimeline(){
         const meta=TYPE_META[a.type]||{};
         const color=TYPE_COLORS[a.type]||defaultColor;
         const alertStatus=a.type==='ALERTE'?normalizeAlertStatus(a.alerte_statut)||DEFAULT_ALERT_STATUS:null;
+        const alertTypes=a.type==='ALERTE'?normalizeAlertTypes(a.alerte_types):[];
         events.push({
           id:`act-${a.id}`,
           type:'activity',
@@ -1919,6 +2068,7 @@ function renderGuideeTimeline(){
           consultant:consultant,
           activity:a,
           alertStatus,
+          alertTypes,
           status:'future'
         });
       });
@@ -2049,9 +2199,13 @@ function renderGuideeTimeline(){
       ? normalizeAlertStatus(ev.activity.alerte_statut)||DEFAULT_ALERT_STATUS
       : null);
     const alertBadge=alertStatusValue?renderAlertStatusBadge(alertStatusValue):'';
+    const alertTypeBadgeHtml=ev.activity && ev.activity.type==='ALERTE'
+      ? renderAlertTypeBadge(ev.activity.alerte_types)
+      : (ev.alertTypes?renderAlertTypeBadge(ev.alertTypes):'');
     const consultantFallback=ev.type==='activity'?'—':'Consultant inconnu';
     const consultantChip=renderConsultantChip(ev.consultant,{selected:isSelected,includeIcon:true,bold:ev.type!=='activity',fallback:consultantFallback});
     const metaPrimaryPieces=[];
+    if(alertTypeBadgeHtml) metaPrimaryPieces.push(alertTypeBadgeHtml);
     if(alertBadge) metaPrimaryPieces.push(alertBadge);
     if(hoursBadge) metaPrimaryPieces.push(hoursBadge);
     if(probabilityBadge) metaPrimaryPieces.push(probabilityBadge);
@@ -2320,6 +2474,7 @@ function renderReporting(){
         eventId:activeAlert.id?`act-${activeAlert.id}`:'',
         status:activeAlertStatus,
         statusLabel:activeAlertStatus?ALERT_STATUS_LABELS[activeAlertStatus]||activeAlertStatus:'',
+        alertTypes:normalizeAlertTypes(activeAlert.alerte_types),
       }:null
     };
   });
@@ -2464,6 +2619,9 @@ function renderReporting(){
       const statusLabelValue=a.type==='ALERTE'
         ? (alertStatus?ALERT_STATUS_LABELS[alertStatus]||alertStatus:'')
         : '';
+      const alertTypesList=a.type==='ALERTE'?normalizeAlertTypes(a.alerte_types):[];
+      const alertTypesShort=formatAlertTypesShort(alertTypesList);
+      const alertTypesLabel=formatAlertTypesLabel(alertTypesList);
       return {
         type:a.type,
         typeLabel:ACTIVITY_LABELS[a.type]||a.type,
@@ -2478,6 +2636,7 @@ function renderReporting(){
           eventId:a.id?`act-${a.id}`:'',
           status:a.type==='ALERTE'?alertStatus:null,
           statusLabel:a.type==='ALERTE'?statusLabelValue:'',
+          alertTypes:alertTypesList,
         },
         descriptionHtml:formatReportMultiline(a.description),
         descriptionLines,
@@ -2485,6 +2644,9 @@ function renderReporting(){
         probabilityLabel,
         status:a.type==='ALERTE'?alertStatus:null,
         statusLabel:a.type==='ALERTE' ? (statusLabelValue||'—') : '',
+        alertTypes:alertTypesList,
+        alertTypesShort,
+        alertTypesLabel,
       };
     });
   const renderConsultantRef=(ref,interactive=true)=>{
@@ -2513,29 +2675,35 @@ function renderReporting(){
     const suffix=guidee.dateRange?` (${esc(guidee.dateRange)})`:'';
     return `${renderGuideeNameLink(guidee,interactive)}${suffix}`;
   };
-  const renderGuideeEvent=(eventRef,interactive=true)=>{
+  const renderGuideeEvent=(eventRef,interactive=true,options={})=>{
     if(!eventRef){
       return '—';
     }
+    const {prefixAlert=true}=options||{};
     const label=(eventRef.label||'—').trim()||'—';
     const normalizedStatus=eventRef.status?normalizeAlertStatus(eventRef.status)||eventRef.status:null;
-    const statusLabel=eventRef.statusLabel|| (normalizedStatus?ALERT_STATUS_LABELS[normalizedStatus]||normalizedStatus:'');
-    if(!interactive){
-      const parts=[];
-      if(statusLabel) parts.push(statusLabel);
-      parts.push(label);
-      return esc(parts.filter(Boolean).join(' · '));
+    const statusLabel=eventRef.statusLabel || (normalizedStatus?ALERT_STATUS_LABELS[normalizedStatus]||normalizedStatus:'');
+    const alertTypesRaw=prefixAlert?(eventRef.alertTypes||eventRef.alerte_types||[]):[];
+    const typesShort=prefixAlert?formatAlertTypesShort(alertTypesRaw):'';
+    const prefixPieces=[];
+    if(prefixAlert && typesShort){
+      prefixPieces.push(typesShort);
     }
-    const badgeHtml=normalizedStatus?renderAlertStatusBadge(normalizedStatus):'';
-    const prefixHtml=badgeHtml || (statusLabel?`<span class="muted">${esc(statusLabel)}</span>`:'');
-    const contentParts=[prefixHtml,esc(label)].filter(Boolean);
+    if(prefixAlert && normalizedStatus===ALERT_STATUSES.MAJEUR && statusLabel){
+      prefixPieces.push(statusLabel);
+    }
+    const prefixText=prefixPieces.join(' · ');
+    const contentText=prefixText?`${prefixText} · ${label}`:label;
+    if(!interactive){
+      return esc(contentText);
+    }
     if(!eventRef.guideeId){
-      return contentParts.join(' ');
+      return esc(contentText);
     }
     const eventId=eventRef.eventId || (eventRef.activityId?`act-${eventRef.activityId}`:'');
     const eventAttr=eventId?` data-reporting-event-id="${eventId}"`:'';
     const activityAttr=eventRef.activityId?` data-reporting-activity-id="${eventRef.activityId}"`:'';
-    return `<span class="reporting-link" role="link" tabindex="0" data-reporting-guidee-event="${eventRef.guideeId}"${activityAttr}${eventAttr}>${contentParts.join(' ')}</span>`;
+    return `<span class="reporting-link" role="link" tabindex="0" data-reporting-guidee-event="${eventRef.guideeId}"${activityAttr}${eventAttr}>${esc(contentText)}</span>`;
   };
   const renderParticipants=(participants,interactive=true)=>{
     if(!participants || !participants.length){
@@ -2595,20 +2763,61 @@ function renderReporting(){
   const guideesRowsPlain=guideesDataList.map(item=>renderGuideesRow(item,false));
   const guideesTable=wrapTable('Guidées',guideesHeader,guideesRowsInteractive,5);
   const guideesTablePlain=wrapTable('Guidées',guideesHeader,guideesRowsPlain,5);
-  const highlightsHeader='<tr><th>Consultants</th><th>Date</th><th>Probabilité</th><th>Statut</th><th>Titre</th><th>Description</th></tr>';
-  const renderHighlightsRow=(item,interactive)=>{
-    const probabilityCell=interactive?item.probabilityHtml:esc(item.probabilityLabel||'—');
-    const statusCell=esc(item.statusLabel||'—');
-    return `<tr><td>${renderParticipants(item.participants,interactive)}</td><td>${esc(item.date)}</td><td>${probabilityCell}</td><td>${statusCell}</td><td>${renderGuideeEvent(item.titleEvent,interactive)}</td><td>${item.descriptionHtml}</td></tr>`;
+  const highlightConfigs={
+    ALERTE:{
+      label:ACTIVITY_LABELS.ALERTE||'Alertes',
+      header:'<tr><th>Consultants</th><th>Date</th><th>Type</th><th>Statut</th><th>Titre</th><th>Description</th></tr>',
+      colspan:6,
+      renderInteractive:(item)=>{
+        const typeCell=esc(item.alertTypesShort||'—');
+        const statusCell=esc(item.statusLabel||'—');
+        return `<tr><td>${renderParticipants(item.participants,true)}</td><td>${esc(item.date)}</td><td>${typeCell}</td><td>${statusCell}</td><td>${renderGuideeEvent(item.titleEvent,true,{prefixAlert:false})}</td><td>${item.descriptionHtml}</td></tr>`;
+      },
+      renderPlain:(item)=>{
+        const typeCell=esc(item.alertTypesShort||'—');
+        const statusCell=esc(item.statusLabel||'—');
+        return `<tr><td>${renderParticipants(item.participants,false)}</td><td>${esc(item.date)}</td><td>${typeCell}</td><td>${statusCell}</td><td>${renderGuideeEvent(item.titleEvent,false,{prefixAlert:false})}</td><td>${item.descriptionHtml}</td></tr>`;
+      }
+    },
+    AVIS:{
+      label:ACTIVITY_LABELS.AVIS||'Avis',
+      header:'<tr><th>Consultants</th><th>Date</th><th>Titre</th><th>Description</th></tr>',
+      colspan:4,
+      renderInteractive:(item)=>`<tr><td>${renderParticipants(item.participants,true)}</td><td>${esc(item.date)}</td><td>${renderGuideeEvent(item.titleEvent,true)}</td><td>${item.descriptionHtml}</td></tr>`,
+      renderPlain:(item)=>`<tr><td>${renderParticipants(item.participants,false)}</td><td>${esc(item.date)}</td><td>${renderGuideeEvent(item.titleEvent,false)}</td><td>${item.descriptionHtml}</td></tr>`
+    },
+    VERBATIM:{
+      label:ACTIVITY_LABELS.VERBATIM||'Verbatims',
+      header:'<tr><th>Consultants</th><th>Date</th><th>Titre</th><th>Description</th></tr>',
+      colspan:4,
+      renderInteractive:(item)=>`<tr><td>${renderParticipants(item.participants,true)}</td><td>${esc(item.date)}</td><td>${renderGuideeEvent(item.titleEvent,true)}</td><td>${item.descriptionHtml}</td></tr>`,
+      renderPlain:(item)=>`<tr><td>${renderParticipants(item.participants,false)}</td><td>${esc(item.date)}</td><td>${renderGuideeEvent(item.titleEvent,false)}</td><td>${item.descriptionHtml}</td></tr>`
+    },
+    PROLONGEMENT:{
+      label:ACTIVITY_LABELS.PROLONGEMENT||'Prolongements',
+      header:'<tr><th>Consultants</th><th>Date</th><th>Probabilité</th><th>Titre</th><th>Description</th></tr>',
+      colspan:5,
+      renderInteractive:(item)=>{
+        const probabilityCell=item.probabilityHtml||'—';
+        return `<tr><td>${renderParticipants(item.participants,true)}</td><td>${esc(item.date)}</td><td>${probabilityCell}</td><td>${renderGuideeEvent(item.titleEvent,true)}</td><td>${item.descriptionHtml}</td></tr>`;
+      },
+      renderPlain:(item)=>{
+        const probabilityCell=esc(item.probabilityLabel||'—');
+        return `<tr><td>${renderParticipants(item.participants,false)}</td><td>${esc(item.date)}</td><td>${probabilityCell}</td><td>${renderGuideeEvent(item.titleEvent,false)}</td><td>${item.descriptionHtml}</td></tr>`;
+      }
+    }
   };
   const highlightTables=highlightTypes.map(type=>{
-    const label=ACTIVITY_LABELS[type]||type;
+    const config=highlightConfigs[type];
+    if(!config){
+      return {interactive:'',plain:''};
+    }
     const itemsForType=highlightsData.filter(item=>item.type===type);
-    const rowsInteractive=itemsForType.map(item=>renderHighlightsRow(item,true));
-    const rowsPlain=itemsForType.map(item=>renderHighlightsRow(item,false));
+    const rowsInteractive=itemsForType.map(item=>config.renderInteractive(item));
+    const rowsPlain=itemsForType.map(item=>config.renderPlain(item));
     return {
-      interactive:wrapTable(label,highlightsHeader,rowsInteractive,6),
-      plain:wrapTable(label,highlightsHeader,rowsPlain,6),
+      interactive:wrapTable(config.label,config.header,rowsInteractive,config.colspan),
+      plain:wrapTable(config.label,config.header,rowsPlain,config.colspan),
     };
   });
   const cordeeHeader='<tr><th>Consultants</th><th>Date</th><th>Titre</th><th>Description</th></tr>';
@@ -2633,9 +2842,16 @@ function renderReporting(){
       missionsTextLines.push(`DERNIER VERBATIM : ${m.verbatim?.label||'—'}`);
       missionsTextLines.push(`DERNIER AVIS : ${m.avis?.label||'—'}`);
       const alertText=m.alert
-        ? [m.alert.statusLabel && m.alert.statusLabel!=='—'?m.alert.statusLabel:'', m.alert.label||'—']
-            .filter(Boolean)
-            .join(' · ')
+        ? (()=>{
+            const typeLabel=formatAlertTypesShort(m.alert.alertTypes||[]);
+            const parts=[];
+            if(typeLabel) parts.push(typeLabel);
+            if(m.alert.status===ALERT_STATUSES.MAJEUR && (m.alert.statusLabel||'').trim()){
+              parts.push(m.alert.statusLabel.trim());
+            }
+            parts.push(m.alert.label||'—');
+            return parts.filter(Boolean).join(' • ');
+          })()
         : '—';
       missionsTextLines.push(`ALERTE EN COURS : ${alertText}`);
       missionsTextLines.push('');
@@ -2695,8 +2911,13 @@ function renderReporting(){
       highlightsTextLines.push(`TYPE : ${item.typeLabel}`);
       highlightsTextLines.push(`CONSULTANTS : ${item.participantsLabel||'—'}`);
       highlightsTextLines.push(`DATE : ${item.date}`);
-      highlightsTextLines.push(`PROBABILITÉ : ${item.probabilityLabel}`);
-      highlightsTextLines.push(`STATUT : ${item.statusLabel || '—'}`);
+      if(item.type==='PROLONGEMENT'){
+        highlightsTextLines.push(`PROBABILITÉ : ${item.probabilityLabel}`);
+      }
+      if(item.type==='ALERTE'){
+        highlightsTextLines.push(`TYPE D'ALERTE : ${item.alertTypesLabel||'—'}`);
+        highlightsTextLines.push(`STATUT : ${item.statusLabel || '—'}`);
+      }
       highlightsTextLines.push(`TITRE : ${item.title}`);
       highlightsTextLines.push('DESCRIPTION :');
       if(item.descriptionLines.length){
@@ -3125,61 +3346,80 @@ window.addEventListener('beforeunload',event=>{
     event.returnValue='Des données ne sont pas synchronisées. Sauvegarder avant de quitter ?';
   }
 });
-btnExportJson?.addEventListener('click',()=>{
+btnExportJson?.addEventListener('click',()=>{ exportStoreToFile('sherpa-backup'); });
+btnImportJson?.addEventListener('click',()=>{ promptJsonImport(); });
+
+async function attemptLocalDataBootstrap(){
+  if(offlineAutoLoadAttempted) return false;
+  offlineAutoLoadAttempted=true;
+  if(storeHasRecords()) return true;
   try{
-    const payload=JSON.stringify(store,null,2);
-    const blob=new Blob([payload],{type:'application/json'});
-    const url=URL.createObjectURL(blob);
-    const link=document.createElement('a');
-    link.href=url;
-    const stamp=todayStr();
-    link.download=`sherpa-backup-${stamp}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const response=await fetch('data.json',{cache:'no-store'});
+    if(!response.ok){
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const text=await response.text();
+    const parsed=JSON.parse(text);
+    applyIncomingStore(parsed,'data.json',{alert:false});
+    setSyncStatus('Données chargées depuis data.json.','success');
+    return true;
   }catch(err){
-    console.error('Export JSON error:',err);
-    alert('Export impossible.');
+    console.info('Chargement automatique de data.json impossible :',err?.message||err);
+    return false;
   }
-});
-btnImportJson?.addEventListener('click',()=>{
-  const input=document.createElement('input');
-  input.type='file';
-  input.accept='application/json';
-  input.addEventListener('change',()=>{
-    const file=input.files?.[0];
-    if(!file) return;
-    if(!confirm(`Importer « ${file.name} » et remplacer les données locales ?`)) return;
-    const reader=new FileReader();
-    reader.onload=()=>{
-      try{
-        const content=typeof reader.result==='string'?reader.result:'';
-        const parsed=JSON.parse(content);
-        applyIncomingStore(parsed,'import',{alert:true});
-      }catch(err){
-        console.error('Import JSON error:',err);
-        alert('Import impossible : fichier invalide.');
+}
+
+function enableOfflineMode(options={}){
+  if(offlineMode) return;
+  const {autoLoadLocalData=false,promptImportOnEmpty=false} = options;
+  offlineMode=true;
+  document.body?.classList.add('offline-mode');
+  authGateForced=false;
+  toggleAuthGate(false);
+  setAuthError('');
+  setPasswordFeedback('');
+  cancelAuthRecoveryTimer();
+  syncSuspensions.clear();
+  stopAutoSync();
+  stopRemotePolling();
+  renderAuthUser(null);
+  btnSignOut?.setAttribute('disabled','true');
+  btnResetFirestore?.setAttribute('disabled','true');
+  btnResetLocal?.setAttribute('disabled','true');
+  btnRefreshRemote?.setAttribute('disabled','true');
+  if(btnOfflineMode) btnOfflineMode.disabled=true;
+  setSyncStatus('Mode hors-ligne activé — les données restent locales.','info');
+  updateSyncIndicator();
+  updateUsageGate({silent:true});
+  const promptIfEmpty=async()=>{
+    if(storeHasRecords()) return;
+    alert('Aucune donnée locale détectée. Importez un fichier JSON pour commencer.');
+    await promptJsonImport({quiet:true,showAlert:false});
+  };
+  if(autoLoadLocalData){
+    attemptLocalDataBootstrap().then(success=>{
+      if(!success && promptImportOnEmpty){
+        promptIfEmpty();
+      }else if(promptImportOnEmpty && !storeHasRecords()){
+        promptIfEmpty();
       }
-    };
-    reader.onerror=()=>{
-      console.error('Import JSON read error:',reader.error);
-      alert('Lecture du fichier impossible.');
-    };
-    reader.readAsText(file);
-  },{once:true});
-  input.click();
-});
+    });
+  }else if(promptImportOnEmpty){
+    if(!storeHasRecords()){
+      promptIfEmpty();
+    }
+  }
+}
 
 btnResetFirestore?.addEventListener('click',async()=>{
-  if(!FIRESTORE_ENABLED){
+  if(!isFirestoreAvailable()){
     alert('Reset Firestore indisponible hors connexion.');
     return;
   }
   if(!firebaseDb || !currentUser){
     setSyncStatus('Connectez-vous pour réinitialiser Firestore.','warning');
     alert('Connectez-vous pour réinitialiser Firestore.');
-    if(FIRESTORE_ENABLED && !hasOfflineDataAvailable()) toggleAuthGate(true);
+    if(isFirestoreAvailable() && !hasOfflineDataAvailable()) toggleAuthGate(true);
     return;
   }
   if(!confirm('Écraser tout Firestore avec la donnée locale ?')) return;
@@ -3196,14 +3436,14 @@ btnResetFirestore?.addEventListener('click',async()=>{
 });
 
 btnResetLocal?.addEventListener('click',async()=>{
-  if(!FIRESTORE_ENABLED){
+  if(!isFirestoreAvailable()){
     alert('Reset Local indisponible hors connexion.');
     return;
   }
   if(!firebaseDb || !currentUser){
     setSyncStatus('Connectez-vous pour réinitialiser la donnée locale depuis Firestore.','warning');
     alert('Connectez-vous pour réinitialiser la donnée locale depuis Firestore.');
-    if(FIRESTORE_ENABLED && !hasOfflineDataAvailable()) toggleAuthGate(true);
+    if(isFirestoreAvailable() && !hasOfflineDataAvailable()) toggleAuthGate(true);
     return;
   }
   if(!confirm('Remplacer toute la donnée locale par Firestore ?')) return;
@@ -3234,6 +3474,10 @@ const faProbabilityWrap=$('fa-probability-wrap');
 const faProbability=$('fa-probability');
 const faAlertWrap=$('fa-alert-status-wrap');
 const faAlertStatus=$('fa-alert-status');
+const faAlertTypeWrap=$('fa-alert-type-wrap');
+const faAlertTypeCO=$('fa-alert-type-co');
+const faAlertTypeRH=$('fa-alert-type-rh');
+const faAlertTypeInputs=[faAlertTypeCO,faAlertTypeRH].filter(Boolean);
 const faTitleAI=$('fa-title-ai');
 const btnFaGoto=$('fa-goto-consultant');
 const btnFaGotoGuidee=$('fa-goto-guidee');
@@ -3244,6 +3488,29 @@ const faDate=$('fa-date');
 const faForm=$('form-activity');
 const faSaveBtn=$$('#dlg-activity .actions [value="ok"]');
 let activityInitialSnapshot=null;
+function getSelectedAlertTypes(){
+  if(!faAlertTypeInputs.length) return [];
+  const selected=faAlertTypeInputs
+    .filter(input=>input && input.checked)
+    .map(input=>normalizeAlertType(input.value))
+    .filter(Boolean);
+  return normalizeAlertTypes(selected);
+}
+function setSelectedAlertTypes(types){
+  const normalized=normalizeAlertTypes(types);
+  const fallback=normalized.length?normalized:[...DEFAULT_ALERT_TYPES];
+  const selection=new Set(fallback);
+  faAlertTypeInputs.forEach(input=>{
+    if(!input) return;
+    const type=normalizeAlertType(input.value);
+    input.checked=type?selection.has(type):false;
+  });
+}
+function ensureAlertTypeSelection(){
+  if(!faAlertTypeWrap || faAlertTypeWrap.classList.contains('hidden')) return;
+  if(getSelectedAlertTypes().length) return;
+  setSelectedAlertTypes(DEFAULT_ALERT_TYPES);
+}
 function updateActivityDescriptionPlaceholder(templateOverride){
   if(!faDesc || !faType) return;
   let template='';
@@ -3265,7 +3532,8 @@ function snapshotActivityForm(){
     heures:faHeures?.value||'',
     guidee_id:faGuidee?.value||'',
     probability:(faProbability?.value||'').trim().toUpperCase(),
-    alertStatus:(faAlertStatus?.value||'').trim().toUpperCase()
+    alertStatus:(faAlertStatus?.value||'').trim().toUpperCase(),
+    alertTypes:getSelectedAlertTypes()
   };
 }
 function normalizeActivitySnapshot(snap){
@@ -3280,7 +3548,8 @@ function normalizeActivitySnapshot(snap){
     heures:'',
     guidee_id:'',
     probability:'',
-    alertStatus:DEFAULT_ALERT_STATUS
+    alertStatus:DEFAULT_ALERT_STATUS,
+    alertTypes:[]
   };
   if(type==='ACTION_ST_BERNARD'){
     normalized.heures=String(base.heures??'').trim();
@@ -3291,6 +3560,10 @@ function normalizeActivitySnapshot(snap){
   }
   if(type==='ALERTE'){
     normalized.alertStatus=normalizeAlertStatus(base.alertStatus)||DEFAULT_ALERT_STATUS;
+    normalized.alertTypes=normalizeAlertTypes(base.alertTypes);
+  }
+  if(type!=='ALERTE'){
+    normalized.alertTypes=[];
   }
   return normalized;
 }
@@ -3316,6 +3589,14 @@ attachHashtagAutocomplete(faDesc);
 faDesc?.addEventListener('input',()=>{ faDesc.dataset.autofill='false'; });
 faForm?.addEventListener('input',updateActivitySaveVisibility);
 faForm?.addEventListener('change',updateActivitySaveVisibility);
+faAlertTypeInputs.forEach(input=>{
+  on(input,'change',()=>{
+    if(!getSelectedAlertTypes().length){
+      input.checked=true;
+    }
+    updateActivitySaveVisibility();
+  });
+});
 if(faHeures && !faHeures.options.length){
   const frag=document.createDocumentFragment();
   for(let i=0;i<=30;i++){
@@ -3347,6 +3628,7 @@ faType.onchange=()=>{
   faHeuresWrap.classList.toggle('hidden',!isSTB);
   faProbabilityWrap?.classList.toggle('hidden',!isProlongement);
   faAlertWrap?.classList.toggle('hidden',!isAlerte);
+  faAlertTypeWrap?.classList.toggle('hidden',!isAlerte);
   faGuidee.required=isSTB;
   if(isSTB){
     if(!faGuidee.value){
@@ -3368,6 +3650,7 @@ faType.onchange=()=>{
     if(faAlertStatus && !normalizeAlertStatus(faAlertStatus.value)){
       faAlertStatus.value=DEFAULT_ALERT_STATUS;
     }
+    ensureAlertTypeSelection();
   }else if(faAlertStatus){
     faAlertStatus.value=DEFAULT_ALERT_STATUS;
   }
@@ -3513,6 +3796,7 @@ function openActivityModal(id=null,options={}){
   faHeures.value='0';
   if(faProbability) faProbability.value='';
   if(faAlertStatus) faAlertStatus.value=DEFAULT_ALERT_STATUS;
+  if(faAlertTypeWrap) setSelectedAlertTypes(DEFAULT_ALERT_TYPES);
   if(id){
     const a=store.activities.find(x=>x.id===id);
     if(!a) return;
@@ -3527,6 +3811,10 @@ function openActivityModal(id=null,options={}){
     faDesc.dataset.autofill='false';
     updateFaGuideeOptions(a.guidee_id||'');
     faType.onchange();
+    if(faType.value==='ALERTE'){
+      setSelectedAlertTypes(a.alerte_types);
+      ensureAlertTypeSelection();
+    }
   }else if(prefillActivity){
     const consultantId=prefillActivity.consultant_id || faConsult.options[0]?.value || '';
     if(consultantId){
@@ -3550,6 +3838,8 @@ function openActivityModal(id=null,options={}){
     }
     if(faAlertStatus && faType.value==='ALERTE'){
       faAlertStatus.value=normalizeAlertStatus(prefillActivity.alertStatus)||DEFAULT_ALERT_STATUS;
+      setSelectedAlertTypes(prefillActivity.alertTypes);
+      ensureAlertTypeSelection();
     }
   }else{
     updateFaGuideeOptions();
@@ -3571,15 +3861,16 @@ const isAlerte=faType.value==='ALERTE';
 const heuresValue=isSTB ? Number(faHeures.value??0) : undefined;
 const probabilityValue=isProlongement ? (faProbability?.value||'').toUpperCase() : '';
 const alertStatus=isAlerte ? (normalizeAlertStatus(faAlertStatus?.value)||DEFAULT_ALERT_STATUS) : undefined;
+const alertTypes=isAlerte ? getSelectedAlertTypes() : [];
 const titleValue=(faTitle?.value||'').trim();
-const data={ consultant_id:faConsult.value, type:faType.value, date_publication:faDate?.value||'', title:titleValue, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined };
+const data={ consultant_id:faConsult.value, type:faType.value, date_publication:faDate?.value||'', title:titleValue, description:faDesc.value.trim(), heures: isSTB ? heuresValue : undefined, guidee_id: faGuidee.value || undefined, alerte_types: isAlerte ? alertTypes : undefined };
 if(isProlongement && PROLONGEMENT_PROBABILITIES[probabilityValue]){ data.probabilite=probabilityValue; }
 if(isAlerte){ data.alerte_statut=alertStatus; }
 const heuresInvalid=isSTB && (!Number.isFinite(heuresValue) || heuresValue<0);
 const probabilityInvalid=isProlongement && !PROLONGEMENT_PROBABILITIES[probabilityValue];
-const missing = !data.consultant_id || !data.type || !data.date_publication || !data.title || heuresInvalid || probabilityInvalid || (isSTB && !data.guidee_id);
+const missing = !data.consultant_id || !data.type || !data.date_publication || !data.title || heuresInvalid || probabilityInvalid || (isSTB && !data.guidee_id) || (isAlerte && !alertTypes.length);
 if(!isProlongement){ delete data.probabilite; }
-if(!isAlerte){ delete data.alerte_statut; }
+if(!isAlerte){ delete data.alerte_statut; delete data.alerte_types; }
 if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
 if(currentActivityId){ Object.assign(store.activities.find(x=>x.id===currentActivityId),data,{updated_at:nowISO()}); }else{ store.activities.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
@@ -3612,6 +3903,7 @@ btnFaDuplicate?.addEventListener('click',()=>{
     guidee_id:snapshot.guidee_id,
     probability:snapshot.probability,
     alertStatus:snapshot.alertStatus,
+    alertTypes:snapshot.alertTypes,
   };
   dlgA.close('duplicate');
   openActivityModal(null,{prefillActivity:prefill,forceDirty:true});
@@ -4132,6 +4424,12 @@ function stopSyncIndicatorMonitor(){
 }
 function updateSyncIndicator(){
   if(!btnSyncIndicator) return;
+  if(isOfflineMode()){
+    btnSyncIndicator.textContent='⬇️';
+    btnSyncIndicator.title='Exporter la session locale en JSON';
+    btnSyncIndicator.disabled=false;
+    return;
+  }
   const connected=firebaseReady && !!currentUser;
   if(isSyncSuspended()){
     btnSyncIndicator.textContent='⏸️';
@@ -4189,7 +4487,7 @@ function scheduleAutoSync(){
     clearTimeout(autoSyncTimeout);
     autoSyncTimeout=null;
   }
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
+  if(!isFirestoreAvailable() || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
   const delay=Math.min(getSyncIntervalMs(),SYNC_DEBOUNCE_MS);
   autoSyncTimeout=setTimeout(()=>{ syncIfDirty('debounce'); },delay);
 }
@@ -4198,7 +4496,7 @@ function startAutoSync(){
     clearInterval(autoSyncIntervalId);
     autoSyncIntervalId=null;
   }
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
+  if(!isFirestoreAvailable() || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
   const interval=getSyncIntervalMs();
   if(interval>0){
     autoSyncIntervalId=setInterval(()=>{ syncIfDirty('interval'); },interval);
@@ -4227,7 +4525,7 @@ function stopRemotePolling(){
 }
 function startRemotePolling(){
   stopRemotePolling();
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
+  if(!isFirestoreAvailable() || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
   const interval=getRemotePollIntervalMs();
   if(!Number.isFinite(interval) || interval<=0) return;
   remotePollIntervalId=setInterval(()=>{
@@ -4238,11 +4536,11 @@ function startRemotePolling(){
   },interval);
 }
 function restartRemotePolling(){
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser) return;
+  if(!isFirestoreAvailable() || !firebaseReady || !currentUser) return;
   startRemotePolling();
 }
 function markRemoteDirty(reason='local-change'){
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
+  if(!isFirestoreAvailable() || !firebaseReady || !currentUser || !remoteReady) return;
   hasPendingChanges=true;
   setSyncStatus('Modifications locales en attente de sauvegarde…','warning');
   syncIndicatorState='pending';
@@ -4281,7 +4579,7 @@ async function detectRemoteConflict(metaRef, reason){
   return null;
 }
 async function syncIfDirty(reason='auto'){
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
+  if(!isFirestoreAvailable() || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
   const diff=ensureSessionDiff();
   if(!diff || !Object.keys(diff).length){
     hasPendingChanges=false;
@@ -4719,7 +5017,7 @@ async function handleAuthStateChanged(user){
   }
 }
 function initFirebase(){
-  if(!FIRESTORE_ENABLED) return;
+  if(!isFirestoreAvailable()) return;
   setAuthError('');
   setPasswordFeedback('');
   if(typeof firebase==='undefined'){
@@ -4788,6 +5086,9 @@ btnPasswordReset?.addEventListener('click',async()=>{
     btnPasswordReset.disabled=false;
   }
 });
+btnOfflineMode?.addEventListener('click',()=>{
+  enableOfflineMode({promptImportOnEmpty:true});
+});
 btnSignOut?.addEventListener('click',()=>{
   if(!firebaseAuth) return;
   const proceed=()=>{
@@ -4807,9 +5108,13 @@ btnSignOut?.addEventListener('click',()=>{
   }
 });
 btnRefreshRemote?.addEventListener('click',async()=>{
+  if(isOfflineMode() || !isFirestoreAvailable()){
+    setSyncStatus('Mode hors-ligne — aucune synchronisation distante.', 'info');
+    return;
+  }
   if(!firebaseReady || !currentUser){
     setSyncStatus('Connectez-vous pour rafraîchir vos données.', 'warning');
-    if(FIRESTORE_ENABLED && !hasOfflineDataAvailable()) toggleAuthGate(true);
+    if(isFirestoreAvailable() && !hasOfflineDataAvailable()) toggleAuthGate(true);
     return;
   }
   syncIndicatorState='pending';
@@ -4822,8 +5127,12 @@ btnRefreshRemote?.addEventListener('click',async()=>{
   }
 });
 btnSyncIndicator?.addEventListener('click',()=>{
+  if(isOfflineMode()){
+    exportStoreToFile('sherpa-offline');
+    return;
+  }
   if(!currentUser){
-    if(FIRESTORE_ENABLED && !hasOfflineDataAvailable()){
+    if(isFirestoreAvailable() && !hasOfflineDataAvailable()){
       toggleAuthGate(true);
     }
     return;
@@ -4864,11 +5173,15 @@ window.addEventListener('storage',event=>{
 btnSignOut?.setAttribute('disabled','true');
 btnRefreshRemote?.setAttribute('disabled','true');
 updateUsageGate();
-if(hasOfflineDataAvailable()){
+if(hasOfflineDataAvailable() && !isOfflineMode()){
   setSyncStatus('Travail hors connexion — connectez-vous pour synchroniser.');
 }
 renderAuthUser(null);
 updateSyncIndicator();
+const launchedFromFile=typeof window!=='undefined' && window.location?.protocol==='file:';
+if(launchedFromFile){
+  enableOfflineMode({autoLoadLocalData:true,promptImportOnEmpty:true});
+}
 function applyIncomingStore(incoming, sourceLabel, options={}){
   if(!incoming || typeof incoming!=='object') throw new Error('Format vide');
   const migrated=migrateStore(incoming);
@@ -4890,9 +5203,9 @@ function renderActivityFiltersOptions(){
 }
 function refreshAll(){ renderConsultantOptions(); renderActivityFiltersOptions(); renderActivities(); renderGuideeFilters(); renderGuideeTimeline(); renderParams(); renderReporting(); dashboard(); }
 /* Premier rendu */
-if(FIRESTORE_ENABLED){
+if(isFirestoreAvailable()){
   initFirebase();
-}else{
+}else if(!isOfflineMode()){
   setSyncStatus('Synchronisation locale activée.');
 }
 claimActiveSession('init');
