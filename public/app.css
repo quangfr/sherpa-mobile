@@ -335,8 +335,8 @@ tr.selected .row-edit{display:inline-flex}
   .thematique-row .them-delete{margin-left:0;align-self:flex-end}
   .filters-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
   .filter-select{min-height:28px;font-size:12px;padding:2px 6px}
-  .guidee-filters{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}
-  .guidee-filters select{min-height:28px;padding:2px 6px;font-size:12px;min-width:0;width:auto;flex:0 0 auto}
+  .guidee-filters{display:flex;flex-wrap:nowrap;justify-content:flex-end;gap:4px}
+  .guidee-filters select{min-height:28px;padding:2px 6px;font-size:12px;min-width:0;width:auto;flex:1 1 0}
 }
 .guidee-progress{position:static;display:flex;align-items:center;gap:8px;padding:4px 0 0;background:transparent;border-top:none;--progress-color:var(--accent)}
 #guidee-pane .guidee-progress{padding:4px 0 0}
