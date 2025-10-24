@@ -1,8 +1,8 @@
-# Sherpa — Guide fonctionnel et pratiques d'équipe (v6)
+# Sherpa — Outil de suivi de mission GO-LIVE
 
 ## 0. Changelog au 24/10/2025
 
-### Version 6 — dernières évolutions
+### Version 1 — dernières évolutions
 - Mode hors ligne clarifié : ouverture directe des fichiers `app.html` ou `index.html`, sauvegarde locale en un clic (`⬇️`) et navettes `📤`/`📥` pour partager un export JSON anonymisé lors des tests ou des migrations. Tout fonctionne sans connexion et se resynchronise dès que l'on se reconnecte. 
 - Vue d'ensemble des missions enrichie : l'onglet `👥 Sherpa` met en avant les situations à risque (alertes actives, fins de mission proches, actions STB/avis manquants) et permet d'ouvrir des fiches consultants préparées par l'assistant IA.
 - Parcours des activités fluidifié : filtres cumulables par personne, type, hashtag ou mois, badges lisibles (heures, probabilité, statut d'alerte) et suggestions automatiques pour les hashtags/mentions afin d'harmoniser le vocabulaire.
@@ -19,9 +19,10 @@
   3. Pour récupérer la donnée de production, utiliser le bouton `📥 Export JSON` du mode en ligne : un fichier `sherpa-backup-YYYY-MM-DD.json` est téléchargé. Placez-le dans le même dossier que `app.html` pour un chargement automatique (le plus récent est appliqué), ou importez-le depuis l'onglet `Paramètres > Backup`.
 
 ## 2. Collaboration et workflow Git/Codex
-- Lancer la session sur Codex depuis la branche `main`
-- Avant le merge vers `main`, s'il y a eu des évolutions entre temps, demander Codex de les récupérer pour éliminer les risques de conflits.
+- Lancer la conversation sur Codex depuis la branche `main`
+- Avant le merge vers `main`, s'il y a eu des évolutions entre temps, demander Codex de `Màj ma branche depuis main` pour éliminer les risques de conflits.
 - Après le merge, patienter **1 à 2 minutes** : GitHub Pages reconstruit automatiquement le site (`/app.html`). Valider ensuite l'URL publique.
+- Il faut reprendre la
 - Documenter avec Codex chaque évolution significative depuis la dernière modification (README, changelog) afin de faciliter la collaboration.
 
 ## 3. Description fonctionnelle
