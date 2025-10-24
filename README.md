@@ -1,5 +1,15 @@
 # Sherpa — Guide fonctionnel et pratiques d'équipe (v6)
 
+## 0. Changelog au 24/10/2025
+
+### Version 6 — dernières évolutions
+- Mode hors ligne clarifié : ouverture directe des fichiers `app.html` ou `index.html`, sauvegarde locale en un clic (`⬇️`) et navettes `📤`/`📥` pour partager un export JSON anonymisé lors des tests ou des migrations. Tout fonctionne sans connexion et se resynchronise dès que l'on se reconnecte. 
+- Vue d'ensemble des missions enrichie : l'onglet `👥 Sherpa` met en avant les situations à risque (alertes actives, fins de mission proches, actions STB/avis manquants) et permet d'ouvrir des fiches consultants préparées par l'assistant IA.
+- Parcours des activités fluidifié : filtres cumulables par personne, type, hashtag ou mois, badges lisibles (heures, probabilité, statut d'alerte) et suggestions automatiques pour les hashtags/mentions afin d'harmoniser le vocabulaire.
+- Guidées visualisées en timeline : progression calculée automatiquement, badges de statut colorés et formulaires assistés par l'IA pour poser le cadre comme pour rédiger le résultat.
+- Reporting instantané : un document déjà formaté (texte ou HTML) prêt à copier, couvrant missions, actions, alertes, avis, verbatims, prolongements et cordées sur la période par défaut (du 1ᵉʳ juillet 2025 à aujourd'hui).
+- Synchronisation plus sereine : connexion Firebase protégée par un proxy, reprise automatique après coupure, diff client pour fusionner les modifications et onglets coordonnés via `SHERPA_SYNC_SESSION`/`SHERPA_SIGNOUT_BROADCAST`.
+
 ## 1. Installation et environnements
 - **Instance de production** : publiée automatiquement depuis la branche `main` du dépôt [github.com/quangfr/sherpa](https://github.com/quangfr/sherpa). La base de donnée est hébergée sur Firebase **Firestore**. Un **worker Cloudflare** sert de proxy d'API pour masquer les secrets Firebase et n'autorise que les appels provenant de l'application Sherpa.
 - **Mode en ligne** : ouvrir `https://quangfr.github.io/sherpa/app.html`. L'authentification Firebase déclenche ensuite la synchronisation Firestore (consultants, guidées, activités, paramètres).
@@ -14,9 +24,9 @@
 - Lancer la session sur Codex depuis la branche `main`
 - Avant le merge vers `main`, vérifier s'il y a eu des évolutions entre temps. Demander Codex de les récupérer pour éliminer les risques de conflits.
 - Après le merge, patienter **1 à 2 minutes** : GitHub Pages reconstruit automatiquement le site (`/app.html`). Valider ensuite l'URL publique.
-- Documenter chaque évolution significative (README, changelog) afin de faciliter l'assistance Codex.
+- Documenter avec Codex chaque évolution significative depuis la dernière modification (README, changelog) afin de faciliter la collaboration.
 
-## 3. Description fonctionnelle (v6)
+## 3. Description fonctionnelle
 ### Contexte
 Sherpa est un cockpit "local-first" destiné aux Product Owners, coachs et managers pour piloter consultants, guidées et activités (actions STB, cordées, avis, verbatims, alertes, prolongements). L'application fonctionne en SPA HTML/CSS/JS avec persistance locale (`localStorage`) et synchronisation optionnelle Firestore. Un mode hors ligne permet un usage autonome (aucune requête IA/Firestore).
 
@@ -43,23 +53,3 @@ Sherpa est un cockpit "local-first" destiné aux Product Owners, coachs et manag
 - **Guidées** : sélection automatique de l'événement courant, badges colorés selon statut (passé/futur/présent), calcul de progression = jours écoulés / durée totale.
 - **Reporting** : tri alpha sur consultants (missions) et tri décroissant sur dates (actions, alertes, avis, verbatims, prolongements, cordées). Texte multi-ligne rendu en `<br/>`.
 - **Accessibilité** : éléments focusables (`tabIndex=0`), commandes clavier (`Enter/Space`), header sticky, tables scrollables avec `hover-scroll`.
-
-### Technique
-- **Structure** : `index.html` (accueil), `app.html` (SPA), `app.css` (tokens/layout), `app.js` (logique métier, Firestore, IA), `data.json` (jeu d'exemple anonymisé pour sandbox).
-- **Cycle de vie** : `load()` lit `localStorage`, `migrateStore()` applique les mises à niveau, `save()` persiste et déclenche la sync Firestore (sauf hors ligne). Le diff est géré via `computeSessionDiff`/`ensureSessionDiff`.
-- **Synchronisation** : Firebase Auth + Firestore (login email/mot de passe, reconnexion silencieuse, diff client, auto-sync `sync_interval_minutes`). En mode hors ligne, aucune requête réseau, bouton `⬇️` pour export rapide.
-- **IA** : intégration OpenAI (prompts communs/contexte/titre) via endpoints proxy `faOpenAI` et `fcOpenAI`, désactivée hors ligne.
-- **Robustesse** : échappement via `esc()`, debouncing de sync (`scheduleAutoSync`), coordination multi-onglets (`SHERPA_SYNC_SESSION`), reprise automatique après perte d'auth.
-
-## 4. Changelog
-
-### Version 6 — dernières évolutions
-- Mode hors ligne clarifié : ouverture directe des fichiers `app.html` ou `index.html`, sauvegarde locale en un clic (`⬇️`) et navettes `📤`/`📥` pour partager un export JSON anonymisé lors des tests ou des migrations. Tout fonctionne sans connexion et se resynchronise dès que l'on se reconnecte. 
-- Vue d'ensemble des missions enrichie : l'onglet `👥 Sherpa` met en avant les situations à risque (alertes actives, fins de mission proches, actions STB/avis manquants) et permet d'ouvrir des fiches consultants préparées par l'assistant IA.
-- Parcours des activités fluidifié : filtres cumulables par personne, type, hashtag ou mois, badges lisibles (heures, probabilité, statut d'alerte) et suggestions automatiques pour les hashtags/mentions afin d'harmoniser le vocabulaire.
-- Guidées visualisées en timeline : progression calculée automatiquement, badges de statut colorés et formulaires assistés par l'IA pour poser le cadre comme pour rédiger le résultat.
-- Reporting instantané : un document déjà formaté (texte ou HTML) prêt à copier, couvrant missions, actions, alertes, avis, verbatims, prolongements et cordées sur la période par défaut (du 1ᵉʳ juillet 2025 à aujourd'hui).
-- Synchronisation plus sereine : connexion Firebase protégée par un proxy, reprise automatique après coupure, diff client pour fusionner les modifications et onglets coordonnés via `SHERPA_SYNC_SESSION`/`SHERPA_SIGNOUT_BROADCAST`.
-
----
-Ce document remplace l'ancien README et sert de référence fonctionnelle et opérationnelle pour l'équipe Sherpa (v6).
