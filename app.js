@@ -963,12 +963,20 @@ openTab('guidee',true);
 renderGuideeFilters();
 renderGuideeTimeline();
 }
-function gotoGuideeTimeline(gid, activityId=''){
+function gotoGuideeTimeline(gid, targetId=''){
   const g=store.guidees.find(x=>x.id===gid);
   if(!g){ return; }
   state.guidees.guidee_id=g.id;
   state.guidees.consultant_id=g.consultant_id||'';
-  state.guidees.selectedEventId=activityId?`act-${activityId}`:'';
+  let eventId='';
+  if(targetId){
+    if(targetId.startsWith('act-') || targetId.startsWith('start-') || targetId.startsWith('end-')){
+      eventId=targetId;
+    }else{
+      eventId=`act-${targetId}`;
+    }
+  }
+  state.guidees.selectedEventId=eventId;
   renderGuideeFilters();
   renderGuideeTimeline();
   openTab('guidee',true);
@@ -1170,13 +1178,10 @@ const beneficiariesIds=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boo
 const beneficiariesNames=beneficiariesIds
   .map(id=>store.consultants.find(cons=>cons.id===id)?.nom)
   .filter(Boolean);
-const guideeBadge=g
-  ? `<span class="activity-guidee-chip click-span" role="link" tabindex="0" data-goto-guidee="${g.id}" data-goto-guidee-activity="${a.id}">🧭 ${esc(g.nom||'Sans titre')}</span>`
-  : '';
 const beneficiariesBadge=beneficiariesNames.length
   ? `<span class="activity-beneficiary" title="Bénéficiaires">🪢 ${esc(beneficiariesNames.join(', '))}</span>`
   : '';
-const headerPieces=[guideeBadge,beneficiariesBadge].filter(Boolean);
+const headerPieces=[beneficiariesBadge].filter(Boolean);
 const metaInline=headerPieces.length?` <span class="activity-meta-inline">${headerPieces.join(' ')}</span>`:'';
 const leadingBadges=[heuresBadge,probabilityBadge].filter(Boolean).join(' ');
 const titleLine=`<div class="activity-title">${leadingBadges?`${leadingBadges} `:''}<span class="activity-title-text">${titleHtml}</span>${metaInline}</div>`;
@@ -1683,12 +1688,9 @@ function renderGuideeTimeline(){
   timelineEl.innerHTML='';
   dated.forEach(ev=>{
     const g=ev.guidee;
-    const consultant=ev.consultant;
     const item=document.createElement('div');
     const isMilestone=ev.type==='start' || ev.type==='end';
     const classes=['timeline-item', ev.status];
-    const alignRight=ev.type==='activity' && ev.activity?.type==='ACTION_ST_BERNARD';
-    if(alignRight) classes.push('timeline-item-alt');
     const isSelected=ev.id===state.guidees.selectedEventId;
     if(isSelected) classes.push('selected');
     if(isMilestone) classes.push('timeline-item-milestone');
@@ -1703,8 +1705,9 @@ function renderGuideeTimeline(){
       item.style.setProperty('--selection-color','#fff');
       item.style.setProperty('--timeline-border','var(--accent)');
       item.style.setProperty('--timeline-marker-border','var(--accent)');
+      item.style.setProperty('--timeline-body-bg','var(--accent)');
+      item.style.setProperty('--timeline-body-fg','#fff');
     }
-    const consultantName=esc(consultant?.nom||'—');
     const friendlyDate=formatActivityDate(ev.date,{selected:isSelected});
     const friendlyDateHtml=esc(friendlyDate);
     const rawDate=esc(ev.date||'');
@@ -1728,14 +1731,14 @@ function renderGuideeTimeline(){
       const title=esc((ev.activity.title||'').trim()||'Sans titre');
       metaPrimaryPieces.push(`<span class="bold">${title}</span>`);
     }else{
-      const verb=ev.type==='start'?'Début':'Fin';
+      const verb=ev.type==='start'?'Début de':'Fin de';
       const gid=ev.guidee?.id||'';
       const filterAttr=gid?` data-filter-guidee="${gid}"`:'';
       const guideeLabel=esc(ev.guidee?.nom||'Sans titre');
       const clickableName=gid?`<span class="click-span"${filterAttr}>${guideeLabel}</span>`:guideeLabel;
-      metaPrimaryPieces.push(`<span class="bold">${verb} 🧭 ${clickableName}</span>`);
+      metaPrimaryPieces.push(`<span class="bold">${verb} ${clickableName}</span>`);
     }
-    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-primary">${metaPrimaryPieces.join(' ')}</div><div class="timeline-meta-date"><span class="timeline-date-dot">•</span><span class="bold" title="${rawDate}">${friendlyDateHtml}</span>${editButtons.join('')}</div></div>`;
+    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-date" title="${rawDate}"><span class="sub">${friendlyDateHtml}</span>${editButtons.join('')}</div><div class="timeline-meta-primary">${metaPrimaryPieces.join(' ')}</div></div>`;
     let bodyHtml='';
     if(ev.type==='activity'){
       const desc=(ev.activity?.description||'').trim();
@@ -1752,15 +1755,12 @@ function renderGuideeTimeline(){
       const descriptionContent=descHtml||'—';
       bodyHtml=`${infoLine}<div class="${descriptionClass}">${descriptionContent}</div>`;
     }else{
-      const consultantLine=consultant && consultantName!=='—'
-        ? `<div class="timeline-meta-secondary">👤 ${consultantName}</div>`
-        : '';
       const textRaw=ev.type==='start'
         ? (ev.guidee?.description||'').trim()
         : (ev.guidee?.resultat||'').trim();
       const textHtml=textRaw?esc(textRaw):'—';
       const descriptionClass=isSelected?'timeline-description':'timeline-description clamp-8';
-      bodyHtml=`${consultantLine}<div class="${descriptionClass}">${textHtml}</div>`;
+      bodyHtml=`<div class="${descriptionClass}">${textHtml}</div>`;
     }
     const markerIcon=isSelected?'✔️':esc(ev.icon);
     item.innerHTML=`<div class="timeline-marker">${markerIcon}</div><div class="timeline-body">${metaHtml}${bodyHtml}</div>`;
@@ -1918,10 +1918,22 @@ function renderReporting(){
     const startText=formatReportDate(guidee.date_debut||'');
     const endText=formatReportDate(guidee.date_fin||'');
     const hasRange=startText!=='—' || endText!=='—';
+    const descriptionPlain=formatReportPlainText(guidee.description);
+    const descriptionLines=descriptionPlain==='—'?[]:descriptionPlain.split('\n').map(line=>line.trim()).filter(Boolean);
+    const resultPlain=formatReportPlainText(guidee.resultat);
+    const resultLines=resultPlain==='—'?[]:resultPlain.split('\n').map(line=>line.trim()).filter(Boolean);
     return {
       id:guidee.id||'',
       name,
       dateRange:hasRange?`${startText} → ${endText}`:'',
+      startText,
+      endText,
+      startEventId:guidee.id?`start-${guidee.id}`:'',
+      endEventId:guidee.id?`end-${guidee.id}`:'',
+      descriptionHtml:formatReportMultiline(guidee.description),
+      descriptionLines,
+      resultHtml:formatReportMultiline(guidee.resultat),
+      resultLines,
     };
   };
   const missionsData=consultants.map(c=>{
@@ -1930,13 +1942,6 @@ function renderReporting(){
       .filter(a=>a.type==='PROLONGEMENT' && a.consultant_id===c.id)
       .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''));
     const lastPro=prolongements[0]||null;
-    let finCell=missionDate;
-    if(lastPro){
-      const proText=formatTitleDate(lastPro.title,lastPro.date_publication||'');
-      finCell=finCell && finCell!=='—'
-        ? `${finCell} • ${proText}`
-        : proText;
-    }
     const guideesForConsultant=(store.guidees||[]).filter(g=>g.consultant_id===c.id);
     const sortedGuidees=[...guideesForConsultant].sort((a,b)=>(b.date_debut||'').localeCompare(a.date_debut||''));
     const activeGuidee=sortedGuidees.find(g=>{
@@ -1959,7 +1964,13 @@ function renderReporting(){
     return {
       consultant:{id:c.id||'',name:c.nom||'—'},
       missionTitle:c.titre_mission||'—',
-      missionEndText:finCell,
+      missionEndText:missionDate,
+      prolongement:lastPro?{
+        label:formatTitleDate(lastPro.title,lastPro.date_publication||''),
+        guideeId:lastPro.guidee_id||'',
+        activityId:lastPro.id||'',
+        eventId:lastPro.id?`act-${lastPro.id}`:''
+      }:null,
       guidee:buildGuideeData(activeGuidee),
       verbatim:lastVerbatim?{label:formatTitleDate(lastVerbatim.title,lastVerbatim.date_publication||''),guideeId:lastVerbatim.guidee_id||'',activityId:lastVerbatim.id||''}:null,
       avis:lastAvis?{label:formatTitleDate(lastAvis.title,lastAvis.date_publication||''),guideeId:lastAvis.guidee_id||'',activityId:lastAvis.id||''}:null,
@@ -2045,6 +2056,88 @@ function renderReporting(){
         guidee:buildGuideeData(guidee)
       };
     });
+  const includeDateInRange=(dateStr)=>{
+    if(dateStr){
+      return withinRange(dateStr);
+    }
+    return !startDateObj && !endDateObj;
+  };
+  const normalizeRangeDate=(value)=>{
+    const d=parseDate(value||'');
+    if(!d || Number.isNaN(d.getTime())) return null;
+    return d;
+  };
+  const guideeMatchesRange=(guidee)=>{
+    const start=normalizeRangeDate(guidee?.date_debut||'');
+    const end=normalizeRangeDate(guidee?.date_fin||'');
+    if(!start && !end){
+      return !startDateObj && !endDateObj;
+    }
+    const effectiveStart=start||end;
+    const effectiveEnd=end||start;
+    if(startDateObj && effectiveEnd<startDateObj) return false;
+    if(endDateObj && effectiveStart>endDateObj) return false;
+    return true;
+  };
+  const consultantsDataList=consultants
+    .filter(c=>includeDateInRange(c.date_fin||''))
+    .map(c=>{
+      const descriptionPlain=formatReportPlainText(c.description);
+      const descriptionLines=descriptionPlain==='—'?[]:descriptionPlain.split('\n').map(line=>line.trim()).filter(Boolean);
+      return {
+        consultant:{id:c.id||'',name:c.nom||'—'},
+        endText:formatReportDate(c.date_fin||''),
+        title:c.titre_mission||'—',
+        descriptionHtml:formatReportMultiline(c.description),
+        descriptionLines,
+      };
+    });
+  const guideesDataList=(store.guidees||[])
+    .filter(guideeMatchesRange)
+    .map(g=>({
+      ...buildGuideeData(g),
+      rawStart:g.date_debut||'',
+      rawEnd:g.date_fin||'',
+    }))
+    .sort((a,b)=>{
+      const aKey=a.rawStart||'';
+      const bKey=b.rawStart||'';
+      return bKey.localeCompare(aKey);
+    });
+  const highlightTypes=['ALERTE','AVIS','VERBATIM','PROLONGEMENT'];
+  const highlightsData=(store.activities||[])
+    .filter(a=>highlightTypes.includes(a.type))
+    .filter(a=>withinRange(a.date_publication||''))
+    .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''))
+    .map(a=>{
+      const consultant=store.consultants.find(c=>c.id===a.consultant_id)||null;
+      const beneficiaries=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
+      const participants=buildParticipants(a.consultant_id,consultant?.nom||'',beneficiaries);
+      const descriptionPlain=formatReportPlainText(a.description);
+      const descriptionLines=descriptionPlain==='—'?[]:descriptionPlain.split('\n').map(line=>line.trim()).filter(Boolean);
+      const probabilityLabel=a.type==='PROLONGEMENT'
+        ? (PROLONGEMENT_PROBABILITIES[a.probabilite]?.label||'—')
+        : '—';
+      return {
+        type:a.type,
+        typeLabel:ACTIVITY_LABELS[a.type]||a.type,
+        participants,
+        participantsLabel:participants.length?participants.map(p=>p.name).join(', '):'—',
+        date:formatReportDate(a.date_publication||''),
+        title:(a.title||'').trim()||'Sans titre',
+        titleEvent:{
+          label:(a.title||'').trim()||'Sans titre',
+          guideeId:a.guidee_id||'',
+          activityId:a.id||'',
+          eventId:a.id?`act-${a.id}`:'',
+        },
+        descriptionHtml:formatReportMultiline(a.description),
+        descriptionLines,
+        probabilityHtml:a.type==='PROLONGEMENT'?renderProbabilityBadge(a.probabilite):'—',
+        probabilityLabel,
+        statusLabel:a.type==='ALERTE' ? (a.alerte_active===false?'Non':'Actif') : '—',
+      };
+    });
   const renderConsultantRef=(ref,interactive=true)=>{
     const name=(ref?.name||'—').trim()||'—';
     if(!interactive || !ref?.id){
@@ -2052,29 +2145,37 @@ function renderReporting(){
     }
     return `<span class="reporting-link" role="link" tabindex="0" data-reporting-consultant="${ref.id}">${esc(name)}</span>`;
   };
-  const renderGuideeName=(guidee,interactive=true)=>{
-    const name=(guidee?.name||'Sans titre').trim()||'Sans titre';
-    if(!interactive || !guidee?.id){
+  const renderGuideeNameLink=(guidee,interactive=true)=>{
+    if(!guidee){
+      return '—';
+    }
+    const name=(guidee.name||'Sans titre').trim()||'Sans titre';
+    if(!interactive || !guidee.id){
       return esc(name);
     }
-    return `<span class="reporting-link" role="link" tabindex="0" data-reporting-guidee-modal="${guidee.id}">${esc(name)}</span>`;
+    const eventId=guidee.startEventId||`start-${guidee.id}`;
+    const eventAttr=eventId?` data-reporting-event-id="${eventId}"`:'';
+    return `<span class="reporting-link" role="link" tabindex="0" data-reporting-guidee-event="${guidee.id}"${eventAttr}>${esc(name)}</span>`;
   };
   const renderGuideeCell=(guidee,interactive=true)=>{
     if(!guidee){
       return '—';
     }
     const suffix=guidee.dateRange?` (${esc(guidee.dateRange)})`:'';
-    return `${renderGuideeName(guidee,interactive)}${suffix}`;
+    return `${renderGuideeNameLink(guidee,interactive)}${suffix}`;
   };
   const renderGuideeEvent=(eventRef,interactive=true)=>{
     if(!eventRef){
       return '—';
     }
     const label=(eventRef.label||'—').trim()||'—';
-    if(!interactive || !eventRef.guideeId || !eventRef.activityId){
+    if(!interactive || !eventRef.guideeId){
       return esc(label);
     }
-    return `<span class="reporting-link" role="link" tabindex="0" data-reporting-guidee-event="${eventRef.guideeId}" data-reporting-activity-id="${eventRef.activityId}">${esc(label)}</span>`;
+    const eventId=eventRef.eventId || (eventRef.activityId?`act-${eventRef.activityId}`:'');
+    const eventAttr=eventId?` data-reporting-event-id="${eventId}"`:'';
+    const activityAttr=eventRef.activityId?` data-reporting-activity-id="${eventRef.activityId}"`:'';
+    return `<span class="reporting-link" role="link" tabindex="0" data-reporting-guidee-event="${eventRef.guideeId}"${activityAttr}${eventAttr}>${esc(label)}</span>`;
   };
   const renderParticipants=(participants,interactive=true)=>{
     if(!participants || !participants.length){
@@ -2092,44 +2193,70 @@ function renderReporting(){
     }).filter(Boolean);
     return items.length?items.join(', '):'—';
   };
-  const renderGuideeReferenceLine=(guidee,interactive=true)=>{
-    if(!guidee){
-      return '';
-    }
-    const suffix=guidee.dateRange?` (${esc(guidee.dateRange)})`:'';
-    return `<div class="reporting-guidee-ref">🧭 ${renderGuideeName(guidee,interactive)}${suffix}</div>`;
-  };
   const wrapTable=(caption,headerRow,rows,colspan,summary='')=>{
     const captionHtml=summary?`${caption}<br/>${summary}`:caption;
     const body=rows.length?rows.join(''):`<tr><td colspan="${colspan}">—</td></tr>`;
     return `<div class="reporting-section"><table><caption>${captionHtml}</caption><thead>${headerRow}</thead><tbody>${body}</tbody></table></div>`;
   };
   const missionsHeader='<tr><th>Consultant</th><th>Titre</th><th>Fin de mission</th><th>Guidée en cours</th><th>Dernier verbatim</th><th>Dernier avis</th><th>Alerte en cours</th></tr>';
-  const renderMissionsRow=(item,interactive)=>`<tr><td>${renderConsultantRef(item.consultant,interactive)}</td><td>${esc(item.missionTitle||'—')}</td><td>${esc(item.missionEndText||'—')}</td><td>${renderGuideeCell(item.guidee,interactive)}</td><td>${renderGuideeEvent(item.verbatim,interactive)}</td><td>${renderGuideeEvent(item.avis,interactive)}</td><td>${renderGuideeEvent(item.alert,interactive)}</td></tr>`;
+  const renderMissionsRow=(item,interactive)=>{
+    const missionEndPieces=[];
+    const hasEndText=item.missionEndText && item.missionEndText!=='—';
+    if(hasEndText){
+      missionEndPieces.push(esc(item.missionEndText));
+    }
+    if(item.prolongement){
+      missionEndPieces.push(renderGuideeEvent(item.prolongement,interactive));
+    }
+    if(!missionEndPieces.length){
+      missionEndPieces.push('—');
+    }
+    const missionEndCell=missionEndPieces.join('<br/>');
+    return `<tr><td>${renderConsultantRef(item.consultant,interactive)}</td><td>${esc(item.missionTitle||'—')}</td><td>${missionEndCell}</td><td>${renderGuideeCell(item.guidee,interactive)}</td><td>${renderGuideeEvent(item.verbatim,interactive)}</td><td>${renderGuideeEvent(item.avis,interactive)}</td><td>${renderGuideeEvent(item.alert,interactive)}</td></tr>`;
+  };
   const missionsRowsInteractive=missionsData.map(item=>renderMissionsRow(item,true));
   const missionsRowsPlain=missionsData.map(item=>renderMissionsRow(item,false));
   const missionsTable=wrapTable('Missions',missionsHeader,missionsRowsInteractive,7);
   const missionsTablePlain=wrapTable('Missions',missionsHeader,missionsRowsPlain,7);
   const actionsHeader='<tr><th>Consultants</th><th>Date</th><th>Durée</th><th>Titre</th><th>Description</th></tr>';
-  const renderActionsRow=(item,interactive)=>{
-    const guideeLine=renderGuideeReferenceLine(item.guidee,interactive);
-    return `<tr><td>${renderParticipants(item.participants,interactive)}</td><td>${esc(item.date)}</td><td>${esc(item.hours)}</td><td>${renderGuideeEvent(item.titleEvent,interactive)}${guideeLine}</td><td>${item.descriptionHtml}</td></tr>`;
-  };
+  const renderActionsRow=(item,interactive)=>`<tr><td>${renderParticipants(item.participants,interactive)}</td><td>${esc(item.date)}</td><td>${esc(item.hours)}</td><td>${renderGuideeEvent(item.titleEvent,interactive)}</td><td>${item.descriptionHtml}</td></tr>`;
   const actionsRowsInteractive=actionsData.map(item=>renderActionsRow(item,true));
   const actionsRowsPlain=actionsData.map(item=>renderActionsRow(item,false));
   const actionsTable=wrapTable('Actions',actionsHeader,actionsRowsInteractive,5,actionsSummary);
   const actionsTablePlain=wrapTable('Actions',actionsHeader,actionsRowsPlain,5,actionsSummary);
-  const cordeeHeader='<tr><th>Consultants</th><th>Date</th><th>Titre</th><th>Description</th></tr>';
-  const renderCordeeRow=(item,interactive)=>{
-    const guideeLine=renderGuideeReferenceLine(item.guidee,interactive);
-    return `<tr><td>${renderParticipants(item.participants,interactive)}</td><td>${esc(item.date)}</td><td>${renderGuideeEvent(item.titleEvent,interactive)}${guideeLine}</td><td>${item.descriptionHtml}</td></tr>`;
+  const consultantsHeader='<tr><th>Nom</th><th>Date fin</th><th>Titre</th><th>Description</th></tr>';
+  const renderConsultantsRow=(item,interactive)=>`<tr><td>${renderConsultantRef(item.consultant,interactive)}</td><td>${esc(item.endText||'—')}</td><td>${esc(item.title||'—')}</td><td>${item.descriptionHtml}</td></tr>`;
+  const consultantsRowsInteractive=consultantsDataList.map(item=>renderConsultantsRow(item,true));
+  const consultantsRowsPlain=consultantsDataList.map(item=>renderConsultantsRow(item,false));
+  const consultantsTable=wrapTable('Consultants',consultantsHeader,consultantsRowsInteractive,4);
+  const consultantsTablePlain=wrapTable('Consultants',consultantsHeader,consultantsRowsPlain,4);
+  const guideesHeader='<tr><th>Nom</th><th>Dates</th><th>Description</th><th>Résultat</th></tr>';
+  const renderGuideesRow=(item,interactive)=>{
+    const datesText=`${esc(item.startText||'—')} → ${esc(item.endText||'—')}`;
+    return `<tr><td>${renderGuideeNameLink(item,interactive)}</td><td>${datesText}</td><td>${item.descriptionHtml}</td><td>${item.resultHtml}</td></tr>`;
   };
+  const guideesRowsInteractive=guideesDataList.map(item=>renderGuideesRow(item,true));
+  const guideesRowsPlain=guideesDataList.map(item=>renderGuideesRow(item,false));
+  const guideesTable=wrapTable('Guidées',guideesHeader,guideesRowsInteractive,4);
+  const guideesTablePlain=wrapTable('Guidées',guideesHeader,guideesRowsPlain,4);
+  const highlightsHeader='<tr><th>Consultants</th><th>Date</th><th>Probabilité</th><th>Statut</th><th>Titre</th><th>Description</th></tr>';
+  const renderHighlightsRow=(item,interactive)=>{
+    const probabilityCell=interactive?item.probabilityHtml:esc(item.probabilityLabel||'—');
+    const statusCell=esc(item.statusLabel||'—');
+    return `<tr><td>${renderParticipants(item.participants,interactive)}</td><td>${esc(item.date)}</td><td>${probabilityCell}</td><td>${statusCell}</td><td>${renderGuideeEvent(item.titleEvent,interactive)}</td><td>${item.descriptionHtml}</td></tr>`;
+  };
+  const highlightsRowsInteractive=highlightsData.map(item=>renderHighlightsRow(item,true));
+  const highlightsRowsPlain=highlightsData.map(item=>renderHighlightsRow(item,false));
+  const highlightsTable=wrapTable('Alertes · Avis · Verbatims · Prolongements',highlightsHeader,highlightsRowsInteractive,6);
+  const highlightsTablePlain=wrapTable('Alertes · Avis · Verbatims · Prolongements',highlightsHeader,highlightsRowsPlain,6);
+  const cordeeHeader='<tr><th>Consultants</th><th>Date</th><th>Titre</th><th>Description</th></tr>';
+  const renderCordeeRow=(item,interactive)=>`<tr><td>${renderParticipants(item.participants,interactive)}</td><td>${esc(item.date)}</td><td>${renderGuideeEvent(item.titleEvent,interactive)}</td><td>${item.descriptionHtml}</td></tr>`;
   const cordeeRowsInteractive=cordeeData.map(item=>renderCordeeRow(item,true));
   const cordeeRowsPlain=cordeeData.map(item=>renderCordeeRow(item,false));
   const cordeeTable=wrapTable('Cordées',cordeeHeader,cordeeRowsInteractive,4);
   const cordeeTablePlain=wrapTable('Cordées',cordeeHeader,cordeeRowsPlain,4);
-  reportingDocument.innerHTML=[missionsTable,actionsTable,cordeeTable].join('');
-  lastReportingHtml=[missionsTablePlain,actionsTablePlain,cordeeTablePlain].join('');
+  reportingDocument.innerHTML=[missionsTable,actionsTable,consultantsTable,guideesTable,highlightsTable,cordeeTable].join('');
+  lastReportingHtml=[missionsTablePlain,actionsTablePlain,consultantsTablePlain,guideesTablePlain,highlightsTablePlain,cordeeTablePlain].join('');
   const missionsTextLines=[];
   if(missionsData.length){
     missionsData.forEach(m=>{
@@ -2137,6 +2264,7 @@ function renderReporting(){
       missionsTextLines.push(`Consultant : ${m.consultant.name||'—'}`);
       missionsTextLines.push(`Titre : ${m.missionTitle||'—'}`);
       missionsTextLines.push(`Fin de mission : ${m.missionEndText||'—'}`);
+      missionsTextLines.push(`Prolongement : ${m.prolongement?.label||'—'}`);
       missionsTextLines.push(`Guidée en cours : ${guideeLabel}`);
       missionsTextLines.push(`Dernier verbatim : ${m.verbatim?.label||'—'}`);
       missionsTextLines.push(`Dernier avis : ${m.avis?.label||'—'}`);
@@ -2163,6 +2291,62 @@ function renderReporting(){
       actionsTextLines.push('');
     });
     while(actionsTextLines.length && actionsTextLines[actionsTextLines.length-1]==='') actionsTextLines.pop();
+  }
+  const consultantsTextLines=[];
+  if(consultantsDataList.length){
+    consultantsDataList.forEach(item=>{
+      consultantsTextLines.push(`Nom : ${item.consultant.name||'—'}`);
+      consultantsTextLines.push(`Date fin : ${item.endText||'—'}`);
+      consultantsTextLines.push(`Titre : ${item.title||'—'}`);
+      consultantsTextLines.push('Description :');
+      if(item.descriptionLines.length){
+        item.descriptionLines.forEach(line=>consultantsTextLines.push(line));
+      }else{
+        consultantsTextLines.push('—');
+      }
+      consultantsTextLines.push('');
+    });
+    while(consultantsTextLines.length && consultantsTextLines[consultantsTextLines.length-1]==='') consultantsTextLines.pop();
+  }
+  const guideesTextLines=[];
+  if(guideesDataList.length){
+    guideesDataList.forEach(item=>{
+      guideesTextLines.push(`Nom : ${item.name||'Sans titre'}`);
+      guideesTextLines.push(`Dates : ${item.startText||'—'} → ${item.endText||'—'}`);
+      guideesTextLines.push('Description :');
+      if(item.descriptionLines.length){
+        item.descriptionLines.forEach(line=>guideesTextLines.push(line));
+      }else{
+        guideesTextLines.push('—');
+      }
+      guideesTextLines.push('Résultat :');
+      if(item.resultLines.length){
+        item.resultLines.forEach(line=>guideesTextLines.push(line));
+      }else{
+        guideesTextLines.push('—');
+      }
+      guideesTextLines.push('');
+    });
+    while(guideesTextLines.length && guideesTextLines[guideesTextLines.length-1]==='') guideesTextLines.pop();
+  }
+  const highlightsTextLines=[];
+  if(highlightsData.length){
+    highlightsData.forEach(item=>{
+      highlightsTextLines.push(`Type : ${item.typeLabel}`);
+      highlightsTextLines.push(`Consultants : ${item.participantsLabel||'—'}`);
+      highlightsTextLines.push(`Date : ${item.date}`);
+      highlightsTextLines.push(`Probabilité : ${item.probabilityLabel}`);
+      highlightsTextLines.push(`Statut : ${item.statusLabel}`);
+      highlightsTextLines.push(`Titre : ${item.title}`);
+      highlightsTextLines.push('Description :');
+      if(item.descriptionLines.length){
+        item.descriptionLines.forEach(line=>highlightsTextLines.push(line));
+      }else{
+        highlightsTextLines.push('—');
+      }
+      highlightsTextLines.push('');
+    });
+    while(highlightsTextLines.length && highlightsTextLines[highlightsTextLines.length-1]==='') highlightsTextLines.pop();
   }
   const cordeeTextLines=[];
   if(cordeeData.length){
@@ -2197,6 +2381,7 @@ function renderReporting(){
       'Consultant : —',
       'Titre : —',
       'Fin de mission : —',
+      'Prolongement : —',
       'Guidée en cours : —',
       'Dernier verbatim : —',
       'Dernier avis : —',
@@ -2212,6 +2397,49 @@ function renderReporting(){
       'Consultant : —',
       'Date : —',
       'Durée : —',
+      'Titre : —',
+      'Description :',
+      '—'
+    );
+  }
+  if(sections[sections.length-1] !== '') sections.push('');
+  sections.push('== CONSULTANTS ==','');
+  if(consultantsTextLines.length){
+    sections.push(...consultantsTextLines);
+  }else{
+    sections.push(
+      'Nom : —',
+      'Date fin : —',
+      'Titre : —',
+      'Description :',
+      '—'
+    );
+  }
+  if(sections[sections.length-1] !== '') sections.push('');
+  sections.push('== GUIDÉES ==','');
+  if(guideesTextLines.length){
+    sections.push(...guideesTextLines);
+  }else{
+    sections.push(
+      'Nom : —',
+      'Dates : — → —',
+      'Description :',
+      '—',
+      'Résultat :',
+      '—'
+    );
+  }
+  if(sections[sections.length-1] !== '') sections.push('');
+  sections.push('== ALERTES / AVIS / VERBATIMS / PROLONGEMENTS ==','');
+  if(highlightsTextLines.length){
+    sections.push(...highlightsTextLines);
+  }else{
+    sections.push(
+      'Type : —',
+      'Consultants : —',
+      'Date : —',
+      'Probabilité : —',
+      'Statut : —',
       'Titre : —',
       'Description :',
       '—'
@@ -2372,7 +2600,9 @@ function handleReportingInteraction(target){
   const guideeEventId=target.dataset.reportingGuideeEvent;
   if(guideeEventId){
     const activityId=target.dataset.reportingActivityId||'';
-    gotoGuideeTimeline(guideeEventId,activityId);
+    const eventId=target.dataset.reportingEventId||'';
+    const targetId=eventId||activityId;
+    gotoGuideeTimeline(guideeEventId,targetId);
   }
 }
 reportingDocument?.addEventListener('click',event=>{
