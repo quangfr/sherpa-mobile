@@ -1033,10 +1033,14 @@ const p=store.params||DEFAULT_PARAMS, today=new Date();
 const recentDays=Math.max(1,Number(p.activites_recent_jours)||30);
 const upcomingDays=Math.max(1,Number(p.activites_a_venir_jours)||30);
 const hasRecent=(cid,type,days)=>store.activities.some(a=>a.consultant_id===cid && a.type===type && parseDate(a.date_publication)>=addDays(today,-days));
-const alerteList = store.consultants.filter(c=>{
-  const status=getConsultantAlertStatus(c.id);
-  return status && status!==ALERT_STATUSES.INACTIF;
-});
+const alertEntries = store.consultants
+  .map(consultant=>{
+    const alert=getConsultantActiveAlert(consultant.id);
+    if(!alert) return null;
+    const status=normalizeAlertStatus(alert.alerte_statut)||DEFAULT_ALERT_STATUS;
+    return {consultant,alert,status};
+  })
+  .filter(Boolean);
 const finList = store.consultants.filter(c=>{
   if(!c.date_fin) return false;
   const endDate=parseDate(c.date_fin);
@@ -1061,7 +1065,45 @@ out.appendChild(d);
 });
 $(title).textContent=arr.length;
 };
-fmt(alerteList,'db-alerte-list','db-alerte-title');
+const renderAlertList=()=>{
+  const listEl=$('db-alerte-list');
+  const countEl=$('db-alerte-title');
+  if(listEl) listEl.innerHTML='';
+  alertEntries.forEach(entry=>{
+    const {consultant,alert,status}=entry;
+    const row=document.createElement('div');
+    row.classList.add('db-row','clickable-row');
+    row.tabIndex=0;
+    const statusBadge=renderAlertStatusBadge(status);
+    row.innerHTML=`<div class="row space" style="gap:6px"><div class="row" style="gap:6px"><span class="dot ${statusOf(consultant)}" title="État"></span><span class="linklike">${esc(consultant.nom||'—')}</span>${statusBadge?` ${statusBadge}`:''}</div><span class="sub">/ ${esc(consultant.titre_mission||'—')}</span></div>`;
+    const navigate=()=>{
+      if(alert.guidee_id){
+        gotoGuideeTimeline(alert.guidee_id,alert.id||'');
+      }else{
+        state.guidees.consultant_id=consultant.id||'';
+        state.guidees.guidee_id='';
+        state.guidees.selectedEventId='';
+        renderGuideeFilters();
+        renderGuideeTimeline();
+        openTab('guidee',true);
+      }
+    };
+    on(row,'click',navigate);
+    on(row,'keydown',evt=>{
+      if(evt.key==='Enter' || evt.key===' '){
+        evt.preventDefault();
+        navigate();
+      }
+    });
+    const link=row.querySelector('.linklike');
+    if(link){
+      on(link,'click',evt=>{ evt.preventDefault(); navigate(); });
+    }
+    listEl?.appendChild(row);
+  });
+  if(countEl) countEl.textContent=alertEntries.length;
+};
+renderAlertList();
 fmt(finList,'db-fin-list','db-fin-title');
 fmt(stbList,'db-stb-list','db-stb-title');
 fmt(avisList,'db-avis-list','db-avis-title');
@@ -1128,20 +1170,28 @@ let state={
   reporting:getDefaultReportingRange()
 };
 /* CONSULTANTS */
-function getConsultantAlertStatus(consultantId){
+function getConsultantActiveAlert(consultantId){
   if(!consultantId) return null;
-  const alerts=(store.activities||[])
-    .filter(a=>a.consultant_id===consultantId && a.type==='ALERTE')
-    .map(a=>normalizeAlertStatus(a.alerte_statut))
-    .filter(Boolean);
-  if(!alerts.length) return null;
   let best=null;
-  alerts.forEach(status=>{
-    if(!best || ALERT_STATUS_PRIORITY[status]>ALERT_STATUS_PRIORITY[best]){
-      best=status;
-    }
-  });
+  (store.activities||[])
+    .filter(a=>a.consultant_id===consultantId && a.type==='ALERTE')
+    .forEach(alert=>{
+      const status=normalizeAlertStatus(alert.alerte_statut);
+      if(!status || status===ALERT_STATUSES.INACTIF) return;
+      const priority=ALERT_STATUS_PRIORITY[status]||0;
+      const bestStatus=best?normalizeAlertStatus(best.alerte_statut):null;
+      const bestPriority=bestStatus?ALERT_STATUS_PRIORITY[bestStatus]||0:0;
+      if(!best || priority>bestPriority || (priority===bestPriority && (alert.date_publication||'')>(best.date_publication||''))){
+        best=alert;
+      }
+    });
   return best;
+}
+function getConsultantAlertStatus(consultantId){
+  const active=getConsultantActiveAlert(consultantId);
+  if(!active) return null;
+  const status=normalizeAlertStatus(active.alerte_statut);
+  return status||null;
 }
 function statusOf(c){
   const p=store.params||DEFAULT_PARAMS;
@@ -1328,6 +1378,27 @@ function renderProbabilityBadge(value){
   if(meta.className) classes.push(meta.className);
   return `<span class="${classes.join(' ')}">${esc(meta.label)}</span>`;
 }
+function renderAlertStatusBadge(value){
+  const normalized=normalizeAlertStatus(value)||DEFAULT_ALERT_STATUS;
+  if(!normalized) return '';
+  const label=ALERT_STATUS_LABELS[normalized]||normalized;
+  const className=`status-${normalized.toLowerCase()}`;
+  return `<span class="alert-status-badge ${className}">${esc(label)}</span>`;
+}
+function renderConsultantChip(consultant,{selected=false,includeIcon=false,bold=false,fallback='—'}={}){
+  const id=(consultant?.id||consultant?.consultant_id||'').toString().trim();
+  const rawName=(consultant?.nom??consultant?.name??'');
+  const name=(rawName||'').toString().trim();
+  const classes=['consultant-chip'];
+  if(bold) classes.push('consultant-chip-bold');
+  const label=name?esc(name):esc(fallback);
+  const showIcon=includeIcon && (name || fallback!=='—');
+  const icon=showIcon? '👤 ' : '';
+  const editButton=(selected && id)
+    ? `<button type="button" class="btn ghost small row-edit" data-edit-consultant="${esc(id)}" title="Éditer le consultant" aria-label="Éditer le consultant">✏️</button>`
+    : '';
+  return `<span class="${classes.join(' ')}">${icon}<span class="consultant-name">${label}</span>${editButton}</span>`;
+}
 function renderActivities(){
 refreshMonthOptions();
 refreshHashtagOptions();
@@ -1398,6 +1469,7 @@ const meta=TYPE_META[a.type]||{emoji:'❓',pill:'',label:a.type};
 const typeColor=TYPE_COLORS[a.type]||'var(--accent)';
 const heuresBadge = a.type==='ACTION_ST_BERNARD' ? `<span class="hours-badge"><b>${esc(formatHours(a.heures??0))}h</b></span>`:'';
 const probabilityBadge = a.type==='PROLONGEMENT' ? renderProbabilityBadge(a.probabilite) : '';
+const alertStatusBadge = a.type==='ALERTE' ? renderAlertStatusBadge(a.alerte_statut||DEFAULT_ALERT_STATUS) : '';
 const descText=(a.description||'').trim();
 const descHtml=esc(descText);
 const titleText=(a.title||'').trim()||'Sans titre';
@@ -1412,7 +1484,8 @@ const beneficiariesBadge=beneficiariesNames.length
   : '';
 const headerPieces=[beneficiariesBadge].filter(Boolean);
 const metaInline=headerPieces.length?` <span class="activity-meta-inline">${headerPieces.join(' ')}</span>`:'';
-const leadingBadges=[heuresBadge,probabilityBadge].filter(Boolean).join(' ');
+const leadingBadgesPieces=[alertStatusBadge,heuresBadge,probabilityBadge].filter(Boolean);
+const leadingBadges=leadingBadgesPieces.join(' ');
 const titleLine=`<div class="activity-title">${leadingBadges?`${leadingBadges} `:''}<span class="activity-title-text">${titleHtml}</span>${metaInline}</div>`;
 const descLine=descText
   ? `<div class="activity-desc${isSelected?'':' clamp-5'}">${descHtml}</div>`
@@ -1426,7 +1499,7 @@ const mobileDesc=isSelected
 const friendlyDate=formatActivityDate(a.date_publication||'',{selected:isSelected});
 const friendlyDateHtml=esc(friendlyDate);
 const rawDateTitle=esc(a.date_publication||'');
-const consultantLabel=`<span><b>${esc(c?.nom||'—')}</b></span>`;
+const consultantLabel=renderConsultantChip(c,{selected:isSelected,bold:true});
 const inlineEditButton=()=>`<button class="btn ghost small row-edit" data-inline-edit="${a.id}" title="Éditer l'activité">✏️</button>`;
 const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span></div>`;
 const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
@@ -1492,6 +1565,11 @@ tr.querySelectorAll('[data-goto-guidee]').forEach(el=>{
   });
 });
 tr.querySelectorAll('[data-inline-edit]').forEach(btn=>on(btn,'click',(e)=>{ e.stopPropagation(); openActivityModal(a.id); }));
+tr.querySelectorAll('[data-edit-consultant]').forEach(btn=>on(btn,'click',e=>{
+  e.stopPropagation();
+  const targetId=e.currentTarget?.dataset?.editConsultant||'';
+  if(targetId) openConsultantModal(targetId);
+}));
 if(!mobile){
   const editBtn=tr.querySelector('[data-edit]');
   const delBtn=tr.querySelector('[data-del]');
@@ -1830,6 +1908,7 @@ function renderGuideeTimeline(){
       store.activities.filter(a=>a.guidee_id===g.id).forEach(a=>{
         const meta=TYPE_META[a.type]||{};
         const color=TYPE_COLORS[a.type]||defaultColor;
+        const alertStatus=a.type==='ALERTE'?normalizeAlertStatus(a.alerte_statut)||DEFAULT_ALERT_STATUS:null;
         events.push({
           id:`act-${a.id}`,
           type:'activity',
@@ -1839,6 +1918,7 @@ function renderGuideeTimeline(){
           guidee:g,
           consultant:consultant,
           activity:a,
+          alertStatus,
           status:'future'
         });
       });
@@ -1965,10 +2045,18 @@ function renderGuideeTimeline(){
     const probabilityBadge=ev.activity && ev.activity.type==='PROLONGEMENT'
       ? renderProbabilityBadge(ev.activity.probabilite)
       : '';
+    const alertStatusValue=ev.alertStatus || (ev.activity && ev.activity.type==='ALERTE'
+      ? normalizeAlertStatus(ev.activity.alerte_statut)||DEFAULT_ALERT_STATUS
+      : null);
+    const alertBadge=alertStatusValue?renderAlertStatusBadge(alertStatusValue):'';
+    const consultantFallback=ev.type==='activity'?'—':'Consultant inconnu';
+    const consultantChip=renderConsultantChip(ev.consultant,{selected:isSelected,includeIcon:true,bold:ev.type!=='activity',fallback:consultantFallback});
     const metaPrimaryPieces=[];
+    if(alertBadge) metaPrimaryPieces.push(alertBadge);
     if(hoursBadge) metaPrimaryPieces.push(hoursBadge);
     if(probabilityBadge) metaPrimaryPieces.push(probabilityBadge);
     if(ev.type==='activity' && ev.activity){
+      metaPrimaryPieces.push(consultantChip);
       const title=esc((ev.activity.title||'').trim()||'Sans titre');
       metaPrimaryPieces.push(`<span class="bold">${title}</span>`);
     }else{
@@ -1978,8 +2066,8 @@ function renderGuideeTimeline(){
       const rawGuideeName=(ev.guidee?.nom||'Sans titre').trim()||'Sans titre';
       const guideeLabel=esc(`🧭 ${rawGuideeName}`);
       const clickableName=gid?`<span class="click-span"${filterAttr}>${guideeLabel}</span>`:guideeLabel;
-      const consultantLabel=esc((ev.consultant?.nom||'').trim()||'Consultant inconnu');
-      metaPrimaryPieces.push(`<span class="bold">${consultantLabel} • ${verb} ${clickableName}</span>`);
+      const milestoneLabel=`${consultantChip} • ${verb} ${clickableName}`;
+      metaPrimaryPieces.push(milestoneLabel);
     }
     const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-date" title="${rawDate}"><span class="sub">${friendlyDateHtml}</span>${editButtons.join('')}</div><div class="timeline-meta-primary">${metaPrimaryPieces.join(' ')}</div></div>`;
     let bodyHtml='';
@@ -2025,6 +2113,13 @@ function renderGuideeTimeline(){
     if(guideeEdit && ev.guidee){
       on(guideeEdit,'click',e=>{ e.stopPropagation(); openGuideeModal(ev.guidee.id); });
     }
+    item.querySelectorAll('[data-edit-consultant]').forEach(btn=>{
+      on(btn,'click',e=>{
+        e.stopPropagation();
+        const targetId=e.currentTarget?.dataset?.editConsultant||'';
+        if(targetId) openConsultantModal(targetId);
+      });
+    });
     item.querySelectorAll('[data-filter-guidee]').forEach(el=>{
       on(el,'click',e=>{
         e.stopPropagation();
@@ -2204,6 +2299,7 @@ function renderReporting(){
     const activeAlert=(store.activities||[])
       .filter(a=>a.type==='ALERTE' && a.consultant_id===c.id && normalizeAlertStatus(a.alerte_statut)!==ALERT_STATUSES.INACTIF)
       .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''))[0]||null;
+    const activeAlertStatus=activeAlert?normalizeAlertStatus(activeAlert.alerte_statut)||DEFAULT_ALERT_STATUS:null;
     return {
       consultant:{id:c.id||'',name:c.nom||'—'},
       missionTitle:c.titre_mission||'—',
@@ -2217,7 +2313,14 @@ function renderReporting(){
       guidee:buildGuideeData(activeGuidee),
       verbatim:lastVerbatim?{label:formatTitleDate(lastVerbatim.title,lastVerbatim.date_publication||''),guideeId:lastVerbatim.guidee_id||'',activityId:lastVerbatim.id||''}:null,
       avis:lastAvis?{label:formatTitleDate(lastAvis.title,lastAvis.date_publication||''),guideeId:lastAvis.guidee_id||'',activityId:lastAvis.id||''}:null,
-      alert:activeAlert?{label:formatTitleDate(activeAlert.title,activeAlert.date_publication||''),guideeId:activeAlert.guidee_id||'',activityId:activeAlert.id||''}:null
+      alert:activeAlert?{
+        label:formatTitleDate(activeAlert.title,activeAlert.date_publication||''),
+        guideeId:activeAlert.guidee_id||'',
+        activityId:activeAlert.id||'',
+        eventId:activeAlert.id?`act-${activeAlert.id}`:'',
+        status:activeAlertStatus,
+        statusLabel:activeAlertStatus?ALERT_STATUS_LABELS[activeAlertStatus]||activeAlertStatus:'',
+      }:null
     };
   });
   const buildParticipants=(mainId,fallbackName,beneficiaryIds=[])=>{
@@ -2358,6 +2461,9 @@ function renderReporting(){
         ? (PROLONGEMENT_PROBABILITIES[a.probabilite]?.label||'—')
         : '—';
       const alertStatus=normalizeAlertStatus(a.alerte_statut);
+      const statusLabelValue=a.type==='ALERTE'
+        ? (alertStatus?ALERT_STATUS_LABELS[alertStatus]||alertStatus:'')
+        : '';
       return {
         type:a.type,
         typeLabel:ACTIVITY_LABELS[a.type]||a.type,
@@ -2370,12 +2476,15 @@ function renderReporting(){
           guideeId:a.guidee_id||'',
           activityId:a.id||'',
           eventId:a.id?`act-${a.id}`:'',
+          status:a.type==='ALERTE'?alertStatus:null,
+          statusLabel:a.type==='ALERTE'?statusLabelValue:'',
         },
         descriptionHtml:formatReportMultiline(a.description),
         descriptionLines,
         probabilityHtml:a.type==='PROLONGEMENT'?renderProbabilityBadge(a.probabilite):'—',
         probabilityLabel,
-        statusLabel:a.type==='ALERTE' ? (alertStatus?ALERT_STATUS_LABELS[alertStatus]:'—') : '—',
+        status:a.type==='ALERTE'?alertStatus:null,
+        statusLabel:a.type==='ALERTE' ? (statusLabelValue||'—') : '',
       };
     });
   const renderConsultantRef=(ref,interactive=true)=>{
@@ -2409,13 +2518,24 @@ function renderReporting(){
       return '—';
     }
     const label=(eventRef.label||'—').trim()||'—';
-    if(!interactive || !eventRef.guideeId){
-      return esc(label);
+    const normalizedStatus=eventRef.status?normalizeAlertStatus(eventRef.status)||eventRef.status:null;
+    const statusLabel=eventRef.statusLabel|| (normalizedStatus?ALERT_STATUS_LABELS[normalizedStatus]||normalizedStatus:'');
+    if(!interactive){
+      const parts=[];
+      if(statusLabel) parts.push(statusLabel);
+      parts.push(label);
+      return esc(parts.filter(Boolean).join(' · '));
+    }
+    const badgeHtml=normalizedStatus?renderAlertStatusBadge(normalizedStatus):'';
+    const prefixHtml=badgeHtml || (statusLabel?`<span class="muted">${esc(statusLabel)}</span>`:'');
+    const contentParts=[prefixHtml,esc(label)].filter(Boolean);
+    if(!eventRef.guideeId){
+      return contentParts.join(' ');
     }
     const eventId=eventRef.eventId || (eventRef.activityId?`act-${eventRef.activityId}`:'');
     const eventAttr=eventId?` data-reporting-event-id="${eventId}"`:'';
     const activityAttr=eventRef.activityId?` data-reporting-activity-id="${eventRef.activityId}"`:'';
-    return `<span class="reporting-link" role="link" tabindex="0" data-reporting-guidee-event="${eventRef.guideeId}"${activityAttr}${eventAttr}>${esc(label)}</span>`;
+    return `<span class="reporting-link" role="link" tabindex="0" data-reporting-guidee-event="${eventRef.guideeId}"${activityAttr}${eventAttr}>${contentParts.join(' ')}</span>`;
   };
   const renderParticipants=(participants,interactive=true)=>{
     if(!participants || !participants.length){
@@ -2512,7 +2632,12 @@ function renderReporting(){
       missionsTextLines.push(`GUIDÉE EN COURS : ${guideeLabel}`);
       missionsTextLines.push(`DERNIER VERBATIM : ${m.verbatim?.label||'—'}`);
       missionsTextLines.push(`DERNIER AVIS : ${m.avis?.label||'—'}`);
-      missionsTextLines.push(`ALERTE EN COURS : ${m.alert?.label||'—'}`);
+      const alertText=m.alert
+        ? [m.alert.statusLabel && m.alert.statusLabel!=='—'?m.alert.statusLabel:'', m.alert.label||'—']
+            .filter(Boolean)
+            .join(' · ')
+        : '—';
+      missionsTextLines.push(`ALERTE EN COURS : ${alertText}`);
       missionsTextLines.push('');
     });
     while(missionsTextLines.length && missionsTextLines[missionsTextLines.length-1]==='') missionsTextLines.pop();
@@ -2571,7 +2696,7 @@ function renderReporting(){
       highlightsTextLines.push(`CONSULTANTS : ${item.participantsLabel||'—'}`);
       highlightsTextLines.push(`DATE : ${item.date}`);
       highlightsTextLines.push(`PROBABILITÉ : ${item.probabilityLabel}`);
-      highlightsTextLines.push(`STATUT : ${item.statusLabel}`);
+      highlightsTextLines.push(`STATUT : ${item.statusLabel || '—'}`);
       highlightsTextLines.push(`TITRE : ${item.title}`);
       highlightsTextLines.push('DESCRIPTION :');
       if(item.descriptionLines.length){
@@ -3113,6 +3238,7 @@ const faTitleAI=$('fa-title-ai');
 const btnFaGoto=$('fa-goto-consultant');
 const btnFaGotoGuidee=$('fa-goto-guidee');
 const btnFaDelete=$$('#dlg-activity .actions [data-action="delete"]');
+const btnFaDuplicate=$$('#dlg-activity .actions [data-action="duplicate"]');
 const faOpenAI=$('fa-openai');
 const faDate=$('fa-date');
 const faForm=$('form-activity');
@@ -3177,11 +3303,14 @@ function updateActivitySaveVisibility(){
   if(!faSaveBtn){
     return;
   }
-  if(!activityInitialSnapshot){
-    faSaveBtn.classList.add('hidden');
-    return;
+  faSaveBtn.classList.remove('hidden');
+  const hasSnapshot=!!activityInitialSnapshot;
+  const dirty=hasSnapshot?isActivityFormDirty():false;
+  faSaveBtn.disabled=!dirty;
+  if(btnFaDuplicate){
+    const canDuplicate=!!currentActivityId && hasSnapshot && !dirty;
+    btnFaDuplicate.disabled=!canDuplicate;
   }
-  faSaveBtn.classList.toggle('hidden',!isActivityFormDirty());
 }
 attachHashtagAutocomplete(faDesc);
 faDesc?.addEventListener('input',()=>{ faDesc.dataset.autofill='false'; });
@@ -3365,40 +3494,74 @@ function updateFaGuideeOptions(preferredId){
 }
 $('btn-new-activity').onclick=()=>openActivityModal();
 let currentActivityId=null;
-function openActivityModal(id=null){
-currentActivityId=id;
-activityInitialSnapshot=null;
-updateActivitySaveVisibility();
-if(id && state.activities.selectedId!==id){
-  state.activities.selectedId=id;
-  renderActivities();
-}
-faConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
-if(faDate) faDate.value=todayStr();
-faDesc.value='';
-faDesc.dataset.autofill='true';
-if(faTitle) faTitle.value='';
-faType.value='ACTION_ST_BERNARD'; faHeuresWrap.classList.remove('hidden'); faHeures.value='0';
-if(faProbability) faProbability.value='';
-if(faAlertStatus) faAlertStatus.value=DEFAULT_ALERT_STATUS;
-if(id){
-const a=store.activities.find(x=>x.id===id); if(!a) return;
-faConsult.value=a.consultant_id; faType.value=a.type; if(faDate) faDate.value=a.date_publication||''; faDesc.value=a.description||''; if(faTitle) faTitle.value=a.title||''; faHeures.value=String(a.heures??0);
- if(faProbability) faProbability.value=String(a.probabilite||'').toUpperCase();
- if(faAlertStatus) faAlertStatus.value=normalizeAlertStatus(a.alerte_statut)||DEFAULT_ALERT_STATUS;
- faDesc.dataset.autofill='false';
-updateFaGuideeOptions(a.guidee_id||'');
-faType.onchange();
-}else{
-  updateFaGuideeOptions();
-  faType.onchange();
-  applyActivityTemplateAutofill(true);
-}
-activityInitialSnapshot=normalizeActivitySnapshot(snapshotActivityForm());
-updateActivityGuideeTooltip();
-updateActivityConsultantTooltip();
-updateActivitySaveVisibility();
-dlgA.showModal();
+function openActivityModal(id=null,options={}){
+  const {prefillActivity=null,forceDirty=false}=options||{};
+  currentActivityId=id;
+  activityInitialSnapshot=null;
+  updateActivitySaveVisibility();
+  if(id && state.activities.selectedId!==id){
+    state.activities.selectedId=id;
+    renderActivities();
+  }
+  faConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
+  if(faDate) faDate.value=todayStr();
+  faDesc.value='';
+  faDesc.dataset.autofill='true';
+  if(faTitle) faTitle.value='';
+  faType.value='ACTION_ST_BERNARD';
+  faHeuresWrap.classList.remove('hidden');
+  faHeures.value='0';
+  if(faProbability) faProbability.value='';
+  if(faAlertStatus) faAlertStatus.value=DEFAULT_ALERT_STATUS;
+  if(id){
+    const a=store.activities.find(x=>x.id===id);
+    if(!a) return;
+    faConsult.value=a.consultant_id;
+    faType.value=a.type;
+    if(faDate) faDate.value=a.date_publication||'';
+    faDesc.value=a.description||'';
+    if(faTitle) faTitle.value=a.title||'';
+    faHeures.value=String(a.heures??0);
+    if(faProbability) faProbability.value=String(a.probabilite||'').toUpperCase();
+    if(faAlertStatus) faAlertStatus.value=normalizeAlertStatus(a.alerte_statut)||DEFAULT_ALERT_STATUS;
+    faDesc.dataset.autofill='false';
+    updateFaGuideeOptions(a.guidee_id||'');
+    faType.onchange();
+  }else if(prefillActivity){
+    const consultantId=prefillActivity.consultant_id || faConsult.options[0]?.value || '';
+    if(consultantId){
+      faConsult.value=consultantId;
+    }
+    updateFaGuideeOptions(prefillActivity.guidee_id||'');
+    faType.value=prefillActivity.type || 'ACTION_ST_BERNARD';
+    faType.onchange();
+    if(faDate) faDate.value=prefillActivity.date || todayStr();
+    if(faDesc){
+      faDesc.value=prefillActivity.description||'';
+      faDesc.dataset.autofill='false';
+    }
+    if(faTitle) faTitle.value=prefillActivity.title||'';
+    if(faHeures && faType.value==='ACTION_ST_BERNARD'){
+      faHeures.value=String(prefillActivity.heures??'0');
+    }
+    if(faProbability && faType.value==='PROLONGEMENT'){
+      const probabilityValue=String(prefillActivity.probability||'').toUpperCase();
+      faProbability.value=probabilityValue || DEFAULT_PROLONGEMENT_PROBABILITY;
+    }
+    if(faAlertStatus && faType.value==='ALERTE'){
+      faAlertStatus.value=normalizeAlertStatus(prefillActivity.alertStatus)||DEFAULT_ALERT_STATUS;
+    }
+  }else{
+    updateFaGuideeOptions();
+    faType.onchange();
+    applyActivityTemplateAutofill(true);
+  }
+  const snapshot=normalizeActivitySnapshot(snapshotActivityForm());
+  activityInitialSnapshot=forceDirty?{...snapshot,__forceDirty:true}:snapshot;
+  updateActivityGuideeTooltip();
+  updateActivityConsultantTooltip();
+  updateActivitySaveVisibility();
+  dlgA.showModal();
 }
 $('form-activity').onsubmit=(e)=>{
 e.preventDefault();
@@ -3435,6 +3598,24 @@ btnFaDelete?.addEventListener('click',e=>{
   save('activity-delete');
  }
 });
+btnFaDuplicate?.addEventListener('click',()=>{
+  if(!currentActivityId) return;
+  if(isActivityFormDirty()) return;
+  const snapshot=normalizeActivitySnapshot(snapshotActivityForm());
+  const prefill={
+    consultant_id:snapshot.consultant_id,
+    type:snapshot.type||'',
+    date:todayStr(),
+    title:snapshot.title,
+    description:snapshot.description,
+    heures:snapshot.heures,
+    guidee_id:snapshot.guidee_id,
+    probability:snapshot.probability,
+    alertStatus:snapshot.alertStatus,
+  };
+  dlgA.close('duplicate');
+  openActivityModal(null,{prefillActivity:prefill,forceDirty:true});
+});
 /* MODALS (GUIDÉE) */
 const dlgG=$('dlg-guidee');
 let currentGuideeId=null;
@@ -3457,6 +3638,7 @@ function updateGuideeDescriptionPlaceholders(){
 }
 const btnFgEditConsultant=$('fg-edit-consultant');
 const fgForm=$('form-guidee');
+const btnFgDuplicate=$$('#dlg-guidee .actions [data-action="duplicate"]');
 const fgSaveBtn=$$('#dlg-guidee .actions [value="ok"]');
 function updateGuideeConsultantTooltip(){
   if(!btnFgEditConsultant) return;
@@ -3531,18 +3713,20 @@ function normalizeGuideeSnapshot(snap){
 function isGuideeFormDirty(){
   if(!guideeInitialSnapshot) return false;
   const current=normalizeGuideeSnapshot(snapshotGuideeForm());
-  const initial=normalizeGuideeSnapshot(guideeInitialSnapshot);
-  return JSON.stringify(current)!==JSON.stringify(initial);
+  return JSON.stringify(current)!==JSON.stringify(guideeInitialSnapshot);
 }
 function updateGuideeSaveVisibility(){
   if(!fgSaveBtn){
     return;
   }
-  if(!guideeInitialSnapshot){
-    fgSaveBtn.classList.add('hidden');
-    return;
+  fgSaveBtn.classList.remove('hidden');
+  const hasSnapshot=!!guideeInitialSnapshot;
+  const dirty=hasSnapshot?isGuideeFormDirty():false;
+  fgSaveBtn.disabled=!dirty;
+  if(btnFgDuplicate){
+    const canDuplicate=!!currentGuideeId && hasSnapshot && !dirty;
+    btnFgDuplicate.disabled=!canDuplicate;
   }
-  fgSaveBtn.classList.toggle('hidden',!isGuideeFormDirty());
 }
 function buildGuideePayload(){
   const snap=snapshotGuideeForm();
@@ -3580,7 +3764,7 @@ function populateGuideeFormConsultants(){
   fgConsult.innerHTML=store.consultants.map(c=>`<option value="${c.id}">${esc(c.nom)}</option>`).join('');
 }
 function openGuideeModal(id=null,options={}){
-  const {defaultConsultantId=''}=options||{};
+  const {defaultConsultantId='',prefillGuidee=null,forceDirty=false}=options||{};
   currentGuideeId=id;
   guideeInitialSnapshot=null;
   updateGuideeSaveVisibility();
@@ -3589,7 +3773,10 @@ function openGuideeModal(id=null,options={}){
   const preferred=defaultConsultantId && optionValues.includes(defaultConsultantId)
     ? defaultConsultantId
     : fgConsult.options[0]?.value||'';
-  const g=id? store.guidees.find(x=>x.id===id) : {id:uid(),nom:'',description:'',resultat:'',consultant_id:preferred,date_debut:todayStr(),date_fin:''};
+  const newGuideeTemplate={id:uid(),nom:'',description:'',resultat:'',consultant_id:preferred,date_debut:todayStr(),date_fin:''};
+  const g=id
+    ? store.guidees.find(x=>x.id===id)
+    : (prefillGuidee ? {...newGuideeTemplate,...prefillGuidee} : newGuideeTemplate);
   const templateGuidee=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee);
   const templateResult=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee_result);
   if(fgDesc) fgDesc.placeholder=templateGuidee||'';
@@ -3597,6 +3784,11 @@ function openGuideeModal(id=null,options={}){
   fgConsult.value=g?.consultant_id||preferred||'';
   fgNom.value=g?.nom||'';
   if(id){
+    fgDesc.value=g?.description||'';
+    fgDesc.dataset.autofill='false';
+    fgResult.value=g?.resultat||'';
+    fgResult.dataset.autofill='false';
+  }else if(prefillGuidee){
     fgDesc.value=g?.description||'';
     fgDesc.dataset.autofill='false';
     fgResult.value=g?.resultat||'';
@@ -3613,7 +3805,9 @@ function openGuideeModal(id=null,options={}){
   const defaultEnd=consultant?.date_fin||start;
   fgFin.value=g?.date_fin||defaultEnd;
   updateGuideeConsultantTooltip();
-  guideeInitialSnapshot=normalizeGuideeSnapshot(snapshotGuideeForm());
+  const snapshot=normalizeGuideeSnapshot(snapshotGuideeForm());
+  guideeInitialSnapshot=forceDirty?{...snapshot,__forceDirty:true}:snapshot;
+  updateGuideeSaveVisibility();
   dlgG.showModal();
 }
 $('btn-new-guidee').onclick=()=>openGuideeModal();
@@ -3649,6 +3843,14 @@ btnFgEditConsultant?.addEventListener('click',()=>{
     dlgG.close('cancel');
   }
   openConsultantModal(consultantId);
+});
+btnFgDuplicate?.addEventListener('click',()=>{
+  if(!currentGuideeId) return;
+  if(isGuideeFormDirty()) return;
+  const snapshot=normalizeGuideeSnapshot(snapshotGuideeForm());
+  const prefill={...snapshot};
+  dlgG.close('duplicate');
+  openGuideeModal(null,{prefillGuidee:prefill,defaultConsultantId:prefill.consultant_id,forceDirty:true});
 });
 $$('#dlg-guidee .actions [value="del"]').onclick=(e)=>{
   e.preventDefault();
@@ -3716,11 +3918,10 @@ function updateConsultantSaveVisibility(){
   if(!fcSaveBtn){
     return;
   }
-  if(!consultantInitialSnapshot){
-    fcSaveBtn.classList.add('hidden');
-    return;
-  }
-  fcSaveBtn.classList.toggle('hidden',!isConsultantFormDirty());
+  fcSaveBtn.classList.remove('hidden');
+  const hasSnapshot=!!consultantInitialSnapshot;
+  const dirty=hasSnapshot?isConsultantFormDirty():false;
+  fcSaveBtn.disabled=!dirty;
 }
 fcForm?.addEventListener('input',updateConsultantSaveVisibility);
 fcForm?.addEventListener('change',updateConsultantSaveVisibility);
