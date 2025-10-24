@@ -46,6 +46,7 @@ main{height:calc(100vh - var(--headH)); overflow:hidden}
 .tab{padding:6px 8px;border:1px solid var(--border);border-bottom-color:transparent;border-radius:10px 10px 0 0;background:var(--card);cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap;flex-shrink:0;transition:background-color .15s ease,color .15s ease,border-color .15s ease}
 .tab.active{background:var(--accent);border-color:var(--accent);color:#f0f9ff}
 .view{display:none;height:100%;overflow:auto;padding:8px 4px}
+.view#view-reglages{margin-top:20px}
 .view.active{display:block}
 #view-dashboard{margin:20px 0;}
 .grid{display:grid;gap:10px}
@@ -128,7 +129,7 @@ textarea{width:100%;resize:vertical}
 .table tbody tr.clickable{cursor:pointer}
 .muted{color:var(--muted)}
 .dot{width:10px;height:10px;border-radius:50%}
-.dot.g{background:var(--green)} .dot.y{background:var(--yellow)} .dot.r{background:var(--red)}
+.dot.g{background:var(--green)} .dot.y{background:var(--yellow)} .dot.r{background:var(--red)} .dot.gray{background:#9ca3af}
 .green{color:var(--green);font-weight:700}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;white-space:pre-wrap}
 .hidden{display:none!important}

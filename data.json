@@ -156,7 +156,6 @@
       "description": "Guidée Soulgorithm pour Amélie Dupont. Imaginer afin de co-imaginer des scénarios IA à forte valeur utilisateur.",
       "date_debut": "2024-11-11",
       "date_fin": "2025-07-29",
-      "thematique_id": "soulgorithm",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -167,7 +166,6 @@
       "description": "Guidée Pôlène pour Amélie Dupont. Connecter afin de cartographier les échanges de données qui révèlent la valeur parcours.",
       "date_debut": "2024-12-01",
       "date_fin": "2025-06-24",
-      "thematique_id": "polene",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -178,7 +176,6 @@
       "description": "Guidée Pôlène pour Léo Garnier. Connecter afin de cartographier les échanges de données qui révèlent la valeur parcours.",
       "date_debut": "2024-11-26",
       "date_fin": "2025-12-31",
-      "thematique_id": "polene",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T14:44:08.968Z",
       "_status": "updated"
@@ -190,7 +187,6 @@
       "description": "Guidée Goal Digger pour Léo Garnier. Prioriser afin de creuser les objectifs pour prioriser la roadmap d'impact.",
       "date_debut": "2024-12-16",
       "date_fin": "2025-07-09",
-      "thematique_id": "goal-digger",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -201,7 +197,6 @@
       "description": "Guidée Protocop pour Léo Garnier. Prototyper afin de prototyper vite et bien pour donner corps aux idées.",
       "date_debut": "2025-01-05",
       "date_fin": "2025-09-22",
-      "thematique_id": "protocop",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -212,7 +207,6 @@
       "description": "Guidée Goal Digger pour Clara Nguyen. Prioriser afin de creuser les objectifs pour prioriser la roadmap d'impact.",
       "date_debut": "2024-12-11",
       "date_fin": "2025-08-28",
-      "thematique_id": "goal-digger",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -223,7 +217,6 @@
       "description": "Guidée Protocop pour Clara Nguyen. Prototyper afin de prototyper vite et bien pour donner corps aux idées.",
       "date_debut": "2024-12-31",
       "date_fin": "2025-07-24",
-      "thematique_id": "protocop",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -234,7 +227,6 @@
       "description": "Guidée Protocop pour Matthieu Colin. Prototyper afin de prototyper vite et bien pour donner corps aux idées.",
       "date_debut": "2024-12-26",
       "date_fin": "2025-09-12",
-      "thematique_id": "protocop",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -245,7 +237,6 @@
       "description": "Guidée Promptzilla pour Matthieu Colin. Invoquer afin de invoquer l'IA avec précision et créativité.",
       "date_debut": "2025-01-15",
       "date_fin": "2025-08-08",
-      "thematique_id": "promptzilla",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -256,7 +247,6 @@
       "description": "Guidée Le Cardinal pour Matthieu Colin. Modéliser afin de modéliser avec clarté les structures fonctionnelles prioritaires.",
       "date_debut": "2025-02-04",
       "date_fin": "2025-10-22",
-      "thematique_id": "le-cardinal",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -267,7 +257,6 @@
       "description": "Guidée Promptzilla pour Sarah Boulanger. Invoquer afin de invoquer l'IA avec précision et créativité.",
       "date_debut": "2025-01-10",
       "date_fin": "2025-09-27",
-      "thematique_id": "promptzilla",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -278,7 +267,6 @@
       "description": "Guidée Le Cardinal pour Sarah Boulanger. Modéliser afin de modéliser avec clarté les structures fonctionnelles prioritaires.",
       "date_debut": "2025-01-30",
       "date_fin": "2025-08-23",
-      "thematique_id": "le-cardinal",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -289,7 +277,6 @@
       "description": "Guidée Le Cardinal pour Nicolas Aubert. Modéliser afin de modéliser avec clarté les structures fonctionnelles prioritaires.",
       "date_debut": "2025-01-25",
       "date_fin": "2025-10-12",
-      "thematique_id": "le-cardinal",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -300,7 +287,6 @@
       "description": "Guidée Gutenberg pour Nicolas Aubert. Documenter afin de documenter le projet au fil de l'eau et le rendre inspirant.",
       "date_debut": "2025-02-14",
       "date_fin": "2025-09-07",
-      "thematique_id": "gutenberg",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -311,7 +297,6 @@
       "description": "Guidée Soulgorithm pour Nicolas Aubert. Imaginer afin de co-imaginer des scénarios IA à forte valeur utilisateur.",
       "date_debut": "2025-03-06",
       "date_fin": "2025-11-21",
-      "thematique_id": "soulgorithm",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -322,7 +307,6 @@
       "description": "Guidée Gutenberg pour Julie Perrin. Documenter afin de documenter le projet au fil de l'eau et le rendre inspirant.",
       "date_debut": "2025-02-09",
       "date_fin": "2025-10-27",
-      "thematique_id": "gutenberg",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -333,7 +317,6 @@
       "description": "Guidée Soulgorithm pour Julie Perrin. Imaginer afin de co-imaginer des scénarios IA à forte valeur utilisateur.",
       "date_debut": "2025-03-01",
       "date_fin": "2025-09-22",
-      "thematique_id": "soulgorithm",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -344,7 +327,6 @@
       "description": "Guidée Soulgorithm pour Yanis Martin. Imaginer afin de co-imaginer des scénarios IA à forte valeur utilisateur.",
       "date_debut": "2025-02-24",
       "date_fin": "2025-11-11",
-      "thematique_id": "soulgorithm",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -355,7 +337,6 @@
       "description": "Guidée Pôlène pour Yanis Martin. Connecter afin de cartographier les échanges de données qui révèlent la valeur parcours.",
       "date_debut": "2025-03-16",
       "date_fin": "2025-10-07",
-      "thematique_id": "polene",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -366,7 +347,6 @@
       "description": "Guidée Goal Digger pour Yanis Martin. Prioriser afin de creuser les objectifs pour prioriser la roadmap d'impact.",
       "date_debut": "2025-04-05",
       "date_fin": "2025-12-21",
-      "thematique_id": "goal-digger",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -377,7 +357,6 @@
       "description": "Guidée Pôlène pour Inès Caradec. Connecter afin de cartographier les échanges de données qui révèlent la valeur parcours.",
       "date_debut": "2025-03-11",
       "date_fin": "2025-11-26",
-      "thematique_id": "polene",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -388,7 +367,6 @@
       "description": "Guidée Goal Digger pour Inès Caradec. Prioriser afin de creuser les objectifs pour prioriser la roadmap d'impact.",
       "date_debut": "2025-03-31",
       "date_fin": "2025-10-22",
-      "thematique_id": "goal-digger",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -399,7 +377,6 @@
       "description": "Guidée Goal Digger pour Élodie Barraud. Prioriser afin de creuser les objectifs pour prioriser la roadmap d'impact.",
       "date_debut": "2025-03-26",
       "date_fin": "2025-12-11",
-      "thematique_id": "goal-digger",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -410,7 +387,6 @@
       "description": "Guidée Protocop pour Élodie Barraud. Prototyper afin de prototyper vite et bien pour donner corps aux idées.",
       "date_debut": "2025-04-15",
       "date_fin": "2025-11-06",
-      "thematique_id": "protocop",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -421,7 +397,6 @@
       "description": "Guidée Promptzilla pour Élodie Barraud. Invoquer afin de invoquer l'IA avec précision et créativité.",
       "date_debut": "2025-05-05",
       "date_fin": "2026-01-20",
-      "thematique_id": "promptzilla",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -432,7 +407,6 @@
       "description": "Guidée Protocop pour Karim Bezzina. Prototyper afin de prototyper vite et bien pour donner corps aux idées.",
       "date_debut": "2025-04-10",
       "date_fin": "2025-12-26",
-      "thematique_id": "protocop",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -443,7 +417,6 @@
       "description": "Guidée Promptzilla pour Karim Bezzina. Invoquer afin de invoquer l'IA avec précision et créativité.",
       "date_debut": "2025-04-30",
       "date_fin": "2025-11-21",
-      "thematique_id": "promptzilla",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -454,7 +427,6 @@
       "description": "Guidée Promptzilla pour Noémie Forest. Invoquer afin de invoquer l'IA avec précision et créativité.",
       "date_debut": "2025-04-25",
       "date_fin": "2026-01-10",
-      "thematique_id": "promptzilla",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -465,7 +437,6 @@
       "description": "Guidée Le Cardinal pour Noémie Forest. Modéliser afin de modéliser avec clarté les structures fonctionnelles prioritaires.",
       "date_debut": "2025-05-15",
       "date_fin": "2025-12-06",
-      "thematique_id": "le-cardinal",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z"
     },
@@ -476,7 +447,6 @@
       "description": "Guidée Gutenberg pour Noémie Forest. Documenter afin de documenter le projet au fil de l'eau et le rendre inspirant.",
       "date_debut": "2025-03-01",
       "date_fin": "2026-02-19",
-      "thematique_id": "gutenberg",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T12:10:16.287Z",
       "_status": "updated"
@@ -648,7 +618,8 @@
       "guidee_id": "f4b7bb49-7b37-4f66-9a87-55c1be2f3f97-c16e01d6-a1e5-4c42-8857-6f5b769e2f0a-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée."
+      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "6ea5bc34-bf6b-47b0-936b-5a0b7c8fa786",
@@ -716,7 +687,8 @@
       "guidee_id": "8d1c5168-cbd0-4bcc-bb1c-a117b626c821-70cddb51-1299-48c6-86a0-0d64dc5915c3-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Pôlène : signal critique détecté sur la guidée."
+      "title": "Alerte Pôlène : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "415d4ebd-5ce1-4d8f-85d1-57a28b44e666",
@@ -795,7 +767,8 @@
       "guidee_id": "e23dfc10-2708-4c53-86de-a760b9599870-70cddb51-1299-48c6-86a0-0d64dc5915c3-1",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Goal Digger : signal critique détecté sur la guidée."
+      "title": "Alerte Goal Digger : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "926f7757-dfdd-4a04-87f0-2e1812af66a0",
@@ -817,7 +790,8 @@
       "guidee_id": "006bf5c3-d17e-49c1-9557-02ce60d38d66-74e91bf0-a3c9-49b1-82ae-56341f26d8fa-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Goal Digger : signal critique détecté sur la guidée."
+      "title": "Alerte Goal Digger : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "6d9af315-f940-478e-bfd4-bd5bc909c920",
@@ -896,7 +870,8 @@
       "guidee_id": "7cb1d4cb-6322-4059-8723-680aa1e106f5-f08d3d50-ce4b-4278-8f09-af72a3003c52-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Protocop : signal critique détecté sur la guidée."
+      "title": "Alerte Protocop : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "7fd51cbd-df50-4756-bf67-72f2ad8dc499",
@@ -964,7 +939,8 @@
       "guidee_id": "63bad2d8-5131-4070-a59b-187f9435c41f-f08d3d50-ce4b-4278-8f09-af72a3003c52-1",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "8b182e04-a90d-42b3-9b3a-a41831d69956",
@@ -997,7 +973,8 @@
       "guidee_id": "398ad961-1cb4-4657-9291-86967dd71b01-d314fffb-4c1b-488f-b44a-d7bbb2e54425-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "5e427d76-c07f-426f-8670-29e40ec633d0",
@@ -1099,7 +1076,8 @@
       "guidee_id": "f4d4a51b-1b3b-40ab-b1d1-1b91e14c8c82-ea199eb1-9394-47bc-98da-1a1d4615cc8a-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Le Cardinal : signal critique détecté sur la guidée."
+      "title": "Alerte Le Cardinal : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "50fc664d-420f-4fdd-9e58-f1bcbf474ba3",
@@ -1156,7 +1134,8 @@
       "guidee_id": "29e1902f-0314-410c-8e7e-c1c8926d7268-ea199eb1-9394-47bc-98da-1a1d4615cc8a-1",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Gutenberg : signal critique détecté sur la guidée."
+      "title": "Alerte Gutenberg : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "d1d80787-f028-4f84-a6ec-12c30451f783",
@@ -1178,7 +1157,8 @@
       "guidee_id": "0d54ec96-3bb8-4eea-812a-acc297c93e67-6d3286b4-39de-453d-accd-00ad3f66a1a5-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Gutenberg : signal critique détecté sur la guidée."
+      "title": "Alerte Gutenberg : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "14b65351-a2ef-42f3-a9c0-cbc3420a7c43",
@@ -1292,7 +1272,8 @@
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée."
+      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "0eefece4-28e1-4748-98b2-bf29133f518c",
@@ -1359,7 +1340,8 @@
       "guidee_id": "6cc8a72d-aac0-42e9-a179-5974255eb53d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-1",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Pôlène : signal critique détecté sur la guidée."
+      "title": "Alerte Pôlène : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "b50faa8a-419a-4329-9da3-a753605e0a5d",
@@ -1394,7 +1376,8 @@
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Pôlène : signal critique détecté sur la guidée."
+      "title": "Alerte Pôlène : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "14b5cd09-4a94-45c2-b212-608ff1d057e5",
@@ -1532,7 +1515,8 @@
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Protocop : signal critique détecté sur la guidée."
+      "title": "Alerte Protocop : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "b88806bb-cb2e-48c3-a7c2-734bb0b8ae73",
@@ -1578,7 +1562,8 @@
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Protocop : signal critique détecté sur la guidée."
+      "title": "Alerte Protocop : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "06ebc357-e89b-425b-af49-d1d232c3c461",
@@ -1680,7 +1665,8 @@
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "6ec6d65d-8e82-4eac-bc31-dbac22e5ab9e",
@@ -1736,7 +1722,8 @@
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Le Cardinal : signal critique détecté sur la guidée."
+      "title": "Alerte Le Cardinal : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "c5628f81-9e44-4c3a-98f8-cf24ffd4dbbd",
@@ -2225,7 +2212,8 @@
       "guidee_id": "eee1a678-b47d-41d1-a1b1-921fb1c76d4d-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-1",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Protocop : signal critique détecté sur la guidée."
+      "title": "Alerte Protocop : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "ea6b71c7-aa65-4bee-a246-212e11a0c18c",
@@ -2292,7 +2280,8 @@
       "guidee_id": "e0755f60-d496-440a-83ff-df96792f1342-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée."
+      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "88fc28e1-e139-46cb-b6fe-331bbacdef5f",
@@ -2347,7 +2336,8 @@
       "guidee_id": "7077d67d-ceea-482f-ae2d-45549f471736-ea199eb1-9394-47bc-98da-1a1d4615cc8a-2",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée."
+      "title": "Alerte Soulgorithm : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "45a454c7-5772-42de-b502-85d6751830c3",
@@ -2358,7 +2348,8 @@
       "guidee_id": "184a44f1-fb24-415b-86ab-f65fc618d7c7-37792a47-987e-429a-a969-b5e6d3450308-1",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "ae1a46ee-cb10-46e0-8c91-d3b7a4f8b4e0",
@@ -2380,7 +2371,8 @@
       "guidee_id": "c09e83e9-df5d-4763-b6b4-59d0655861af-befe8589-be70-4ff3-a27b-54b8a7d277a0-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Pôlène : signal critique détecté sur la guidée."
+      "title": "Alerte Pôlène : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "3a3b1a25-4cc7-4043-ae3b-c7557208dc53",
@@ -2435,7 +2427,8 @@
       "guidee_id": "d584af04-f816-443a-98fe-ca19490b1291-347a8e7d-f5e5-4681-96f7-77f790557d09-1",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Le Cardinal : signal critique détecté sur la guidée."
+      "title": "Alerte Le Cardinal : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "ecdcd280-d480-4d6b-8e00-dbc4eb034885",
@@ -2490,7 +2483,8 @@
       "guidee_id": "994ee0ca-e81b-4b54-8c1d-98bebd0ee46c-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Goal Digger : signal critique détecté sur la guidée."
+      "title": "Alerte Goal Digger : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "cb830fea-5691-4021-a8da-1f5e98830a6d",
@@ -2523,7 +2517,8 @@
       "guidee_id": "aaac168c-abeb-4bbf-a075-74c6b36a7d7d-e24d84d4-a1bb-4b5e-933b-8cc86ceb9330-2",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Goal Digger : signal critique détecté sur la guidée."
+      "title": "Alerte Goal Digger : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "c68b7b07-a109-43c7-b875-e90e45aa5083",
@@ -2545,7 +2540,8 @@
       "guidee_id": "2200fb77-2e79-49b1-b429-17b255588a3c-37792a47-987e-429a-a969-b5e6d3450308-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Protocop : signal critique détecté sur la guidée."
+      "title": "Alerte Protocop : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "36c074bf-eb38-4bae-8157-ef4f4e4a885f",
@@ -2589,7 +2585,8 @@
       "guidee_id": "cbe0b101-f4a2-4013-be51-309b44030f14-347a8e7d-f5e5-4681-96f7-77f790557d09-0",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "2adea123-c61d-4413-9031-4d6a9cb34e42",
@@ -2622,7 +2619,8 @@
       "guidee_id": "773ec433-a476-48d7-a57d-bb9f10740f25-89d61ef7-9bb3-4e46-896c-38ad8dbc7de1-2",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Promptzilla : signal critique détecté sur la guidée."
+      "title": "Alerte Promptzilla : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "486ca1e3-9af2-4b03-bc11-e4903581991d",
@@ -2689,7 +2687,8 @@
       "guidee_id": "59054324-735c-46e7-bc88-5d509d9b236c-347a8e7d-f5e5-4681-96f7-77f790557d09-2",
       "created_at": "2025-10-21T08:47:54Z",
       "updated_at": "2025-10-21T08:47:54Z",
-      "title": "Alerte Gutenberg : signal critique détecté sur la guidée."
+      "title": "Alerte Gutenberg : signal critique détecté sur la guidée.",
+      "alerte_statut": "MAJEUR"
     },
     {
       "id": "5543d9a7-a514-4f49-8f6e-d743679b5d0e",
@@ -2758,88 +2757,6 @@
       "updated_at": "2025-10-21T12:32:17.884Z",
       "_status": "updated",
       "title": "Atelier Pôlène : cartographier les échanges de données qui révèlent la valeur parcours."
-    }
-  ],
-  "thematiques": [
-    {
-      "id": "le-cardinal",
-      "nom": "Le Cardinal",
-      "emoji": "🔷",
-      "color": "#266cb7",
-      "verbe": "Modéliser",
-      "description": "Le pouvoir de modéliser avec clarté. Vulgariser des structures complexes, expliquer la cardinalité avec pédagogie, et co-créer des schémas métiers structurés. Transformer des brainstorms flous en artefacts limpides."
-    },
-    {
-      "id": "petit-robert-downey-jr",
-      "nom": "Petit Robert Downey Jr",
-      "emoji": "📚",
-      "color": "#b94a0e",
-      "verbe": "Nommer",
-      "description": "Le pouvoir du discernement sémantique. Rétablir la clarté quand les mots se confondent. Forger un vocabulaire métier partagé, documenté et stable."
-    },
-    {
-      "id": "gutenberg",
-      "nom": "Gutenberg",
-      "emoji": "📖",
-      "color": "#374151",
-      "verbe": "Documenter",
-      "description": "Le pouvoir de raconter le produit. Documenter le projet au fil de l’eau et le rendre lisible et inspirant. Transformer l’ordinaire du delivery en récit engageant."
-    },
-    {
-      "id": "indelebile",
-      "nom": "Indélébile",
-      "emoji": "⚓",
-      "color": "#684131",
-      "verbe": "Ancrer",
-      "description": "Le pouvoir de l’ancrage visuel. Facilitation graphique en réunion, ateliers et supports. Faire durer les idées grâce à l’image."
-    },
-    {
-      "id": "protocop",
-      "nom": "Protocop",
-      "emoji": "⚡",
-      "color": "#017387",
-      "verbe": "Prototyper",
-      "description": "Le pouvoir de prototyper vite et bien. Donner corps à l’idée avant le développement. Transformer l'intuition en objet de projection et d'envie."
-    },
-    {
-      "id": "tuto-tarantino",
-      "nom": "Tuto Tarantino",
-      "emoji": "🎬",
-      "color": "#ac1b1b",
-      "verbe": "Transmettre",
-      "description": "Le pouvoir de captiver par des tutoriels vidéo percutants. Rythme, narration, pédagogie : transmettre devient un art."
-    },
-    {
-      "id": "goal-digger",
-      "nom": "Goal Digger",
-      "emoji": "🎯",
-      "color": "#1b6f4e",
-      "verbe": "Prioriser",
-      "description": "Le pouvoir de creuser au bon endroit pour faire émerger une vraie roadmap de valeur. Tracer une route claire autour d’objectifs d’impact."
-    },
-    {
-      "id": "promptzilla",
-      "nom": "Promptzilla",
-      "emoji": "🤖",
-      "color": "#5a3494",
-      "verbe": "Invoquer",
-      "description": "Le pouvoir d'invoquer l'IA avec précision et créativité. Utiliser l'IA pour accélérer la production sans sacrifier la rigueur."
-    },
-    {
-      "id": "soulgorithm",
-      "nom": "Soulgorithm",
-      "emoji": "💡",
-      "color": "#ad2c6d",
-      "verbe": "Imaginer",
-      "description": "Le pouvoir d’imaginer des fonctionnalités IA qui font vraiment sens. Prioriser l’impact utilisateur avant la techno."
-    },
-    {
-      "id": "polene",
-      "nom": "Pôlène",
-      "emoji": "🐝",
-      "color": "#ad7600",
-      "verbe": "Connecter",
-      "description": "Le pouvoir de concevoir des produits qui exposent leur valeur par la donnée. Anticiper APIs, événements métiers et données pivots pour polliniser l’écosystème."
     }
   ]
 }
