@@ -26,8 +26,6 @@
 - Patienter **1 à 2 minutes** avant de vérifier sur l'instance de production
 - Documenter chaque évolution significative dans le README
 
-Note : Dans le cas d'un travail 
-
 ## 3. Description fonctionnelle
 ### Contexte
 Sherpa est un cockpit "local-first" destiné aux Product Owners, coachs et managers pour piloter consultants, guidées et activités (actions STB, cordées, avis, verbatims, alertes, prolongements). L'application fonctionne en SPA HTML/CSS/JS avec persistance locale (`localStorage`) et synchronisation optionnelle Firestore. Un mode hors ligne permet un usage autonome (aucune requête IA/Firestore).
