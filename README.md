@@ -16,7 +16,7 @@
 - **Mode hors ligne / sandbox locale** :
   1. Télécharger le dépôt de la branche `dev` (`Code` → `Download ZIP`) puis ouvrir le dossier localement.
   2. Ouvrir `app.html` directement dans le navigateur pour lancer l'application en sandbox. Aucune requête réseau n'est déclenchée ; les données sont lues/écrites dans `localStorage` (`SHERPA_STORE_V6`).
-  3. Pour récupérer la donnée de production, utiliser le bouton `⬇️` (export JSON) du mode en ligne, renommer `data.json` et mettre dans le répertoire locale ou réimporter depuis l'onglet `Paramètres`.
+  3. Pour récupérer la donnée de production, utiliser le bouton `📥 Export JSON` du mode en ligne : un fichier `sherpa-backup-YYYY-MM-DD.json` est téléchargé. Placez-le dans le même dossier que `app.html` pour un chargement automatique (le plus récent est appliqué), ou importez-le depuis l'onglet `Paramètres > Backup`.
 
 ## 2. Collaboration et workflow Git/Codex
 - Lancer la session sur Codex depuis la branche `main`

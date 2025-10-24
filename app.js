@@ -813,6 +813,7 @@ let authGateForced=false;
 let remoteReady=false;
 let offlineMode=false;
 let offlineAutoLoadAttempted=false;
+let manualImportPromptedAfterBootstrap=false;
 let isRemoteLoadInFlight=false;
 let remoteLoadQueuedOptions=null;
 let autoSyncTimeout=null;
@@ -3360,24 +3361,121 @@ window.addEventListener('beforeunload',event=>{
 btnExportJson?.addEventListener('click',()=>{ exportStoreToFile('sherpa-backup'); });
 btnImportJson?.addEventListener('click',()=>{ promptJsonImport(); });
 
-async function attemptLocalDataBootstrap(){
-  if(offlineAutoLoadAttempted) return false;
-  offlineAutoLoadAttempted=true;
-  if(storeHasRecords()) return true;
+function normalizeBackupCandidate(candidate, baseHref=window.location.href){
+  if(typeof candidate!=='string') return null;
+  const trimmed=candidate.trim();
+  if(!trimmed) return null;
+  let urlObj;
   try{
-    const response=await fetch('data.json',{cache:'no-store'});
+    urlObj=new URL(trimmed,baseHref||window.location.href);
+  }catch{
+    try{
+      urlObj=new URL(trimmed,window.location.href);
+    }catch{
+      return null;
+    }
+  }
+  const pathname=urlObj.pathname||'';
+  const segments=pathname.split('/').filter(Boolean);
+  const fileName=decodeURIComponent(segments.pop()||'');
+  if(!fileName || !/^sherpa-backup-.*\.json$/i.test(fileName)) return null;
+  if(urlObj.origin!==window.location.origin && urlObj.protocol!=='file:') return null;
+  return {url:urlObj.href,label:fileName};
+}
+
+function describeBackupCandidate(url){
+  if(!url) return 'backup';
+  try{
+    const parsed=new URL(url,window.location.href);
+    const parts=parsed.pathname.split('/').filter(Boolean);
+    const label=decodeURIComponent(parts.pop()||'');
+    return label||url;
+  }catch{
+    const raw=String(url);
+    const fallback=raw.split(/[\\\/]/).pop();
+    return decodeURIComponent(fallback||raw);
+  }
+}
+
+async function discoverLocalBackupUrls(){
+  const candidates=new Map();
+  const addCandidate=(value,baseHref)=>{
+    const normalized=normalizeBackupCandidate(value,baseHref);
+    if(normalized){
+      candidates.set(normalized.url,normalized);
+    }
+  };
+  const globalList=Array.isArray(window.__SHERPA_LOCAL_BACKUPS__)?window.__SHERPA_LOCAL_BACKUPS__:[];
+  globalList.forEach(value=>addCandidate(value));
+  try{
+    const directoryUrl=new URL('./',window.location.href).href;
+    const response=await fetch(directoryUrl,{cache:'no-store'});
+    if(response.ok){
+      const contentType=response.headers.get('content-type')||'';
+      const body=await response.text();
+      if(contentType.includes('application/json')){
+        try{
+          const parsed=JSON.parse(body);
+          const items=Array.isArray(parsed)
+            ? parsed
+            : Array.isArray(parsed?.files)
+              ? parsed.files
+              : [];
+          items.forEach(item=>addCandidate(item,directoryUrl));
+        }catch(err){
+          console.info('Analyse JSON du listing local impossible :',err?.message||err);
+        }
+      }else if(body.includes('sherpa-backup-')){
+        const regex=/href=["']([^"']+)["']/gi;
+        let match;
+        while((match=regex.exec(body))){
+          addCandidate(match[1],directoryUrl);
+        }
+      }
+    }
+  }catch(err){
+    console.info('Listing des fichiers locaux impossible :',err?.message||err);
+  }
+  return Array.from(candidates.values())
+    .sort((a,b)=>b.label.localeCompare(a.label))
+    .map(entry=>entry.url);
+}
+
+async function tryLoadBackupFromUrl(url){
+  try{
+    const response=await fetch(url,{cache:'no-store'});
     if(!response.ok){
       throw new Error(`HTTP ${response.status}`);
     }
     const text=await response.text();
     const parsed=JSON.parse(text);
-    applyIncomingStore(parsed,'data.json',{alert:false});
-    setSyncStatus('Données chargées depuis data.json.','success');
+    const label=describeBackupCandidate(url);
+    applyIncomingStore(parsed,label,{alert:false});
+    setSyncStatus(`Données chargées depuis ${label}.`,'success');
+    manualImportPromptedAfterBootstrap=false;
     return true;
   }catch(err){
-    console.info('Chargement automatique de data.json impossible :',err?.message||err);
+    console.info(`Chargement automatique de ${url} impossible :`,err?.message||err);
     return false;
   }
+}
+
+async function attemptLocalDataBootstrap(){
+  if(offlineAutoLoadAttempted) return false;
+  offlineAutoLoadAttempted=true;
+  if(storeHasRecords()) return true;
+  const candidates=await discoverLocalBackupUrls();
+  for(const url of candidates){
+    const loaded=await tryLoadBackupFromUrl(url);
+    if(loaded) return true;
+  }
+  const guidance='Aucun fichier de données « sherpa-backup-*.json » détecté. Exportez la donnée depuis la version de production (Paramètres > Backup > Export JSON) puis importez-la ici.';
+  console.info(guidance);
+  setSyncStatus(guidance,'warning');
+  alert(`${guidance}\n\nLe sélecteur de fichier va s\'ouvrir pour choisir votre sauvegarde locale.`);
+  manualImportPromptedAfterBootstrap=true;
+  await promptJsonImport({quiet:true,showAlert:true});
+  return 'prompted';
 }
 
 function enableOfflineMode(options={}){
@@ -3409,13 +3507,13 @@ function enableOfflineMode(options={}){
   };
   if(autoLoadLocalData){
     attemptLocalDataBootstrap().then(success=>{
-      if(!success && promptImportOnEmpty){
+      if(!success && promptImportOnEmpty && !manualImportPromptedAfterBootstrap){
         promptIfEmpty();
-      }else if(promptImportOnEmpty && !storeHasRecords()){
+      }else if(promptImportOnEmpty && !storeHasRecords() && !manualImportPromptedAfterBootstrap){
         promptIfEmpty();
       }
     });
-  }else if(promptImportOnEmpty){
+  }else if(promptImportOnEmpty && !manualImportPromptedAfterBootstrap){
     if(!storeHasRecords()){
       promptIfEmpty();
     }
