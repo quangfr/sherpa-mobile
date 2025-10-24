@@ -3,7 +3,7 @@
 # Spécifications complètes — Application **SHERPA** (v6.x)
 
 ## 1) Contexte
-- **But** : cockpit local-first pour suivre des **Consultants**, leurs **Activités** (STB, Cordées, Notes, Verbatims, Avis, Alertes, Prolongements), des **Guidées**, et toute la configuration métier (paramètres, templates de description, prompt IA, sauvegardes JSON).
+- **But** : cockpit local-first pour suivre des **Consultants**, leurs **Activités** (STB, Cordées, Notes, Verbatims, Avis, Alertes, Prolongements), des **Guidées**, et toute la configuration métier (paramètres, templates de description, prompts IA, sauvegardes JSON).
 - **Périmètre** :
   - Visualisation des signaux clés (alertes actives, fins de mission proches, absence d’actions/avis) et pilotage des jalons guidée/STB.
   - Filtrage, création, édition des activités/guidées et gestion centralisée du prompt IA et des templates de description.
@@ -12,7 +12,7 @@
 - **Public** : PM/PO, coachs, managers.
 - **Principes** :
   - Application mono-page (HTML/CSS/JS) + persistance **localStorage** (`SHERPA_STORE_V6`) avec synchronisation Firestore optionnelle.
-  - Expérience compacte, responsive, sans dépendance externe hors Firebase/OpenAI proxy.
+  - Expérience compacte, responsive, sans dépendance externe hors Firebase/OpenAI proxy, et gestion d’authentification non bloquante (reconnexion automatique tant que les cookies sont valides).
   - UI régénérable : tokens CSS, grilles et composants stables.
 
 ---
@@ -37,6 +37,10 @@
   - Types : `ACTION_ST_BERNARD`, `CORDEE`, `NOTE`, `VERBATIM`, `AVIS`, `ALERTE`, `PROLONGEMENT`.
   - Prolongement : probabilité `OUI/PROBABLE/INCERTAIN/IMPROBABLE/NON`.
   - Alerte : champ booléen `alerte_active` (par défaut actif) ; pas de notion d’échéance « sous X jours ».
+- **Clés techniques additionnelles** :
+  - `SHERPA_ACTIVE_TAB` (onglet UI courant),
+  - `SHERPA_SYNC_SESSION` (coordination d’un onglet principal pour la synchro),
+  - `SHERPA_SIGNOUT_BROADCAST` (diffusion de la déconnexion sur les autres onglets).
 
 ### 2.2 Règles de migration / cohérence
 - Fusion des `params` avec les valeurs par défaut, normalisation des thématiques, purge des champs obsolètes (`url`, `delai_alerte_jours`, prompts historiques, etc.).
@@ -48,7 +52,7 @@
 ## 3) Interface
 ### 3.1 Navigation
 - **Tabs** persistés (`SHERPA_ACTIVE_TAB`) : `👥 Sherpa`, `📌 Activités`, `🧭 Guidées`, `📈 Reporting`, `⚙️ Paramètres` (desktop) / icônes seules en mobile.
-- Header sticky : bouton statut sync (`✔️/⌛/⚠️`), actions d’auth (login, logout).
+- Header sticky : bouton statut sync (`✔️/⌛/⚠️/⏸️`), actions d’auth (login, logout). L’écran d’authentification ne s’affiche que lors d’une déconnexion explicite ou lorsque les identifiants ne sont plus valides ; sinon une reconnexion automatique est tentée en arrière-plan.
 
 ### 3.2 Dashboard (👥 Sherpa)
 - Cartes indicateurs :
@@ -62,7 +66,7 @@
 - Tableau : colonnes `Type`, `Actions`, `Consultant`, `Titre & détails`.
   - Lignes affichent badge heures/probabilité devant le titre, méta (`activity-meta`) avec hashtags & date.
   - Nom de la guidée en pied de ligne (texte cliquable) renvoyant vers la timeline filtrée.
-  - Description clampée; guidee associée affichée uniquement pour la ligne sélectionnée (bloc `activity-guidee`).
+  - Description clampée; guidée associée affichée uniquement pour la ligne sélectionnée (bloc `activity-guidee`).
 - Actions rapides : édition, duplication, suppression, accès consultant/guidée, génération IA (description & titre).
 - Modale activité : description initialisée et placeholder via le template du type sélectionné ; suggestion de titre IA via le prompt paramétrable.
 
@@ -137,8 +141,9 @@
 ### 5.2 Cycle de vie données
 - `load()` lit LS, `migrateStore()` nettoie & met à niveau, sinon bootstrap store vide.
 - `save()` met à jour `meta.updated_at`, persiste LS, marque diff Firestore (`markRemoteDirty`) puis `refreshAll()`.
-- Diff calculé via `computeSessionDiff` / `ensureSessionDiff`, synchronisation Firestore (`saveStoreToFirestore`, `loadRemoteStore`) avec indicateur (`✔️/⌛/⚠️`).
+- Diff calculé via `computeSessionDiff` / `ensureSessionDiff`, synchronisation Firestore (`saveStoreToFirestore`, `loadRemoteStore`) avec indicateur (`✔️/⌛/⚠️/⏸️`).
 - Backup : boutons import/export déclenchent FileReader / Blob pour JSON complet.
+- Gestion de session : tant que des données locales existent, l’application reste utilisable hors ligne. Lors d’une expiration de token Firebase, une reconnexion email/mot de passe est tentée automatiquement (mot de passe conservé en mémoire volatile) avant d’afficher l’écran d’authentification.
 
 ### 5.3 UI rendering
 - `renderActivities()` construit lignes + état sélection, badges heures/probabilité, meta, guidee.
@@ -150,11 +155,11 @@
 ### 5.4 Performance & robustesse
 - Vanilla JS, rendu à la volée sans framework; calculs en mémoire.
 - Échappement systématique des champs libres via `esc()`.
-- Synchronisation asynchrone Firestore avec debouncing (`scheduleAutoSync`) et statut visuel.
-- Gestion erreurs import/export et AI (alerts utilisateur).
+- Synchronisation Firestore avec debouncing (`scheduleAutoSync`) ; l’intervalle n’est actif que lorsque l’onglet principal est visible. Les autres onglets suspendent la synchro (`SHERPA_SYNC_SESSION`) et la reprennent à la reprise du focus (icône `⏸️`).
+- En cas de perte de session : suspension “auth-recovery” (pas d’écran bloquant), tentatives de reconnexion progressives, puis affichage du login si les identifiants ne fonctionnent plus.
 
 ### 5.5 Intégrations
-- **Firebase** (Auth + Firestore) : login email/mot de passe, auto-sync périodique configurable (`sync_interval_minutes`).
+- **Firebase** (Auth + Firestore) : login email/mot de passe, reconnexion silencieuse tant que les cookies sont valides, broadcast de déconnexion inter-onglets, auto-sync périodique configurable (`sync_interval_minutes`).
 - **OpenAI** : endpoints `faOpenAI` / `fcOpenAI` + prompts paramétrables (description, contexte d’activité, titre) sur le modèle `gpt-5-nano`.
 - Aucun lien GitHub / diff automatique (supprimé au profit du backup JSON).
 

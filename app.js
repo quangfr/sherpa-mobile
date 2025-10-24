@@ -1,6 +1,10 @@
 /* KEYS & UTILS */
 const LS_KEY='SHERPA_STORE_V6';
 const TAB_KEY='SHERPA_ACTIVE_TAB';
+const ACTIVE_SESSION_KEY='SHERPA_SYNC_SESSION';
+const SIGNOUT_BROADCAST_KEY='SHERPA_SIGNOUT_BROADCAST';
+const AUTH_RECOVERY_MAX_ATTEMPTS=3;
+const AUTH_RECOVERY_RETRY_DELAY_MS=5000;
 const nowISO=()=>new Date().toISOString();
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const uid=()=>crypto.randomUUID?crypto.randomUUID():'id-'+Math.random().toString(36).slice(2);
@@ -151,6 +155,7 @@ const DEFAULT_SYNC_INTERVAL_MINUTES=10;
 const SYNC_DEBOUNCE_MS=2000;
 const STALE_CHECK_INTERVAL_MS=30000;
 const REMOTE_STALE_THRESHOLD_MULTIPLIER=3;
+const SESSION_INSTANCE_ID=uid();
 const REMOTE_POLL_MIN_INTERVAL_MS=60000;
 const FIRESTORE_COLLECTIONS={
   consultants:'consultants',
@@ -494,6 +499,142 @@ function toggleAuthGate(show){
   if(!authGate) return;
   authGate.classList.toggle('hidden',!show);
 }
+function isSyncSuspended(){
+  return syncSuspensions.size>0;
+}
+function suspendSync(reason='generic', options={}){
+  const key=reason||'generic';
+  if(syncSuspensions.has(key)) return;
+  const wasEmpty=syncSuspensions.size===0;
+  syncSuspensions.add(key);
+  if(wasEmpty){
+    syncIndicatorState='paused';
+    stopAutoSync();
+  }
+  const {message=null,variant='info'}=options||{};
+  if(message){
+    setSyncStatus(message,variant);
+  }else if(key==='hidden'){
+    setSyncStatus('Synchronisation en pause — onglet en arrière-plan.');
+  }else if(key==='secondary'){
+    setSyncStatus('Synchronisation en pause — onglet secondaire détecté.');
+  }else if(key==='auth-recovery'){
+    setSyncStatus('Session Firebase expirée — reconnexion automatique…','warning');
+  }
+  updateSyncIndicator();
+}
+function resumeSync(reason='generic', options={}){
+  const key=reason||'generic';
+  if(!syncSuspensions.has(key)) return;
+  syncSuspensions.delete(key);
+  if(syncSuspensions.size===0){
+    const {message=null,variant='success'}=options||{};
+    if(message){
+      setSyncStatus(message,variant);
+    }else if(key==='hidden' || key==='secondary'){
+      setSyncStatus('Synchronisation réactivée.','success');
+    }
+    restartAutoSync();
+  }
+  updateSyncIndicator();
+}
+function parseSessionDescriptor(value){
+  if(!value) return null;
+  try{
+    const parsed=JSON.parse(value);
+    if(parsed && typeof parsed==='object'){
+      return {
+        id:parsed.id?String(parsed.id):'',
+        ts:Number(parsed.ts)||0,
+        origin:parsed.origin?String(parsed.origin):''
+      };
+    }
+  }catch{
+    return {id:String(value),ts:0,origin:''};
+  }
+  return null;
+}
+function claimActiveSession(origin='focus'){
+  try{
+    localStorage.setItem(ACTIVE_SESSION_KEY,JSON.stringify({id:SESSION_INSTANCE_ID,ts:Date.now(),origin}));
+  }catch(err){
+    console.warn('Impossible de marquer la session active :',err);
+  }
+  resumeSync('secondary',{message:'Synchronisation réactivée — onglet principal actif.'});
+}
+function handleActiveSessionChange(descriptor){
+  if(!descriptor) return;
+  if(descriptor.id===SESSION_INSTANCE_ID) return;
+  suspendSync('secondary',{message:'Synchronisation en pause — un autre onglet est actif.'});
+}
+function broadcastSignOutIntent(){
+  try{
+    localStorage.setItem(SIGNOUT_BROADCAST_KEY,JSON.stringify({id:SESSION_INSTANCE_ID,ts:Date.now()}));
+  }catch(err){
+    console.warn('Impossible de diffuser la déconnexion :',err);
+  }
+}
+function handleSignOutBroadcast(){
+  externalSignOutSignal=true;
+  manualSignOutRequested=true;
+  cancelAuthRecoveryTimer();
+  lastAuthCredentials=null;
+}
+function isCredentialInvalidError(err){
+  if(!err) return false;
+  const code=String(err.code||'');
+  const markers=['invalid-email','invalid-credential','user-disabled','user-not-found','wrong-password','requires-recent-login'];
+  return markers.some(marker=>code.includes(marker));
+}
+function cancelAuthRecoveryTimer(){
+  if(authRecoveryTimer){
+    clearTimeout(authRecoveryTimer);
+    authRecoveryTimer=null;
+  }
+}
+async function attemptAuthRecovery(){
+  if(authRecoveryInFlight) return;
+  if(!firebaseAuth || !lastAuthCredentials) return;
+  authRecoveryInFlight=true;
+  authRecoveryAttempts+=1;
+  try{
+    await firebaseAuth.signInWithEmailAndPassword(lastAuthCredentials.email,lastAuthCredentials.password);
+  }catch(err){
+    console.error('Tentative de reconnexion automatique échouée :',err);
+    if(isCredentialInvalidError(err)){
+      lastAuthCredentials=null;
+      cancelAuthRecoveryTimer();
+      forceAuthGate(formatAuthError(err),'error');
+    }else if(authRecoveryAttempts>=AUTH_RECOVERY_MAX_ATTEMPTS){
+      cancelAuthRecoveryTimer();
+      forceAuthGate('Impossible de rétablir la session automatiquement. Connectez-vous à nouveau.','error');
+    }else{
+      cancelAuthRecoveryTimer();
+      authRecoveryTimer=setTimeout(()=>{
+        attemptAuthRecovery().catch(recoveryErr=>{
+          console.error('Reconnexion automatique impossible :',recoveryErr);
+        });
+      },AUTH_RECOVERY_RETRY_DELAY_MS*Math.max(1,authRecoveryAttempts));
+    }
+  }finally{
+    authRecoveryInFlight=false;
+  }
+}
+function forceAuthGate(message='Travail hors connexion — connectez-vous pour synchroniser.', variant='info'){
+  cancelAuthRecoveryTimer();
+  authRecoveryInFlight=false;
+  syncSuspensions.clear();
+  stopAutoSync();
+  authGateForced=true;
+  toggleAuthGate(true);
+  remoteReady=false;
+  setSyncStatus(message,variant);
+  syncIndicatorState='error';
+  updateSyncIndicator();
+  updateUsageGate({silent:true});
+  manualSignOutRequested=false;
+  externalSignOutSignal=false;
+}
 function isRemoteDataStale(){
   if(!remoteReady) return true;
   if(!lastRemoteReadIso) return true;
@@ -618,6 +759,13 @@ let hasPendingChanges=false;
 let syncIndicatorState='error';
 let syncIndicatorIntervalId=null;
 let lastSyncSuccess=0;
+const syncSuspensions=new Set();
+let lastAuthCredentials=null;
+let manualSignOutRequested=false;
+let externalSignOutSignal=false;
+let authRecoveryAttempts=0;
+let authRecoveryTimer=null;
+let authRecoveryInFlight=false;
 let lastSyncError=0;
 /* LOAD / SAVE */
 function ensureThematiqueIds(arr){
@@ -3743,6 +3891,12 @@ function stopSyncIndicatorMonitor(){
 function updateSyncIndicator(){
   if(!btnSyncIndicator) return;
   const connected=firebaseReady && !!currentUser;
+  if(isSyncSuspended()){
+    btnSyncIndicator.textContent='⏸️';
+    btnSyncIndicator.title='Synchronisation en pause — revenez sur l\'onglet principal pour reprendre.';
+    btnSyncIndicator.disabled=false;
+    return;
+  }
   if(!connected){
     btnSyncIndicator.textContent='⚠️';
     btnSyncIndicator.title='Hors connexion — cliquez pour vous connecter.';
@@ -3782,7 +3936,7 @@ function startSyncIndicatorMonitor(){
   syncIndicatorIntervalId=setInterval(updateSyncIndicator,STALE_CHECK_INTERVAL_MS);
 }
 function restartAutoSync(){
-  if(!firebaseReady || !currentUser || !remoteReady) return;
+  if(!firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
   stopAutoSync();
   startAutoSync();
   scheduleAutoSync();
@@ -3793,7 +3947,7 @@ function scheduleAutoSync(){
     clearTimeout(autoSyncTimeout);
     autoSyncTimeout=null;
   }
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
+  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
   const delay=Math.min(getSyncIntervalMs(),SYNC_DEBOUNCE_MS);
   autoSyncTimeout=setTimeout(()=>{ syncIfDirty('debounce'); },delay);
 }
@@ -3802,7 +3956,7 @@ function startAutoSync(){
     clearInterval(autoSyncIntervalId);
     autoSyncIntervalId=null;
   }
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
+  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
   const interval=getSyncIntervalMs();
   if(interval>0){
     autoSyncIntervalId=setInterval(()=>{ syncIfDirty('interval'); },interval);
@@ -3831,7 +3985,7 @@ function stopRemotePolling(){
 }
 function startRemotePolling(){
   stopRemotePolling();
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
+  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
   const interval=getRemotePollIntervalMs();
   if(!Number.isFinite(interval) || interval<=0) return;
   remotePollIntervalId=setInterval(()=>{
@@ -3885,7 +4039,7 @@ async function detectRemoteConflict(metaRef, reason){
   return null;
 }
 async function syncIfDirty(reason='auto'){
-  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady) return;
+  if(!FIRESTORE_ENABLED || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
   const diff=ensureSessionDiff();
   if(!diff || !Object.keys(diff).length){
     hasPendingChanges=false;
@@ -4263,7 +4417,14 @@ async function loadRemoteStore(options={}){
 async function handleAuthStateChanged(user){
   currentUser=user||null;
   if(user){
+    manualSignOutRequested=false;
+    externalSignOutSignal=false;
+    authRecoveryAttempts=0;
+    cancelAuthRecoveryTimer();
     authGateForced=false;
+    if(syncSuspensions.has('auth-recovery')){
+      resumeSync('auth-recovery',{message:'Reconnexion Firebase réussie — synchronisation réactivée.',variant:'success'});
+    }
     renderAuthUser(user);
     btnRefreshRemote?.removeAttribute('disabled');
     btnSignOut?.removeAttribute('disabled');
@@ -4283,22 +4444,40 @@ async function handleAuthStateChanged(user){
       updateUsageGate();
     }
   }else{
-    authGateForced=true;
     renderAuthUser(null);
     btnRefreshRemote?.setAttribute('disabled','true');
     if(btnSignOut) btnSignOut.setAttribute('disabled','true');
-    remoteReady=false;
-    hasPendingChanges=false;
-    stopAutoSync();
-    toggleAuthGate(true);
     setPasswordFeedback('');
-    setSyncStatus('Travail hors connexion — connectez-vous pour synchroniser.');
-    syncIndicatorState='error';
-    lastSyncSuccess=0;
-    lastRemoteReadIso=null;
-    lastRemoteWriteIso=null;
-    updateSyncIndicator();
-    updateUsageGate();
+    setAuthError('');
+    if(manualSignOutRequested || externalSignOutSignal){
+      lastAuthCredentials=null;
+      authRecoveryAttempts=0;
+      forceAuthGate('Déconnexion effectuée — connectez-vous pour reprendre la synchronisation.');
+      hasPendingChanges=false;
+      lastSyncSuccess=0;
+      lastRemoteReadIso=null;
+      lastRemoteWriteIso=null;
+      return;
+    }
+    if(!hasOfflineDataAvailable()){
+      lastAuthCredentials=null;
+      authRecoveryAttempts=0;
+      forceAuthGate('Session expirée — connectez-vous pour récupérer vos données.','warning');
+      return;
+    }
+    authGateForced=false;
+    toggleAuthGate(false);
+    suspendSync('auth-recovery',{message:'Session Firebase expirée — reconnexion automatique…'});
+    updateUsageGate({silent:true});
+    if(!lastAuthCredentials){
+      forceAuthGate('Session expirée — veuillez saisir à nouveau vos identifiants.','warning');
+      return;
+    }
+    if(!authRecoveryInFlight){
+      attemptAuthRecovery().catch(err=>{
+        console.error('Reconnexion automatique impossible :',err);
+      });
+    }
   }
 }
 function initFirebase(){
@@ -4342,6 +4521,10 @@ passwordLoginForm?.addEventListener('submit',async evt=>{
   togglePasswordControls(true);
   try{
     await firebaseAuth.signInWithEmailAndPassword(email,password);
+    lastAuthCredentials={email,password};
+    manualSignOutRequested=false;
+    externalSignOutSignal=false;
+    authRecoveryAttempts=0;
     setPasswordFeedback('Connexion réussie.','success');
   }catch(err){
     console.error('Password sign-in error:',err);
@@ -4370,6 +4553,10 @@ btnPasswordReset?.addEventListener('click',async()=>{
 btnSignOut?.addEventListener('click',()=>{
   if(!firebaseAuth) return;
   const proceed=()=>{
+    manualSignOutRequested=true;
+    cancelAuthRecoveryTimer();
+    lastAuthCredentials=null;
+    broadcastSignOutIntent();
     firebaseAuth.signOut().catch(err=>{
       console.error('Sign-out error:',err);
       setAuthError(formatAuthError(err));
@@ -4408,12 +4595,32 @@ btnSyncIndicator?.addEventListener('click',()=>{
 });
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
-    syncIfDirty('hidden').catch(()=>{});
+    const maybePromise=syncIfDirty('hidden');
+    if(maybePromise && typeof maybePromise.finally==='function'){
+      maybePromise.finally(()=>{ suspendSync('hidden'); });
+    }else{
+      suspendSync('hidden');
+    }
+  }else if(document.visibilityState==='visible'){
+    resumeSync('hidden');
+    claimActiveSession('visibility');
+  }
+});
+window.addEventListener('focus',()=>{
+  if(document.visibilityState==='visible'){
+    claimActiveSession('focus');
   }
 });
 window.addEventListener('beforeunload',()=>{
   if(hasPendingChanges){
     syncIfDirty('beforeunload').catch(()=>{});
+  }
+});
+window.addEventListener('storage',event=>{
+  if(event.key===ACTIVE_SESSION_KEY){
+    handleActiveSessionChange(parseSessionDescriptor(event.newValue));
+  }else if(event.key===SIGNOUT_BROADCAST_KEY && event.newValue){
+    handleSignOutBroadcast();
   }
 });
 btnSignOut?.setAttribute('disabled','true');
@@ -4450,4 +4657,5 @@ if(FIRESTORE_ENABLED){
 }else{
   setSyncStatus('Synchronisation locale activée.');
 }
+claimActiveSession('init');
 refreshAll();
