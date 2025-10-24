@@ -14,8 +14,8 @@
 - **Instance de production** : publiée automatiquement depuis la branche `main` du dépôt [github.com/quangfr/sherpa](https://github.com/quangfr/sherpa). La base de donnée est hébergée sur Firebase **Firestore**. Un **worker Cloudflare** sert de proxy d'API pour masquer les secrets Firebase et n'autorise que les appels provenant de l'application Sherpa.
 - **Mode en ligne** : ouvrir [https://quangfr.github.io/sherpa](https://quangfr.github.io/sherpa). La synchronisation des données se fait en temps réel (consultants, guidées, activités, paramètres).
 - **Mode hors ligne / sandbox locale** :
-  1. Télécharger le dépôt (`Code` → `Download ZIP`) ou cloner puis ouvrir le dossier localement.
-  2. Ouvrir `app.html` ou `index.html` directement dans le navigateur pour lancer l'application en sandbox. Aucune requête réseau n'est déclenchée ; les données sont lues/écrites dans `localStorage` (`SHERPA_STORE_V6`).
+  1. Télécharger le dépôt de la branche `dev` (`Code` → `Download ZIP`) puis ouvrir le dossier localement.
+  2. Ouvrir `app.html` directement dans le navigateur pour lancer l'application en sandbox. Aucune requête réseau n'est déclenchée ; les données sont lues/écrites dans `localStorage` (`SHERPA_STORE_V6`).
   3. Pour récupérer la donnée de production, utiliser le bouton `⬇️` (export JSON) du mode en ligne, renommer `data.json` et mettre dans le répertoire locale ou réimporter depuis l'onglet `Paramètres`.
 
 ## 2. Collaboration et workflow Git/Codex
