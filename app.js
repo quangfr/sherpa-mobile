@@ -1144,7 +1144,8 @@ const renderAlertList=()=>{
     row.tabIndex=0;
     const statusBadge=renderAlertStatusBadge(status);
     const typeBadge=renderAlertTypeBadge(alert.alerte_types);
-    row.innerHTML=`<div class="row space" style="gap:6px"><div class="row" style="gap:6px"><span class="dot ${statusOf(consultant)}" title="État"></span><span class="linklike">${esc(consultant.nom||'—')}</span>${typeBadge?` ${typeBadge}`:''}${statusBadge?` ${statusBadge}`:''}</div><span class="sub">/ ${esc(consultant.titre_mission||'—')}</span></div>`;
+    const alertTitle=esc((alert.title||'').trim()||'Sans titre');
+    row.innerHTML=`<div class="row space" style="gap:6px"><div class="row" style="gap:6px"><span class="dot ${statusOf(consultant)}" title="État"></span><span class="linklike">${esc(consultant.nom||'—')}</span>${typeBadge?` ${typeBadge}`:''}${statusBadge?` ${statusBadge}`:''}</div><span class="sub">/ ${esc(consultant.titre_mission||'—')}</span></div><div class="sub">${alertTitle}</div>`;
     const navigate=()=>{
       if(alert.guidee_id){
         gotoGuideeTimeline(alert.guidee_id,alert.id||'');
@@ -2210,7 +2211,6 @@ function renderGuideeTimeline(){
     if(hoursBadge) metaPrimaryPieces.push(hoursBadge);
     if(probabilityBadge) metaPrimaryPieces.push(probabilityBadge);
     if(ev.type==='activity' && ev.activity){
-      metaPrimaryPieces.push(consultantChip);
       const title=esc((ev.activity.title||'').trim()||'Sans titre');
       metaPrimaryPieces.push(`<span class="bold">${title}</span>`);
     }else{
@@ -2220,10 +2220,16 @@ function renderGuideeTimeline(){
       const rawGuideeName=(ev.guidee?.nom||'Sans titre').trim()||'Sans titre';
       const guideeLabel=esc(`🧭 ${rawGuideeName}`);
       const clickableName=gid?`<span class="click-span"${filterAttr}>${guideeLabel}</span>`:guideeLabel;
-      const milestoneLabel=`${consultantChip} • ${verb} ${clickableName}`;
+      const milestoneLabel=`${verb} ${clickableName}`;
       metaPrimaryPieces.push(milestoneLabel);
     }
-    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-date" title="${rawDate}"><span class="sub">${friendlyDateHtml}</span>${editButtons.join('')}</div><div class="timeline-meta-primary">${metaPrimaryPieces.join(' ')}</div></div>`;
+    const dateLinePieces=[consultantChip,`<span class="sub">${friendlyDateHtml}</span>`].filter(Boolean);
+    let dateLineHtml='';
+    dateLinePieces.forEach((piece,index)=>{
+      if(index>0) dateLineHtml+=`<span class="timeline-meta-separator">•</span>`;
+      dateLineHtml+=piece;
+    });
+    const metaHtml=`<div class="timeline-meta"><div class="timeline-meta-date" title="${rawDate}">${dateLineHtml}${editButtons.join('')}</div><div class="timeline-meta-primary">${metaPrimaryPieces.join(' ')}</div></div>`;
     let bodyHtml='';
     if(ev.type==='activity'){
       const desc=(ev.activity?.description||'').trim();
@@ -2798,7 +2804,7 @@ function renderReporting(){
       header:'<tr><th>Consultants</th><th>Date</th><th>Probabilité</th><th>Titre</th><th>Description</th></tr>',
       colspan:5,
       renderInteractive:(item)=>{
-        const probabilityCell=item.probabilityHtml||'—';
+        const probabilityCell=esc(item.probabilityLabel||'—');
         return `<tr><td>${renderParticipants(item.participants,true)}</td><td>${esc(item.date)}</td><td>${probabilityCell}</td><td>${renderGuideeEvent(item.titleEvent,true)}</td><td>${item.descriptionHtml}</td></tr>`;
       },
       renderPlain:(item)=>{
