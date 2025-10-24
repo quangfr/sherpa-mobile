@@ -2056,12 +2056,6 @@ function renderReporting(){
         guidee:buildGuideeData(guidee)
       };
     });
-  const includeDateInRange=(dateStr)=>{
-    if(dateStr){
-      return withinRange(dateStr);
-    }
-    return !startDateObj && !endDateObj;
-  };
   const normalizeRangeDate=(value)=>{
     const d=parseDate(value||'');
     if(!d || Number.isNaN(d.getTime())) return null;
@@ -2079,26 +2073,28 @@ function renderReporting(){
     if(endDateObj && effectiveStart>endDateObj) return false;
     return true;
   };
-  const consultantsDataList=consultants
-    .filter(c=>includeDateInRange(c.date_fin||''))
-    .map(c=>{
-      const descriptionPlain=formatReportPlainText(c.description);
-      const descriptionLines=descriptionPlain==='—'?[]:descriptionPlain.split('\n').map(line=>line.trim()).filter(Boolean);
-      return {
-        consultant:{id:c.id||'',name:c.nom||'—'},
-        endText:formatReportDate(c.date_fin||''),
-        title:c.titre_mission||'—',
-        descriptionHtml:formatReportMultiline(c.description),
-        descriptionLines,
-      };
-    });
   const guideesDataList=(store.guidees||[])
     .filter(guideeMatchesRange)
-    .map(g=>({
-      ...buildGuideeData(g),
-      rawStart:g.date_debut||'',
-      rawEnd:g.date_fin||'',
-    }))
+    .map(g=>{
+      const base=buildGuideeData(g);
+      const consultant=consultants.find(c=>c.id===g.consultant_id)||null;
+      const consultantName=(consultant?.nom||'').trim()||'—';
+      const consultantDescriptionPlain=formatReportPlainText(consultant?.description);
+      const consultantDescriptionLines=consultantDescriptionPlain==='—'
+        ? []
+        : consultantDescriptionPlain.split('\n').map(line=>line.trim()).filter(Boolean);
+      return {
+        ...base,
+        rawStart:g.date_debut||'',
+        rawEnd:g.date_fin||'',
+        consultant:{
+          id:consultant?.id||'',
+          name:consultantName,
+        },
+        consultantDescriptionHtml:formatReportMultiline(consultant?.description),
+        consultantDescriptionLines,
+      };
+    })
     .sort((a,b)=>{
       const aKey=a.rawStart||'';
       const bKey=b.rawStart||'';
@@ -2224,39 +2220,43 @@ function renderReporting(){
   const actionsRowsPlain=actionsData.map(item=>renderActionsRow(item,false));
   const actionsTable=wrapTable('Actions',actionsHeader,actionsRowsInteractive,5,actionsSummary);
   const actionsTablePlain=wrapTable('Actions',actionsHeader,actionsRowsPlain,5,actionsSummary);
-  const consultantsHeader='<tr><th>Nom</th><th>Date fin</th><th>Titre</th><th>Description</th></tr>';
-  const renderConsultantsRow=(item,interactive)=>`<tr><td>${renderConsultantRef(item.consultant,interactive)}</td><td>${esc(item.endText||'—')}</td><td>${esc(item.title||'—')}</td><td>${item.descriptionHtml}</td></tr>`;
-  const consultantsRowsInteractive=consultantsDataList.map(item=>renderConsultantsRow(item,true));
-  const consultantsRowsPlain=consultantsDataList.map(item=>renderConsultantsRow(item,false));
-  const consultantsTable=wrapTable('Consultants',consultantsHeader,consultantsRowsInteractive,4);
-  const consultantsTablePlain=wrapTable('Consultants',consultantsHeader,consultantsRowsPlain,4);
-  const guideesHeader='<tr><th>Nom</th><th>Dates</th><th>Description</th><th>Résultat</th></tr>';
+  const guideesHeader='<tr><th>Consultant</th><th>Description consultant</th><th>Guidée</th><th>Description</th><th>Résultat</th></tr>';
   const renderGuideesRow=(item,interactive)=>{
-    const datesText=`${esc(item.startText||'—')} → ${esc(item.endText||'—')}`;
-    return `<tr><td>${renderGuideeNameLink(item,interactive)}</td><td>${datesText}</td><td>${item.descriptionHtml}</td><td>${item.resultHtml}</td></tr>`;
+    const datesLabel=item.dateRange||`${item.startText||'—'} → ${item.endText||'—'}`;
+    const guideeCell=`${renderGuideeNameLink(item,interactive)}<div class="muted">${esc(datesLabel)}</div>`;
+    const consultantDescription=item.consultantDescriptionHtml||'—';
+    return `<tr><td>${renderConsultantRef(item.consultant,interactive)}</td><td>${consultantDescription}</td><td>${guideeCell}</td><td>${item.descriptionHtml}</td><td>${item.resultHtml}</td></tr>`;
   };
   const guideesRowsInteractive=guideesDataList.map(item=>renderGuideesRow(item,true));
   const guideesRowsPlain=guideesDataList.map(item=>renderGuideesRow(item,false));
-  const guideesTable=wrapTable('Guidées',guideesHeader,guideesRowsInteractive,4);
-  const guideesTablePlain=wrapTable('Guidées',guideesHeader,guideesRowsPlain,4);
+  const guideesTable=wrapTable('Guidées',guideesHeader,guideesRowsInteractive,5);
+  const guideesTablePlain=wrapTable('Guidées',guideesHeader,guideesRowsPlain,5);
   const highlightsHeader='<tr><th>Consultants</th><th>Date</th><th>Probabilité</th><th>Statut</th><th>Titre</th><th>Description</th></tr>';
   const renderHighlightsRow=(item,interactive)=>{
     const probabilityCell=interactive?item.probabilityHtml:esc(item.probabilityLabel||'—');
     const statusCell=esc(item.statusLabel||'—');
     return `<tr><td>${renderParticipants(item.participants,interactive)}</td><td>${esc(item.date)}</td><td>${probabilityCell}</td><td>${statusCell}</td><td>${renderGuideeEvent(item.titleEvent,interactive)}</td><td>${item.descriptionHtml}</td></tr>`;
   };
-  const highlightsRowsInteractive=highlightsData.map(item=>renderHighlightsRow(item,true));
-  const highlightsRowsPlain=highlightsData.map(item=>renderHighlightsRow(item,false));
-  const highlightsTable=wrapTable('Alertes · Avis · Verbatims · Prolongements',highlightsHeader,highlightsRowsInteractive,6);
-  const highlightsTablePlain=wrapTable('Alertes · Avis · Verbatims · Prolongements',highlightsHeader,highlightsRowsPlain,6);
+  const highlightTables=highlightTypes.map(type=>{
+    const label=ACTIVITY_LABELS[type]||type;
+    const itemsForType=highlightsData.filter(item=>item.type===type);
+    const rowsInteractive=itemsForType.map(item=>renderHighlightsRow(item,true));
+    const rowsPlain=itemsForType.map(item=>renderHighlightsRow(item,false));
+    return {
+      interactive:wrapTable(label,highlightsHeader,rowsInteractive,6),
+      plain:wrapTable(label,highlightsHeader,rowsPlain,6),
+    };
+  });
   const cordeeHeader='<tr><th>Consultants</th><th>Date</th><th>Titre</th><th>Description</th></tr>';
   const renderCordeeRow=(item,interactive)=>`<tr><td>${renderParticipants(item.participants,interactive)}</td><td>${esc(item.date)}</td><td>${renderGuideeEvent(item.titleEvent,interactive)}</td><td>${item.descriptionHtml}</td></tr>`;
   const cordeeRowsInteractive=cordeeData.map(item=>renderCordeeRow(item,true));
   const cordeeRowsPlain=cordeeData.map(item=>renderCordeeRow(item,false));
   const cordeeTable=wrapTable('Cordées',cordeeHeader,cordeeRowsInteractive,4);
   const cordeeTablePlain=wrapTable('Cordées',cordeeHeader,cordeeRowsPlain,4);
-  reportingDocument.innerHTML=[missionsTable,actionsTable,consultantsTable,guideesTable,highlightsTable,cordeeTable].join('');
-  lastReportingHtml=[missionsTablePlain,actionsTablePlain,consultantsTablePlain,guideesTablePlain,highlightsTablePlain,cordeeTablePlain].join('');
+  const highlightTablesHtml=highlightTables.map(table=>table.interactive);
+  const highlightTablesPlain=highlightTables.map(table=>table.plain);
+  reportingDocument.innerHTML=[missionsTable,actionsTable,guideesTable,...highlightTablesHtml,cordeeTable].join('');
+  lastReportingHtml=[missionsTablePlain,actionsTablePlain,guideesTablePlain,...highlightTablesPlain,cordeeTablePlain].join('');
   const missionsTextLines=[];
   if(missionsData.length){
     missionsData.forEach(m=>{
@@ -2292,28 +2292,19 @@ function renderReporting(){
     });
     while(actionsTextLines.length && actionsTextLines[actionsTextLines.length-1]==='') actionsTextLines.pop();
   }
-  const consultantsTextLines=[];
-  if(consultantsDataList.length){
-    consultantsDataList.forEach(item=>{
-      consultantsTextLines.push(`Nom : ${item.consultant.name||'—'}`);
-      consultantsTextLines.push(`Date fin : ${item.endText||'—'}`);
-      consultantsTextLines.push(`Titre : ${item.title||'—'}`);
-      consultantsTextLines.push('Description :');
-      if(item.descriptionLines.length){
-        item.descriptionLines.forEach(line=>consultantsTextLines.push(line));
-      }else{
-        consultantsTextLines.push('—');
-      }
-      consultantsTextLines.push('');
-    });
-    while(consultantsTextLines.length && consultantsTextLines[consultantsTextLines.length-1]==='') consultantsTextLines.pop();
-  }
   const guideesTextLines=[];
   if(guideesDataList.length){
     guideesDataList.forEach(item=>{
-      guideesTextLines.push(`Nom : ${item.name||'Sans titre'}`);
+      guideesTextLines.push(`Consultant : ${item.consultant?.name||'—'}`);
+      guideesTextLines.push('Description consultant :');
+      if(item.consultantDescriptionLines.length){
+        item.consultantDescriptionLines.forEach(line=>guideesTextLines.push(line));
+      }else{
+        guideesTextLines.push('—');
+      }
+      guideesTextLines.push(`Guidée : ${item.name||'Sans titre'}`);
       guideesTextLines.push(`Dates : ${item.startText||'—'} → ${item.endText||'—'}`);
-      guideesTextLines.push('Description :');
+      guideesTextLines.push('Description guidée :');
       if(item.descriptionLines.length){
         item.descriptionLines.forEach(line=>guideesTextLines.push(line));
       }else{
@@ -2403,27 +2394,17 @@ function renderReporting(){
     );
   }
   if(sections[sections.length-1] !== '') sections.push('');
-  sections.push('== CONSULTANTS ==','');
-  if(consultantsTextLines.length){
-    sections.push(...consultantsTextLines);
-  }else{
-    sections.push(
-      'Nom : —',
-      'Date fin : —',
-      'Titre : —',
-      'Description :',
-      '—'
-    );
-  }
-  if(sections[sections.length-1] !== '') sections.push('');
   sections.push('== GUIDÉES ==','');
   if(guideesTextLines.length){
     sections.push(...guideesTextLines);
   }else{
     sections.push(
-      'Nom : —',
+      'Consultant : —',
+      'Description consultant :',
+      '—',
+      'Guidée : —',
       'Dates : — → —',
-      'Description :',
+      'Description guidée :',
       '—',
       'Résultat :',
       '—'
