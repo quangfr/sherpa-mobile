@@ -275,10 +275,6 @@ dialog::backdrop{background:#0006}
 .mobile-desc.expanded .text{-webkit-line-clamp:unset;display:block;overflow:visible}
 #activities-table td.main{word-break:break-word;overflow-wrap:anywhere}
 #activities-table td:last-child .btn.small{white-space:nowrap}
-@media (max-width:520px){
-  #btn-sync-indicator,
-  .header-actions #auth-user{display:none!important}
-}
 .activity-date-line{display:flex;align-items:center;gap:6px;margin-left:auto}
 .row-edit{display:none}
 tr.selected .row-edit{display:inline-flex}
@@ -314,6 +310,10 @@ tr.selected .row-edit{display:inline-flex}
 .desktop-only{display:revert}
 .mobile-only{display:none}
 @media (max-width:520px){
+  .desktop-only{display:none!important}
+  .header-actions{display:grid;grid-auto-flow:column;grid-auto-columns:max-content;justify-content:flex-end;align-items:center;gap:6px}
+  .header-actions .btn,
+  .header-actions #auth-user{justify-self:end}
   main{height:calc(100vh - var(--headH));min-height:calc(100vh - var(--headH));overflow:hidden;position:relative;z-index:1}
   .header-bar{flex-wrap:wrap;gap:8px}
   .header-left{width:100%;gap:6px}
