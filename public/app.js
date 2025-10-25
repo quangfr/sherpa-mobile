@@ -1783,7 +1783,7 @@ const promptEditor=$('prompt-editor');
 const promptActivityContextEditor=$('prompt-activity-context');
 const promptTitleEditor=$('prompt-title');
 const btnResetPrompt=$('btn-reset-prompt');
-const btnOfflineImport=$('btn-offline-import');
+const btnImportJsonHeader=$('btn-import-json-header');
 const btnExportJsonHeader=$('btn-export-json-header');
 const btnImportJson=$('btn-import-json');
 const btnExportJson=$('btn-export-json');
@@ -3442,13 +3442,7 @@ window.addEventListener('beforeunload',event=>{
 });
 btnExportJsonHeader?.addEventListener('click',()=>{ exportStoreToFile('sherpa-backup'); });
 btnExportJson?.addEventListener('click',()=>{ exportStoreToFile('sherpa-backup'); });
-btnOfflineImport?.addEventListener('click',()=>{
-  if(!isOfflineMode()){
-    alert('Disponible uniquement en mode hors-ligne.');
-    return;
-  }
-  promptJsonImport();
-});
+btnImportJsonHeader?.addEventListener('click',()=>{ promptJsonImport(); });
 btnImportJson?.addEventListener('click',()=>{ promptJsonImport(); });
 
 function normalizeBackupCandidate(candidate, baseHref=window.location.href){
@@ -3582,13 +3576,17 @@ function enableOfflineMode(options={}){
   stopAutoSync();
   stopRemotePolling();
   renderAuthUser(null);
-  btnSignOut?.setAttribute('disabled','true');
+  if(authUserWrap){
+    authUserWrap.classList.remove('hidden');
+  }
+  if(btnSignOut){
+    btnSignOut.removeAttribute('disabled');
+  }
   btnResetFirestore?.setAttribute('disabled','true');
   btnResetLocal?.setAttribute('disabled','true');
   btnRefreshRemote?.setAttribute('disabled','true');
-  if(btnOfflineImport){
-    btnOfflineImport.classList.remove('hidden');
-    btnOfflineImport.removeAttribute('disabled');
+  if(btnImportJsonHeader){
+    btnImportJsonHeader.removeAttribute('disabled');
   }
   if(btnOfflineMode) btnOfflineMode.disabled=true;
   setSyncStatus('Mode hors-ligne activé — les données restent locales.','info');
@@ -5293,6 +5291,13 @@ btnOfflineMode?.addEventListener('click',()=>{
   enableOfflineMode({promptImportOnEmpty:true});
 });
 btnSignOut?.addEventListener('click',()=>{
+  if(isOfflineMode()){
+    const confirmExit=confirm('Quitter le mode hors-ligne et revenir à l\'écran de connexion ?');
+    if(confirmExit){
+      window.location.reload();
+    }
+    return;
+  }
   if(!firebaseAuth) return;
   const proceed=()=>{
     manualSignOutRequested=true;
