@@ -1236,7 +1236,7 @@ renderGuideeEntries(upcomingEntries,'db-actions-upcoming-list','db-actions-upcom
 let state={
   filters:{consultant_id:'',type:'',month:'ALL',hashtag:''},
   activities:{selectedId:'',shouldCenter:false},
-  guidees:{consultant_id:'',guidee_id:'',selectedEventId:''},
+  guidees:{consultant_id:'',guidee_id:'',selectedEventId:'',shouldCenter:false},
   templates:{selected:DESCRIPTION_TEMPLATE_KEYS.activity.ACTION_ST_BERNARD},
   reporting:getDefaultReportingRange()
 };
@@ -1327,6 +1327,7 @@ function gotoGuideeTimeline(gid, targetId=''){
     }
   }
   state.guidees.selectedEventId=eventId;
+  state.guidees.shouldCenter=true;
   renderGuideeFilters();
   renderGuideeTimeline();
   openTab('guidee',true);
@@ -1594,6 +1595,7 @@ const inlineEditButton=()=>`<button class="btn ghost small row-edit" data-inline
 const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span></div>`;
 const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
 const tr=document.createElement('tr'); tr.classList.add('clickable');
+tr.dataset.activityId=a.id;
 tr.style.setProperty('--selection-color','var(--accent)');
 const dateObj=parseDate(a.date_publication||'');
 const isPastDate=dateObj && dateObj<todayStart;
@@ -1680,6 +1682,82 @@ if(state.activities.shouldCenter){
 updateFilterHighlights();
 }
 on(window,'resize',()=>renderActivities());
+
+function getFocusableElement(target){
+  if(target instanceof Element) return target;
+  if(target && target.parentElement) return target.parentElement;
+  return null;
+}
+
+function shouldIgnoreArrowNavigation(event){
+  const el=getFocusableElement(event.target);
+  if(!el) return false;
+  if(el.closest('dialog[open]')) return true;
+  if(el.closest('input,textarea,select,[contenteditable=""],[contenteditable="true"],[contenteditable="plaintext-only"]')) return true;
+  return false;
+}
+
+function navigateActivitySelection(offset){
+  const rows=Array.from(actTBody?.querySelectorAll('tr[data-activity-id]')||[]);
+  if(!rows.length) return false;
+  const ids=rows.map(row=>row.dataset.activityId).filter(Boolean);
+  if(!ids.length) return false;
+  const currentId=state.activities.selectedId||'';
+  let nextIndex;
+  const currentIndex=ids.indexOf(currentId);
+  if(currentIndex===-1){
+    nextIndex=offset>0?0:ids.length-1;
+  }else{
+    nextIndex=Math.min(Math.max(currentIndex+offset,0),ids.length-1);
+  }
+  const nextId=ids[nextIndex]||'';
+  if(!nextId || nextId===currentId) return false;
+  state.activities.selectedId=nextId;
+  state.activities.shouldCenter=true;
+  renderActivities();
+  return true;
+}
+
+function navigateGuideeSelection(offset){
+  if(!timelineEl) return false;
+  const items=Array.from(timelineEl.querySelectorAll('.timeline-item[data-event-id]'));
+  if(!items.length) return false;
+  const ids=items.map(item=>item.dataset.eventId).filter(Boolean);
+  if(!ids.length) return false;
+  const currentId=state.guidees.selectedEventId||'';
+  let nextIndex;
+  const currentIndex=ids.indexOf(currentId);
+  if(currentIndex===-1){
+    nextIndex=offset>0?0:ids.length-1;
+  }else{
+    nextIndex=Math.min(Math.max(currentIndex+offset,0),ids.length-1);
+  }
+  const nextId=ids[nextIndex]||'';
+  if(!nextId || nextId===currentId) return false;
+  state.guidees.selectedEventId=nextId;
+  state.guidees.shouldCenter=true;
+  renderGuideeTimeline();
+  return true;
+}
+
+document.addEventListener('keydown',event=>{
+  if(event.defaultPrevented) return;
+  if(event.key!=='ArrowUp' && event.key!=='ArrowDown') return;
+  if(event.altKey||event.ctrlKey||event.metaKey) return;
+  if(shouldIgnoreArrowNavigation(event)) return;
+  if(document.querySelector('dialog[open]')) return;
+  const offset=event.key==='ArrowDown'?1:-1;
+  let handled=false;
+  if(activeTabId==='activite'){
+    handled=navigateActivitySelection(offset);
+  }else if(activeTabId==='guidee'){
+    handled=navigateGuideeSelection(offset);
+  }
+  if(handled){
+    event.preventDefault();
+  }
+});
+
 /* GUIDÉES */
 const selectGuideeConsult=$('filter-guidee-consultant');
 const selectGuidee=$('filter-guidee');
@@ -1706,6 +1784,7 @@ const promptActivityContextEditor=$('prompt-activity-context');
 const promptTitleEditor=$('prompt-title');
 const btnResetPrompt=$('btn-reset-prompt');
 const btnOfflineImport=$('btn-offline-import');
+const btnExportJsonHeader=$('btn-export-json-header');
 const btnImportJson=$('btn-import-json');
 const btnExportJson=$('btn-export-json');
 const btnResetFirestore=$('btn-reset-firestore');
@@ -2296,11 +2375,13 @@ function renderGuideeTimeline(){
     });
     timelineEl.appendChild(item);
   });
-  if(shouldScroll){
+  const needsCenter=shouldScroll || state.guidees.shouldCenter;
+  if(needsCenter){
     const rawId=state.guidees.selectedEventId||'';
     const safeId=typeof CSS!=='undefined' && typeof CSS.escape==='function' ? CSS.escape(rawId) : rawId;
     const target=timelineEl.querySelector(`[data-event-id="${safeId}"]`);
     target?.scrollIntoView({block:'center'});
+    state.guidees.shouldCenter=false;
   }
 }
 
@@ -2327,7 +2408,7 @@ on(selectGuidee,'change',e=>{
   renderGuideeTimeline();
 });
 btnResetGuidee?.addEventListener('click',()=>{
-  state.guidees={consultant_id:'',guidee_id:'',selectedEventId:''};
+  state.guidees={consultant_id:'',guidee_id:'',selectedEventId:'',shouldCenter:false};
   if(selectGuideeConsult) selectGuideeConsult.value='';
   if(selectGuidee) selectGuidee.value='';
   renderGuideeFilters();
@@ -3359,6 +3440,7 @@ window.addEventListener('beforeunload',event=>{
     event.returnValue='Des données ne sont pas synchronisées. Sauvegarder avant de quitter ?';
   }
 });
+btnExportJsonHeader?.addEventListener('click',()=>{ exportStoreToFile('sherpa-backup'); });
 btnExportJson?.addEventListener('click',()=>{ exportStoreToFile('sherpa-backup'); });
 btnOfflineImport?.addEventListener('click',()=>{
   if(!isOfflineMode()){

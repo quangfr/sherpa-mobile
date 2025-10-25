@@ -15,6 +15,9 @@ a{color:var(--accent);text-decoration:none}
 header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);height:var(--headH)}
 .wrap{width:100%;max-width:none;margin:0;padding:6px 10px}
 .header-bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.header-left{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0}
+.header-left .tabs{flex:1 1 auto}
+.header-left .btn{flex:0 0 auto}
 .header-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .auth-user{display:flex;align-items:center;gap:8px;font-size:12px}
 .auth-gate{position:fixed;inset:0;background:rgba(250,250,250,.94);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:40}
@@ -100,6 +103,8 @@ textarea{width:100%;resize:vertical}
 .input-with-action{position:relative;display:block}
 .input-with-action input{width:100%;padding-right:44px}
 .input-with-action .ai-helper{position:absolute;right:6px;top:50%;transform:translateY(-50%)}
+.field-pair{grid-column:1/-1;display:flex;align-items:flex-end;gap:8px;flex-wrap:nowrap}
+.field-pair>label{flex:1 1 0;min-width:0}
 .hashtag-suggestions{display:none;gap:6px;flex-wrap:wrap;margin-top:4px}
 .hashtag-suggestions.active{display:flex}
 .hashtag-suggestions button{border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:2px 8px;font-size:12px;cursor:pointer}
@@ -310,6 +315,10 @@ tr.selected .row-edit{display:inline-flex}
 .mobile-only{display:none}
 @media (max-width:520px){
   main{height:calc(100vh - var(--headH));min-height:calc(100vh - var(--headH));overflow:hidden;position:relative;z-index:1}
+  .header-bar{flex-wrap:wrap;gap:8px}
+  .header-left{width:100%;gap:6px}
+  .header-actions{width:100%;justify-content:flex-end}
+  .header-actions .btn{flex:0 0 auto}
   .view{height:100%}
   #activities-table thead{display:none}
   #activities-table colgroup{display:none}
@@ -337,6 +346,12 @@ tr.selected .row-edit{display:inline-flex}
   .filter-select{min-height:28px;font-size:12px;padding:2px 6px}
   .guidee-filters{display:flex;flex-wrap:nowrap;justify-content:flex-end;gap:4px}
   .guidee-filters select{min-height:28px;padding:2px 6px;font-size:12px;min-width:0;width:auto;flex:1 1 0}
+  .reporting-toolbar{align-items:flex-start;gap:6px}
+  .reporting-toolbar-dates{flex-wrap:nowrap;gap:6px}
+  .reporting-toolbar-dates label{flex:1 1 0;min-width:0}
+  .reporting-toolbar-actions{flex:1 1 0;display:flex;flex-wrap:nowrap;gap:6px}
+  .reporting-toolbar-actions .btn{flex:1 1 0;justify-content:center}
+  .reporting-toolbar .spacer{display:none}
 }
 .guidee-progress{position:static;display:flex;align-items:center;gap:8px;padding:4px 0 0;background:transparent;border-top:none;--progress-color:var(--accent)}
 #guidee-pane .guidee-progress{padding:4px 0 0}
@@ -360,11 +375,15 @@ dialog{border-radius:0;width:100vw;height:100vh;max-height:none;margin:0}
 .modal.confirm-modal .actions{justify-content:flex-end}
 
 .reporting-pane{display:flex;flex-direction:column;gap:12px;}
-.reporting-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:12px;}
+.reporting-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;}
+.reporting-toolbar-group{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;flex:0 0 auto}
 .reporting-toolbar label{display:flex;flex-direction:column;gap:4px;font-size:12px;}
 .reporting-toolbar input[type=date]{min-width:160px;}
-.reporting-toolbar .spacer{flex:1 1 auto;}
-.reporting-toolbar .btn{align-self:flex-start;}
+.reporting-toolbar .spacer{flex:1 1 auto;min-width:0;}
+.reporting-toolbar-actions{flex:0 0 auto;gap:8px;display:flex;flex-wrap:wrap;align-items:flex-end}
+.reporting-toolbar-actions .btn{align-self:flex-start;}
+.reporting-toolbar-dates{flex:1 1 auto;min-width:0;display:flex;gap:8px;flex-wrap:wrap}
+.reporting-toolbar-dates label{min-width:0;flex:1 1 0}
 .reporting-document{margin-top:8px;display:flex;flex-direction:column;gap:16px;font-size:13px;line-height:1.5;}
 .reporting-document table{width:100%;border-collapse:collapse;font-size:13px;}
 .reporting-document th,.reporting-document td{border:1px solid var(--border);padding:6px;vertical-align:top;}
