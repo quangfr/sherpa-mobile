@@ -1,5 +1,6 @@
 /* KEYS & UTILS */
 const LS_KEY='SHERPA_STORE_V6';
+const OFFLINE_LS_KEY='SHERPA_STORE_OFFLINE_V1';
 const TAB_KEY='SHERPA_ACTIVE_TAB';
 const ACTIVE_SESSION_KEY='SHERPA_SYNC_SESSION';
 const SIGNOUT_BROADCAST_KEY='SHERPA_SIGNOUT_BROADCAST';
@@ -742,7 +743,10 @@ function isRemoteDataStale(){
 function shouldBlockUsage(){
   if(authGateForced) return true;
   if(!isFirestoreAvailable()) return false;
-  if(!currentUser) return !hasOfflineDataAvailable();
+  if(!currentUser){
+    if(hasAuthenticatedOnce) return false;
+    return !hasOfflineDataAvailable();
+  }
   if(!remoteReady) return true;
   return isRemoteDataStale();
 }
@@ -764,7 +768,31 @@ function updateUsageGate(options={}){
 }
 function renderAuthUser(user){
   if(!authUserWrap) return;
-  authUserWrap.classList.toggle('hidden',!user);
+  authUserWrap.classList.remove('hidden');
+  if(!btnSignOut) return;
+  const icon=authUserWrap.querySelector('.icon');
+  const ensureIcon=()=>{
+    if(icon) return icon;
+    const span=document.createElement('span');
+    span.className='icon';
+    btnSignOut.innerHTML='';
+    btnSignOut.appendChild(span);
+    return span;
+  };
+  const targetIcon=icon || ensureIcon();
+  if(isOfflineMode()){
+    targetIcon.textContent='🔄';
+    btnSignOut.title='Quitter le mode hors-ligne';
+    btnSignOut.setAttribute('aria-label','Quitter le mode hors-ligne');
+  }else if(user){
+    targetIcon.textContent='🔒';
+    btnSignOut.title='Se déconnecter';
+    btnSignOut.setAttribute('aria-label','Se déconnecter');
+  }else{
+    targetIcon.textContent='🔑';
+    btnSignOut.title='Se connecter';
+    btnSignOut.setAttribute('aria-label','Se connecter');
+  }
 }
 function formatAuthError(err){
   if(!err) return 'Erreur inconnue.';
@@ -826,6 +854,7 @@ let firebaseAuth=null;
 let firebaseDb=null;
 let firebaseReady=false;
 let currentUser=null;
+let hasAuthenticatedOnce=false;
 let authGateForced=false;
 let remoteReady=false;
 let offlineMode=false;
@@ -983,16 +1012,46 @@ function migrateStore(data){
   migrated.meta={...cleanedMeta,version:6.0,updated_at:nowISO()};
   return migrated;
 }
-function load(){
-const raw=localStorage.getItem(LS_KEY);
-if(raw){ try{ const parsed=JSON.parse(raw); return migrateStore(parsed);}catch{ console.warn('LocalStorage invalide, on repart vide.'); } }
-const empty={consultants:[],activities:[],guidees:[],params:{...DEFAULT_PARAMS},meta:{version:6.0,updated_at:nowISO()}};
-localStorage.setItem(LS_KEY, JSON.stringify(empty));
-return empty;
+function resolveStorageKey(mode='active'){
+  if(mode==='active') return isOfflineMode()?OFFLINE_LS_KEY:LS_KEY;
+  if(mode==='offline') return OFFLINE_LS_KEY;
+  if(mode==='online') return LS_KEY;
+  if(typeof mode==='string' && mode) return mode;
+  return LS_KEY;
 }
-function hasLocalData(){
+function createEmptyStore(){
+  return {
+    consultants:[],
+    activities:[],
+    guidees:[],
+    params:{...DEFAULT_PARAMS},
+    meta:{version:6.0,updated_at:nowISO()}
+  };
+}
+function load(mode='online', options={}){
+  const {createIfMissing=true}=options||{};
+  const storageKey=resolveStorageKey(mode);
+  const raw=localStorage.getItem(storageKey);
+  if(raw){
+    try{
+      const parsed=JSON.parse(raw);
+      return migrateStore(parsed);
+    }catch{
+      console.warn(`LocalStorage invalide (${storageKey}), on repart vide.`);
+    }
+  }else if(!createIfMissing){
+    return null;
+  }
+  const empty=createEmptyStore();
+  if(createIfMissing){
+    localStorage.setItem(storageKey,JSON.stringify(empty));
+  }
+  return empty;
+}
+function hasLocalData(mode='online'){
+  const storageKey=resolveStorageKey(mode);
   try{
-    const obj=JSON.parse(localStorage.getItem(LS_KEY)||'null');
+    const obj=JSON.parse(localStorage.getItem(storageKey)||'null');
     if(!obj || typeof obj!=='object') return false;
     const count=(Array.isArray(obj.consultants)?obj.consultants.length:0)+(Array.isArray(obj.activities)?obj.activities.length:0)+(Array.isArray(obj.guidees)?obj.guidees.length:0);
     return count>0;
@@ -1005,15 +1064,22 @@ function storeHasRecords(){
   return ['consultants','activities','guidees'].some(key=>Array.isArray(store[key]) && store[key].length>0);
 }
 function hasOfflineDataAvailable(){
-  return hasLocalData() || storeHasRecords();
+  if(storeHasRecords()) return true;
+  if(isOfflineMode()) return hasLocalData('offline');
+  return hasLocalData('offline') || hasLocalData('online');
 }
 function save(reason='local-change', options={}){
   const {syncImmediate=true} = options || {};
   store.meta=store.meta||{};
   store.meta.updated_at=nowISO();
-  localStorage.setItem(LS_KEY,JSON.stringify(store));
-  markRemoteDirty(reason);
+  localStorage.setItem(resolveStorageKey('active'),JSON.stringify(store));
   refreshAll();
+  if(isOfflineMode()){
+    setSyncStatus('Modifications enregistrées en mode hors-ligne.','info');
+    updateSyncIndicator();
+    return;
+  }
+  markRemoteDirty(reason);
   if(syncImmediate && typeof syncIfDirty==='function'){
     try{
       const maybePromise=syncIfDirty(reason);
@@ -3582,6 +3648,7 @@ async function attemptLocalDataBootstrap(){
 function enableOfflineMode(options={}){
   if(offlineMode) return;
   const {autoLoadLocalData=false,promptImportOnEmpty=false} = options;
+  const hadOfflineSnapshot=!!localStorage.getItem(OFFLINE_LS_KEY);
   offlineMode=true;
   document.body?.classList.add('offline-mode');
   authGateForced=false;
@@ -3592,6 +3659,10 @@ function enableOfflineMode(options={}){
   syncSuspensions.clear();
   stopAutoSync();
   stopRemotePolling();
+  store=load('offline');
+  initialStoreSnapshot=deepClone(store);
+  lastSessionDiff={};
+  hasPendingChanges=false;
   renderAuthUser(null);
   if(authUserWrap){
     authUserWrap.classList.remove('hidden');
@@ -3606,26 +3677,33 @@ function enableOfflineMode(options={}){
     btnImportJsonHeader.removeAttribute('disabled');
   }
   if(btnOfflineMode) btnOfflineMode.disabled=true;
+  refreshAll();
   setSyncStatus('Mode hors-ligne activé — les données restent locales.','info');
   updateSyncIndicator();
   updateUsageGate({silent:true});
+  const shouldPromptOnEmpty=!hadOfflineSnapshot || promptImportOnEmpty;
   const promptIfEmpty=async()=>{
     if(storeHasRecords()) return;
     alert('Aucune donnée locale détectée. Importez un fichier JSON pour commencer.');
-    await promptJsonImport({quiet:true,showAlert:false});
+    manualImportPromptedAfterBootstrap=true;
+    const imported=await promptJsonImport({quiet:true,showAlert:false});
+    if(!imported){
+      manualImportPromptedAfterBootstrap=false;
+    }
+  };
+  const requestImportIfEmpty=()=>{
+    if(!shouldPromptOnEmpty || manualImportPromptedAfterBootstrap) return;
+    if(storeHasRecords()) return;
+    promptIfEmpty();
   };
   if(autoLoadLocalData){
     attemptLocalDataBootstrap().then(success=>{
-      if(!success && promptImportOnEmpty && !manualImportPromptedAfterBootstrap){
-        promptIfEmpty();
-      }else if(promptImportOnEmpty && !storeHasRecords() && !manualImportPromptedAfterBootstrap){
-        promptIfEmpty();
+      if(!success || !storeHasRecords()){
+        requestImportIfEmpty();
       }
     });
-  }else if(promptImportOnEmpty && !manualImportPromptedAfterBootstrap){
-    if(!storeHasRecords()){
-      promptIfEmpty();
-    }
+  }else{
+    requestImportIfEmpty();
   }
 }
 
@@ -4776,6 +4854,12 @@ function restartRemotePolling(){
   if(!isFirestoreAvailable() || !firebaseReady || !currentUser) return;
   startRemotePolling();
 }
+function requestForegroundRefresh(reason='foreground'){
+  if(!isFirestoreAvailable() || !firebaseReady || !currentUser) return;
+  loadRemoteStore({manual:false,reason,silent:true}).catch(err=>{
+    console.error('Synchronisation au retour au premier plan impossible :',err);
+  });
+}
 function markRemoteDirty(reason='local-change'){
   setLocalSessionDirtyFlag();
   if(!isFirestoreAvailable() || !firebaseReady || !currentUser || !remoteReady) return;
@@ -5046,7 +5130,7 @@ async function overwriteFirestoreFromLocal(){
     updateUsageGate();
     restartRemotePolling();
     scheduleAutoSync();
-    localStorage.setItem(LS_KEY,JSON.stringify(store));
+    localStorage.setItem(resolveStorageKey('online'),JSON.stringify(store));
     refreshAll();
     setSyncStatus(`Firestore réinitialisé (${formatSyncDate(nowIso)})`,'success');
     updateSyncIndicator();
@@ -5144,43 +5228,21 @@ async function loadRemoteStore(options={}){
       hasPendingChanges=true;
       syncIndicatorState='pending';
       if(showFeedback){
-        setSyncStatus(`Données locales plus récentes détectées (local : ${localLabel} / Firestore : ${remoteLabel}).`,'warning');
+        setSyncStatus(`Données locales plus récentes détectées (local : ${localLabel} / Firestore : ${remoteLabel}) — envoi automatique en cours…`,'warning');
       }
       updateSyncIndicator();
       updateUsageGate({silent:!showFeedback});
-      const confirmMessage=[
-        'Des modifications locales plus récentes ont été détectées.',
-        `Version locale : ${localLabel}`,
-        `Version Firestore : ${remoteLabel}`,
-        '',
-        'Voulez-vous envoyer les modifications locales vers Firestore ?',
-        'Choisissez « Annuler » pour conserver la version Firestore.'
-      ].join('\n');
-      const shouldPush=(typeof window!=='undefined' && typeof window.confirm==='function')
-        ? window.confirm(confirmMessage)
-        : true;
-      if(shouldPush){
-        if(store?.meta?.updated_at){
-          lastRemoteWriteIso=store.meta.updated_at;
-        }
-        setSyncStatus('Envoi des modifications locales plus récentes…','warning');
-        scheduleAutoSync();
-        const syncPromise=syncIfDirty('local-newer-confirm');
-        if(syncPromise && typeof syncPromise.catch==='function'){
-          syncPromise.catch(err=>{
-            console.error('Erreur lors de la resynchronisation des modifications locales :',err);
-          });
-        }
-        return null;
+      if(store?.meta?.updated_at){
+        lastRemoteWriteIso=store.meta.updated_at;
       }
-      hasPendingChanges=false;
-      syncIndicatorState='ok';
-      if(showFeedback){
-        setSyncStatus('Version Firestore rechargée.','info');
+      scheduleAutoSync();
+      const syncPromise=syncIfDirty('local-newer-auto');
+      if(syncPromise && typeof syncPromise.catch==='function'){
+        syncPromise.catch(err=>{
+          console.error('Erreur lors de la resynchronisation des modifications locales :',err);
+        });
       }
-      updateSyncIndicator();
-      // Continuer pour appliquer la version Firestore.
-      clearLocalSessionDirtyFlag();
+      return null;
     }
     applyIncomingStore(remoteStore,'firestore',{alert:false});
     initialStoreSnapshot=deepClone(store);
@@ -5191,9 +5253,12 @@ async function loadRemoteStore(options={}){
     lastRemoteWriteIso=metaIso;
     lastSyncSuccess=Date.now();
     syncIndicatorState='ok';
-    const message=metaIso?`Dernière lecture distante : ${formatSyncDate(metaIso)}`:'Synchronisation distante terminée.';
+    const message=remoteIsNewer
+      ? 'Données Firestore plus récentes chargées — version locale remplacée.'
+      : metaIso?`Dernière lecture distante : ${formatSyncDate(metaIso)}`:'Synchronisation distante terminée.';
+    const variant=remoteIsNewer?'info':'success';
     if(showFeedback){
-      setSyncStatus(message,'success');
+      setSyncStatus(message,variant);
     }
     updateUsageGate({silent:!showFeedback});
     startRemotePolling();
@@ -5230,6 +5295,7 @@ async function loadRemoteStore(options={}){
 async function handleAuthStateChanged(user){
   currentUser=user||null;
   if(user){
+    hasAuthenticatedOnce=true;
     manualSignOutRequested=false;
     externalSignOutSignal=false;
     authRecoveryAttempts=0;
@@ -5259,7 +5325,7 @@ async function handleAuthStateChanged(user){
   }else{
     renderAuthUser(null);
     btnRefreshRemote?.setAttribute('disabled','true');
-    if(btnSignOut) btnSignOut.setAttribute('disabled','true');
+    if(btnSignOut) btnSignOut.removeAttribute('disabled');
     setPasswordFeedback('');
     setAuthError('');
     if(manualSignOutRequested || externalSignOutSignal){
@@ -5272,19 +5338,16 @@ async function handleAuthStateChanged(user){
       lastRemoteWriteIso=null;
       return;
     }
-    if(!hasOfflineDataAvailable()){
-      lastAuthCredentials=null;
-      authRecoveryAttempts=0;
-      forceAuthGate('Session expirée — connectez-vous pour récupérer vos données.','warning');
-      return;
-    }
     authGateForced=false;
     toggleAuthGate(false);
     suspendSync('auth-recovery',{message:'Session Firebase expirée — reconnexion automatique…'});
     updateUsageGate({silent:true});
     if(!lastAuthCredentials){
-      forceAuthGate('Session expirée — veuillez saisir à nouveau vos identifiants.','warning');
+      setSyncStatus('Session expirée — cliquez sur 🔑 pour vous reconnecter.','warning');
       return;
+    }
+    if(!hasOfflineDataAvailable()){
+      setSyncStatus('Session expirée — cliquez sur 🔑 pour récupérer vos données.','warning');
     }
     if(!authRecoveryInFlight){
       attemptAuthRecovery().catch(err=>{
@@ -5374,6 +5437,13 @@ btnSignOut?.addEventListener('click',()=>{
     }
     return;
   }
+  if(!currentUser){
+    authGateForced=true;
+    toggleAuthGate(true);
+    setAuthError('');
+    setPasswordFeedback('');
+    return;
+  }
   if(!firebaseAuth) return;
   const proceed=()=>{
     manualSignOutRequested=true;
@@ -5435,11 +5505,13 @@ document.addEventListener('visibilitychange',()=>{
   }else if(document.visibilityState==='visible'){
     resumeSync('hidden');
     claimActiveSession('visibility');
+    requestForegroundRefresh('visibility');
   }
 });
 window.addEventListener('focus',()=>{
   if(document.visibilityState==='visible'){
     claimActiveSession('focus');
+    requestForegroundRefresh('focus');
   }
 });
 window.addEventListener('beforeunload',()=>{
@@ -5469,7 +5541,7 @@ if(launchedFromFile){
 function applyIncomingStore(incoming, sourceLabel, options={}){
   if(!incoming || typeof incoming!=='object') throw new Error('Format vide');
   const migrated=migrateStore(incoming);
-  localStorage.setItem(LS_KEY, JSON.stringify(migrated));
+  localStorage.setItem(resolveStorageKey('active'), JSON.stringify(migrated));
   store=migrated;
   if(options.updateSnapshot!==false){
     initialStoreSnapshot=deepClone(store);
