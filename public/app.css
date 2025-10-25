@@ -114,6 +114,7 @@ textarea{width:100%;resize:vertical}
 .hashtag-suggestions button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .activity-beneficiary{display:inline-flex;align-items:center;gap:4px;padding:0 6px;border-radius:999px;border:1px solid var(--border);background:var(--bg);font-size:12px;line-height:1.4}
 .description-field{height:21.75em;min-height:21.75em;max-height:21.75em;resize:none;overflow:auto}
+#dlg-guidee .description-field{height:10.875em;min-height:10.875em;max-height:10.875em}
 .textarea-with-action textarea.description-field{padding-right:44px}
 .pane{display:flex;flex-direction:column;min-height:0;height:100%}
 .pane-header{position:sticky;top:calc(var(--headH));z-index:2;background:var(--bg);border-bottom:1px solid var(--border);padding:4px 0;display:flex;flex-direction:column;gap:4px}
