@@ -313,9 +313,9 @@ tr.selected .row-edit{display:inline-flex}
 .mobile-only{display:none}
 @media (max-width:520px){
   main{height:calc(100vh - var(--headH));min-height:calc(100vh - var(--headH));overflow:hidden;position:relative;z-index:1}
-  .header-bar{flex-wrap:wrap;gap:8px}
-  .header-left{width:100%;gap:6px}
-  .header-actions{width:100%;justify-content:flex-end;flex-wrap:wrap;gap:6px}
+  .header-bar{flex-wrap:wrap;gap:8px;align-items:flex-start}
+  .header-left{order:1;width:100%;gap:6px}
+  .header-actions{order:0;width:auto;flex:0 1 auto;margin-left:auto;justify-content:flex-end;flex-wrap:wrap;gap:6px}
   .header-backups{display:none}
   #btn-sync-indicator{order:0}
   .header-actions #auth-user{order:1}
