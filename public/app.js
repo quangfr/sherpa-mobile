@@ -4628,6 +4628,7 @@ function updateSyncIndicator(){
   if(isOfflineMode()){
     btnSyncIndicator.textContent='⬇️';
     btnSyncIndicator.title='Exporter la session locale en JSON';
+    btnSyncIndicator.setAttribute('aria-label',btnSyncIndicator.title);
     btnSyncIndicator.disabled=false;
     return;
   }
@@ -4635,12 +4636,14 @@ function updateSyncIndicator(){
   if(isSyncSuspended()){
     btnSyncIndicator.textContent='⏸️';
     btnSyncIndicator.title='Synchronisation en pause — revenez sur l\'onglet principal pour reprendre.';
+    btnSyncIndicator.setAttribute('aria-label',btnSyncIndicator.title);
     btnSyncIndicator.disabled=false;
     return;
   }
   if(!connected){
     btnSyncIndicator.textContent='⚠️';
     btnSyncIndicator.title='Hors connexion — cliquez pour vous connecter.';
+    btnSyncIndicator.setAttribute('aria-label',btnSyncIndicator.title);
     btnSyncIndicator.disabled=false;
     return;
   }
@@ -4657,7 +4660,7 @@ function updateSyncIndicator(){
     icon='⚠️';
     title='Erreur de synchronisation. Cliquez pour rafraîchir.';
   }else if(state==='pending' || hasPendingChanges || isSyncInFlight){
-    icon='⌛';
+    icon='⏳';
     title='Modifications en attente de synchronisation.';
   }else if(state==='stale'){
     icon='⚠️';
@@ -4668,6 +4671,7 @@ function updateSyncIndicator(){
   }
   btnSyncIndicator.textContent=icon;
   btnSyncIndicator.title=title;
+  btnSyncIndicator.setAttribute('aria-label',title);
   btnSyncIndicator.disabled=false;
   updateUsageGate({silent:true});
 }
@@ -5086,25 +5090,62 @@ async function loadRemoteStore(options={}){
       initialStoreSnapshot=deepClone(remoteStore);
       lastSessionDiff=computeSessionDiff();
       const diffHasChanges=lastSessionDiff && Object.keys(lastSessionDiff).length>0;
+      const localIso=store?.meta?.updated_at || store?.meta?.updated_at_iso || null;
+      const localLabel=localIso?formatSyncDate(localIso):'non horodaté';
+      const remoteLabel=metaIso?formatSyncDate(metaIso):'non horodaté';
       remoteReady=true;
-      hasPendingChanges=diffHasChanges;
       lastRemoteReadIso=metaIso;
-      if(store?.meta?.updated_at){
-        lastRemoteWriteIso=store.meta.updated_at;
-      }
-      syncIndicatorState=diffHasChanges?'pending':'ok';
-      setSyncStatus('Données locales plus récentes que Firestore — tentative de resynchronisation…','warning');
-      updateSyncIndicator();
-      scheduleAutoSync();
       updateUsageGate({silent:!showFeedback});
       startRemotePolling();
-      const reconcilePromise=syncIfDirty('reconcile-after-remote');
-      if(reconcilePromise && typeof reconcilePromise.catch==='function'){
-        reconcilePromise.catch(err=>{
-          console.error('Erreur de resynchronisation immédiate :',err);
-        });
+      if(!diffHasChanges){
+        hasPendingChanges=false;
+        syncIndicatorState='ok';
+        if(showFeedback){
+          setSyncStatus('Les données locales sont déjà synchronisées avec Firestore.','success');
+        }
+        updateSyncIndicator();
+        scheduleAutoSync();
+        return null;
       }
-      return null;
+      hasPendingChanges=true;
+      syncIndicatorState='pending';
+      if(showFeedback){
+        setSyncStatus(`Données locales plus récentes détectées (local : ${localLabel} / Firestore : ${remoteLabel}).`,'warning');
+      }
+      updateSyncIndicator();
+      updateUsageGate({silent:!showFeedback});
+      const confirmMessage=[
+        'Des modifications locales plus récentes ont été détectées.',
+        `Version locale : ${localLabel}`,
+        `Version Firestore : ${remoteLabel}`,
+        '',
+        'Voulez-vous envoyer les modifications locales vers Firestore ?',
+        'Choisissez « Annuler » pour conserver la version Firestore.'
+      ].join('\n');
+      const shouldPush=(typeof window!=='undefined' && typeof window.confirm==='function')
+        ? window.confirm(confirmMessage)
+        : true;
+      if(shouldPush){
+        if(store?.meta?.updated_at){
+          lastRemoteWriteIso=store.meta.updated_at;
+        }
+        setSyncStatus('Envoi des modifications locales plus récentes…','warning');
+        scheduleAutoSync();
+        const syncPromise=syncIfDirty('local-newer-confirm');
+        if(syncPromise && typeof syncPromise.catch==='function'){
+          syncPromise.catch(err=>{
+            console.error('Erreur lors de la resynchronisation des modifications locales :',err);
+          });
+        }
+        return null;
+      }
+      hasPendingChanges=false;
+      syncIndicatorState='ok';
+      if(showFeedback){
+        setSyncStatus('Version Firestore rechargée.','info');
+      }
+      updateSyncIndicator();
+      // Continuer pour appliquer la version Firestore.
     }
     applyIncomingStore(remoteStore,'firestore',{alert:false});
     initialStoreSnapshot=deepClone(store);
