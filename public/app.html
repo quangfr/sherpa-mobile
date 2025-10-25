@@ -192,12 +192,18 @@
 </div>
 </div>
 <div class="grid2">
-<label>Consultant <select name="consultant_id" required id="fa-consultant"></select></label>
+<label class="field-with-action">Titre*
+  <div class="input-with-action">
+    <input id="fa-title" name="title" required maxlength="160" placeholder="Résumé de l’activité"/>
+    <button type="button" class="btn ghost small ai-helper" id="fa-title-ai" title="Suggérer un titre à partir de la description">✨</button>
+  </div>
+</label>
 <div class="field-pair" id="fa-type-date-row"><label>Type <select name="type" required id="fa-type">
 <option value="ACTION_ST_BERNARD">🐕‍🦺 Action STB</option><option value="CORDEE">🪢 Cordée</option><option value="NOTE">📝 Note</option>
 <option value="VERBATIM">💬 Verbatim</option><option value="AVIS">🗣️ Avis</option><option value="ALERTE">🚨 Alerte</option><option value="PROLONGEMENT">↪️ Prolongement</option>
 </select></label>
 <label>Date <input type="date" name="date_publication" required id="fa-date"/></label></div>
+<label>Consultant <select name="consultant_id" required id="fa-consultant"></select></label>
 <label>Guidée <select name="guidee_id" id="fa-guidee"></select></label>
 <label id="fa-probability-wrap" class="hidden">Probabilité
   <select id="fa-probability">
@@ -217,12 +223,6 @@
   </select>
 </label>
 <fieldset id="fa-alert-type-wrap" class="hidden alert-type-group"><legend>Type d'alerte</legend><label class="alert-type-option"><input type="checkbox" id="fa-alert-type-co" value="COMMERCE"/> Commerce (CO)</label><label class="alert-type-option"><input type="checkbox" id="fa-alert-type-rh" value="RH"/> Ressources humaines (RH)</label></fieldset>
-<label class="field-with-action">Titre*
-  <div class="input-with-action">
-    <input id="fa-title" name="title" required maxlength="160" placeholder="Résumé de l’activité"/>
-    <button type="button" class="btn ghost small ai-helper" id="fa-title-ai" title="Suggérer un titre à partir de la description">✨</button>
-  </div>
-</label>
 <label id="fa-heures-wrap" class="hidden">Heures réalisées <select name="heures" id="fa-heures"></select></label>
 <label style="grid-column:1/-1" class="field-with-action">Description
   <div class="textarea-with-action">
@@ -243,7 +243,7 @@
   </div>
   <div class="grid2">
     <label>Consultant* <select id="fg-consultant" required></select></label>
-    <label class="field-with-action">Nom de la guidée*
+    <label class="field-with-action" style="grid-column:1/-1">Nom de la guidée*
       <div class="input-with-action">
         <input id="fg-nom" required placeholder="Titre de la guidée"/>
         <button type="button" class="btn ghost small ai-helper" id="fg-title-ai" title="Suggérer un titre à partir de la description">✨</button>
@@ -277,9 +277,9 @@
 </div>
 <div class="grid2">
 <label>Nom* <input name="nom" required id="fc-nom"/></label>
-<label>Titre mission <input name="titre_mission" id="fc-titre"/></label>
-<label>Date fin (dispo) <input type="date" name="date_fin" id="fc-fin"/></label>
 <label>Boond Id <input name="boond_id" id="fc-boond" placeholder="12345"/></label>
+<label style="grid-column:1/-1">Titre mission <input name="titre_mission" id="fc-titre"/></label>
+<label>Date fin (dispo) <input type="date" name="date_fin" id="fc-fin"/></label>
 <label style="grid-column:1/-1" class="field-with-action">Description
   <div class="textarea-with-action">
     <textarea name="description" id="fc-desc" class="description-field" placeholder="#Team #Tech #Data #Customer #Design #Product"></textarea>
