@@ -3,6 +3,7 @@ const LS_KEY='SHERPA_STORE_V6';
 const TAB_KEY='SHERPA_ACTIVE_TAB';
 const ACTIVE_SESSION_KEY='SHERPA_SYNC_SESSION';
 const SIGNOUT_BROADCAST_KEY='SHERPA_SIGNOUT_BROADCAST';
+const LOCAL_SESSION_DIRTY_KEY='SHERPA_LOCAL_SESSION_DIRTY';
 const AUTH_RECOVERY_MAX_ATTEMPTS=3;
 const AUTH_RECOVERY_RETRY_DELAY_MS=5000;
 const nowISO=()=>new Date().toISOString();
@@ -282,6 +283,22 @@ function parseMentionCatalog(text){
     .split(/\s+/)
     .map(normalizeMention)
     .filter(Boolean);
+}
+function setLocalSessionDirtyFlag(){
+  if(typeof sessionStorage==='undefined') return;
+  try{
+    sessionStorage.setItem(LOCAL_SESSION_DIRTY_KEY,'dirty');
+  }catch(err){
+    console.debug('Impossible de marquer la session locale :',err);
+  }
+}
+function clearLocalSessionDirtyFlag(){
+  if(typeof sessionStorage==='undefined') return;
+  try{
+    sessionStorage.removeItem(LOCAL_SESSION_DIRTY_KEY);
+  }catch(err){
+    console.debug('Impossible de nettoyer la session locale :',err);
+  }
 }
 function extractHashtags(text){
   if(!text) return [];
@@ -3676,9 +3693,7 @@ const faProbability=$('fa-probability');
 const faAlertWrap=$('fa-alert-status-wrap');
 const faAlertStatus=$('fa-alert-status');
 const faAlertTypeWrap=$('fa-alert-type-wrap');
-const faAlertTypeCO=$('fa-alert-type-co');
-const faAlertTypeRH=$('fa-alert-type-rh');
-const faAlertTypeInputs=[faAlertTypeCO,faAlertTypeRH].filter(Boolean);
+const faAlertTypeSelect=$('fa-alert-type-select');
 const faTitleAI=$('fa-title-ai');
 const btnFaGoto=$('fa-goto-consultant');
 const btnFaGotoGuidee=$('fa-goto-guidee');
@@ -3690,22 +3705,41 @@ const faForm=$('form-activity');
 const faSaveBtn=$$('#dlg-activity .actions [value="ok"]');
 let activityInitialSnapshot=null;
 function getSelectedAlertTypes(){
-  if(!faAlertTypeInputs.length) return [];
-  const selected=faAlertTypeInputs
-    .filter(input=>input && input.checked)
-    .map(input=>normalizeAlertType(input.value))
-    .filter(Boolean);
-  return normalizeAlertTypes(selected);
+  if(!faAlertTypeSelect) return [];
+  const value=String(faAlertTypeSelect.value||'').toUpperCase();
+  if(value==='RH_CO'){
+    return normalizeAlertTypes([ALERT_TYPES.RH,ALERT_TYPES.COMMERCE]);
+  }
+  if(value==='RH'){
+    return normalizeAlertTypes([ALERT_TYPES.RH]);
+  }
+  if(value==='CO'){
+    return normalizeAlertTypes([ALERT_TYPES.COMMERCE]);
+  }
+  return [];
 }
 function setSelectedAlertTypes(types){
+  if(!faAlertTypeSelect) return;
   const normalized=normalizeAlertTypes(types);
-  const fallback=normalized.length?normalized:[...DEFAULT_ALERT_TYPES];
-  const selection=new Set(fallback);
-  faAlertTypeInputs.forEach(input=>{
-    if(!input) return;
-    const type=normalizeAlertType(input.value);
-    input.checked=type?selection.has(type):false;
-  });
+  let value='';
+  if(normalized.length>=2){
+    value='RH_CO';
+  }else if(normalized[0]===ALERT_TYPES.RH){
+    value='RH';
+  }else if(normalized[0]===ALERT_TYPES.COMMERCE){
+    value='CO';
+  }
+  if(!value){
+    const defaultNormalized=normalizeAlertTypes(DEFAULT_ALERT_TYPES);
+    if(defaultNormalized.length>=2){
+      value='RH_CO';
+    }else if(defaultNormalized[0]===ALERT_TYPES.RH){
+      value='RH';
+    }else{
+      value='CO';
+    }
+  }
+  faAlertTypeSelect.value=value;
 }
 function ensureAlertTypeSelection(){
   if(!faAlertTypeWrap || faAlertTypeWrap.classList.contains('hidden')) return;
@@ -3790,13 +3824,11 @@ attachHashtagAutocomplete(faDesc);
 faDesc?.addEventListener('input',()=>{ faDesc.dataset.autofill='false'; });
 faForm?.addEventListener('input',updateActivitySaveVisibility);
 faForm?.addEventListener('change',updateActivitySaveVisibility);
-faAlertTypeInputs.forEach(input=>{
-  on(input,'change',()=>{
-    if(!getSelectedAlertTypes().length){
-      input.checked=true;
-    }
-    updateActivitySaveVisibility();
-  });
+faAlertTypeSelect?.addEventListener('change',()=>{
+  if(!getSelectedAlertTypes().length){
+    setSelectedAlertTypes(DEFAULT_ALERT_TYPES);
+  }
+  updateActivitySaveVisibility();
 });
 if(faHeures && !faHeures.options.length){
   const frag=document.createDocumentFragment();
@@ -4745,6 +4777,7 @@ function restartRemotePolling(){
   startRemotePolling();
 }
 function markRemoteDirty(reason='local-change'){
+  setLocalSessionDirtyFlag();
   if(!isFirestoreAvailable() || !firebaseReady || !currentUser || !remoteReady) return;
   hasPendingChanges=true;
   setSyncStatus('Modifications locales en attente de sauvegarde…','warning');
@@ -4899,6 +4932,7 @@ async function saveStoreToFirestore(reason='auto', diffOverride=null){
     lastRemoteWriteIso=nowIso;
     lastRemoteReadIso=nowIso;
     hasPendingChanges=false;
+    clearLocalSessionDirtyFlag();
     remoteReady=true;
     syncIndicatorState='ok';
     lastSyncSuccess=Date.now();
@@ -5146,6 +5180,7 @@ async function loadRemoteStore(options={}){
       }
       updateSyncIndicator();
       // Continuer pour appliquer la version Firestore.
+      clearLocalSessionDirtyFlag();
     }
     applyIncomingStore(remoteStore,'firestore',{alert:false});
     initialStoreSnapshot=deepClone(store);
@@ -5440,6 +5475,7 @@ function applyIncomingStore(incoming, sourceLabel, options={}){
     initialStoreSnapshot=deepClone(store);
   }
   lastSessionDiff={};
+  clearLocalSessionDirtyFlag();
   refreshAll();
   if(options.alert!==false){
     alert(`LocalStorage réinitialisé depuis « ${sourceLabel} » ✅`);
