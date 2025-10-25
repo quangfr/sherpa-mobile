@@ -385,7 +385,7 @@ dialog{border-radius:0;width:100vw;height:100vh;max-height:none;margin:0}
 .reporting-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;}
 .reporting-toolbar-group{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;flex:0 0 auto}
 .reporting-toolbar label{display:flex;flex-direction:column;gap:4px;font-size:12px;}
-.reporting-toolbar input[type=date]{min-width:160px;}
+.reporting-toolbar input[type=date]{min-width:100px;}
 .reporting-toolbar .spacer{flex:1 1 auto;min-width:0;}
 .reporting-toolbar-actions{flex:0 0 auto;gap:8px;display:flex;flex-wrap:wrap;align-items:flex-end}
 .reporting-toolbar-actions .btn{align-self:flex-start;}
