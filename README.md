@@ -4,9 +4,7 @@
 
 ### Version 1 — dernières évolutions
 - **Mode hors ligne piloté par le client** : le bouton d'activation situé dans `public/app.html` bascule l'interface dans la classe `offline-mode` de `public/app.css`, charge les données stockées sous `SHERPA_STORE_OFFLINE_V1` et conserve la possibilité d'exporter un JSON grâce à l'indicateur de synchronisation présent dans l'en-tête.
-- **Récupération automatique des sauvegardes locales** : au chargement, la logique de `public/app.js` recense les fichiers `sherpa-backup-*.json` disponibles à la racine du projet afin de reconstruire immédiatement le store et de proposer ensuite l'import manuel pour validation utilisateur.
 - **Synchronisation Firestore sécurisée** : la configuration `FIREBASE_CONFIG` et les collections référencées dans `FIRESTORE_COLLECTIONS` encadrent les échanges avec Firestore, avec reprise automatique, surveillance de l'état de synchronisation et verrouillage préventif en cas d'écart majeur entre copie locale et distante.
-- **Expérience de pilotage enrichie** : les sections `👥 Sherpa`, `📌 Activités`, `🧭 Guidées`, `📈 Reporting` et `⚙️ Paramètres` décrites dans `public/app.html` exploitent la logique de `public/app.js` pour appliquer filtres, badges et raccourcis clavier, tandis que `public/app.css` harmonise la charte graphique, les dialogues natifs et l'adaptation mobile.
 - **Productivité IA intégrée** : les prompts `DEFAULT_DESCRIPTION_TEMPLATES`, `DEFAULT_COMMON_DESCRIPTION_PROMPT`, `DEFAULT_ACTIVITY_TITLE_PROMPT` et `DEFAULT_GUIDEE_TITLE_PROMPT` tirent parti du proxy Cloudflare vers l'API OpenAI pour suggérer des descriptions structurées, proposer des titres contextuels et compléter les textes en respectant le catalogue configurable de hashtags et de mentions.
 
 ## 1. Installation et environnements
