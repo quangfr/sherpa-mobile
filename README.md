@@ -20,12 +20,12 @@
 
 ## 2. Collaboration et workflow Git/Codex
 - Démarrer toujours une conversation Codex depuis la branche `main`
-- Regrouper un maximum de demandes dans un message pour gagner du temps
-- (évolution complexe) Télécharger le code de la branche `dev` et vérifier en local
-- (évolution complexe) Poursuivre les améliorations dans la conversation seulement si pas de merge
+- Regrouper un maximum de demandes dans un prompt pour gagner du temps
+- (optionnel) Télécharger le code de la branche `dev` depuis Github et vérifier en local
+- Poursuivre la conversation seulement si pas de merge, sinon revoir le prompt dans une nouvelle
 - Merger la PR dans la branche `main` dès que possible
 - Patienter **1 à 2 minutes** avant de vérifier sur l'instance de production
-- Documenter chaque évolution significative dans le README
+- Documenter chaque évolution significative dans le changelog du README
 
 ## 3. Description fonctionnelle
 ### Contexte
