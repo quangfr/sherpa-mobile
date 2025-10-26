@@ -382,7 +382,7 @@ tr.selected .row-edit{display:inline-flex}
 @media (max-width:700px){
 dialog{--mobile-dialog-offset:max(env(safe-area-inset-bottom,0px),20px);border-radius:0;width:100vw;height:calc(100vh - var(--mobile-dialog-offset));max-height:calc(100vh - var(--mobile-dialog-offset));margin:0}
 .modal{max-height:none;height:100%;padding:16px 16px calc(120px + 48px + env(safe-area-inset-bottom,0px));}
-.modal .actions{position:fixed;left:16px;right:16px;bottom:calc(48px + env(safe-area-inset-bottom,0px));margin-top:0;padding:12px 16px;background:var(--card);border-radius:12px;box-shadow:0 -6px 24px rgba(15,23,42,.12);z-index:5;}
+.modal .actions{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px));margin-top:0;padding:12px 16px;background:var(--card);border-radius:12px;box-shadow:0 -6px 24px rgba(15,23,42,.12);z-index:5;}
 }
 
 .modal.confirm-modal{max-width:420px}
