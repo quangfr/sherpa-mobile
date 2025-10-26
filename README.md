@@ -3,20 +3,19 @@
 ## 0. Changelog au 24/10/2025
 
 ### Version 1 — dernières évolutions
-- Mode hors ligne autonome : activation directe depuis l'écran de connexion (`Mode hors-ligne`) ou via `app.html`/`index.html`. Sherpa cherche automatiquement le dernier fichier `sherpa-backup-*.json` puis, en l'absence de sauvegarde, propose l'import manuel. Les sauvegardes locales restent accessibles (`⬇️`) pour faciliter les échanges lors des tests ou migrations.
-- Vue d'ensemble des missions enrichie : l'onglet `👥 Sherpa` met en avant les situations à risque (alertes actives, fins de mission proches, actions STB/avis manquants) et permet d'ouvrir des fiches consultants préparées par l'assistant IA.
-- Parcours des activités fluidifié : filtres cumulables par personne, type, hashtag ou mois, badges lisibles (heures, probabilité, statut d'alerte) et suggestions automatiques pour les hashtags/mentions afin d'harmoniser le vocabulaire.
-- Guidées visualisées en timeline : progression calculée automatiquement, badges de statut colorés et formulaires assistés par l'IA pour poser le cadre comme pour rédiger le résultat.
-- Reporting instantané : un document déjà formaté (texte ou HTML) prêt à copier, couvrant missions, actions, alertes, avis, verbatims, prolongements et cordées sur la période par défaut (du 1ᵉʳ juillet 2025 à aujourd'hui).
-- Synchronisation plus sereine : connexion Firebase protégée par un proxy, reprise automatique après coupure, diff client pour fusionner les modifications et onglets coordonnés via `SHERPA_SYNC_SESSION`/`SHERPA_SIGNOUT_BROADCAST`.
+- **Mode hors ligne piloté par le client** : le bouton `#btn-offline-mode` de `public/app.html` déclenche `enableOfflineMode()` dans `public/app.js`, qui bascule l'interface en classe `offline-mode`, charge `SHERPA_STORE_OFFLINE_V1` et neutralise la passerelle Firebase tout en maintenant l'export JSON via l'indicateur de synchro (`updateSyncIndicator()`).
+- **Récupération automatique des sauvegardes locales** : `attemptLocalDataBootstrap()` recherche les fichiers `sherpa-backup-*.json` connus par `discoverLocalBackupUrls()` et `tryLoadBackupFromUrl()` pour reconstituer le store avant de proposer un import manuel, garantissant que les tests hors ligne disposent immédiatement de données réalistes.
+- **Synchronisation Firestore sécurisée** : la configuration `FIREBASE_CONFIG` et les collections déclarées dans `FIRESTORE_COLLECTIONS` sont orchestrées par `loadRemoteStore()` et `saveStoreToFirestore()`, avec reprises automatiques (`scheduleAutoSync()`, `restartAutoSync()`) et surveillance d'état (`updateSyncIndicator()`, `shouldBlockUsage()`).
+- **Expérience de pilotage enrichie** : les vues déclarées dans `public/app.html` — `👥 Sherpa`, `📌 Activités`, `🧭 Guidées`, `📈 Reporting`, `⚙️ Paramètres` — sont alimentées par `dashboard()`, `renderActivities()`, `renderGuideeTimeline()` et `renderReportingDocument()`, chacune appliquant filtres, badges et raccourcis clavier définis dans `public/app.js` et stylés par `public/app.css`.
+- **Productivité IA intégrée** : les prompts par défaut (`DEFAULT_DESCRIPTION_TEMPLATES`, `DEFAULT_COMMON_DESCRIPTION_PROMPT`, `DEFAULT_ACTIVITY_TITLE_PROMPT`, `DEFAULT_GUIDEE_TITLE_PROMPT`) s'appuient sur `requestOpenAISummary()` et `invokeAIHelper()` pour proposer des descriptions structurées, titres et complétions respectant le catalogue de hashtags/mentions paramétrable.
 
 ## 1. Installation et environnements
-- **Instance de production** : publiée automatiquement depuis la branche `main` du dépôt [github.com/quangfr/sherpa](https://github.com/quangfr/sherpa). La base de donnée est hébergée sur Firebase **Firestore**. Un **worker Cloudflare** sert de proxy d'API pour masquer les secrets Firebase et n'autorise que les appels provenant de l'application Sherpa.
-- **Mode en ligne** : ouvrir [https://quangfr.github.io/sherpa](https://quangfr.github.io/sherpa). La synchronisation des données se fait en temps réel (consultants, guidées, activités, paramètres).
+- **Instance de production** : la branche `main` est publiée telle quelle ; l'URL racine charge `index.html`, qui redirige immédiatement vers `public/app.html`. L'application repose sur `public/app.js` (logique), `public/app.css` (styles) et `logo.gif`. Les secrets Firebase sont consommés uniquement côté client via `FIREBASE_CONFIG` et encapsulés derrière le proxy Cloudflare défini pour l'API OpenAI.
+- **Mode en ligne** : ouvrir [https://quangfr.github.io/sherpa](https://quangfr.github.io/sherpa). Le bundle statique s'initialise en SPA, établit `firebaseApp = firebase.initializeApp(FIREBASE_CONFIG)` puis synchronise `consultants`, `activities`, `guidees`, `params` et `meta` via `firebase.firestore().collection(...)`. L'état local reste dans `localStorage` (`SHERPA_STORE_V6`) pour permettre la reprise en cas de réseau intermittent.
 - **Mode hors ligne / sandbox locale** :
-  1. Télécharger le dépôt de la branche `dev` (`Code` → `Download ZIP`) puis ouvrir le dossier localement.
-  2. Ouvrir `index.html` directement dans le navigateur ou cliquer sur `Mode hors-ligne` depuis l'écran de connexion pour lancer la sandbox. Aucune requête réseau n'est déclenchée ; les données sont lues/écrites dans `localStorage` (`SHERPA_STORE_V6`).
-  3. Pour récupérer la donnée de production, utiliser le bouton `📥 Export JSON` du mode en ligne : un fichier `sherpa-backup-YYYY-MM-DD.json` est téléchargé. Placez-le dans le même dossier que `app.html` pour un chargement automatique (le plus récent est appliqué et un message de succès est affiché). S'il n'y a aucune sauvegarde détectée, Sherpa propose automatiquement l'import manuel via `Paramètres > Backup`.
+  1. Cloner le dépôt (`git clone` ou téléchargement ZIP) et ouvrir `public/app.html` directement dans le navigateur ; `enableOfflineMode()` peut aussi être déclenché depuis l'écran de connexion.
+  2. Les données sont enregistrées dans `localStorage` (`SHERPA_STORE_OFFLINE_V1`) via `save()` ; aucun appel réseau n'est émis tant qu'`isOfflineMode()` reste vrai.
+  3. Pour précharger une sauvegarde, déposer un `sherpa-backup-YYYY-MM-DD.json` à la racine et recharger la page : `attemptLocalDataBootstrap()` l'intègre automatiquement. Le menu `⚙️ Paramètres > Backup` repose sur `promptJsonImport()` et `exportStoreToFile()` pour gérer les échanges manuels.
 
 ## 2. Collaboration et workflow Git/Codex
 - Démarrer toujours une conversation Codex depuis la branche `main`
@@ -29,28 +28,29 @@
 
 ## 3. Description fonctionnelle
 ### Contexte
-Sherpa est un cockpit "local-first" destiné aux Product Owners, coachs et managers pour piloter consultants, guidées et activités (actions STB, cordées, avis, verbatims, alertes, prolongements). L'application fonctionne en SPA HTML/CSS/JS avec persistance locale (`localStorage`) et synchronisation optionnelle Firestore. Un mode hors ligne permet un usage autonome (aucune requête IA/Firestore).
+Sherpa est une SPA HTML/JS mono-fichier (`public/app.html` + `public/app.js`) optimisée pour une approche « local-first ». L'authentification (`firebase.auth().signInWithEmailAndPassword`) et la synchronisation Firestore sont optionnelles : le store est d'abord construit en mémoire (`load()` alimente `store` et `initialStoreSnapshot`), puis répliqué côté serveur via `syncIfDirty()` selon les intervalles configurés. Les styles globaux, palettes et comportements responsives sont centralisés dans `public/app.css` (tokens, grilles, `hover-scroll`, `dialog`).
 
 ### Données
-- **Clé principale** : `SHERPA_STORE_V6` contenant `meta` (version, dates, auteur, raison) et `params` (seuils, hashtags, templates, prompts IA).
-- **Consultants** : identifiant, nom, mission, date de fin, description, dates de création/mise à jour.
-- **Guidées** : rattachées à un consultant, avec description, thématique, dates de début/fin, résultat.
-- **Activités** : type (`ACTION_ST_BERNARD`, `CORDEE`, `NOTE`, `VERBATIM`, `AVIS`, `ALERTE`, `PROLONGEMENT`), date, titre, description, heures, bénéficiaires, probabilité, statut/typage d'alerte, lien guidée.
-- **Autres clés** : `thematiques`, `description_templates`, prompts IA (`ai_prompt`, `ai_activity_context_prompt`, `ai_title_prompt`), onglet actif (`SHERPA_ACTIVE_TAB`), gestion de session (`SHERPA_SYNC_SESSION`, `SHERPA_SIGNOUT_BROADCAST`).
-- **Migrations** : fusion automatique des paramètres avec les valeurs par défaut, normalisation des thématiques, nettoyage des champs obsolètes et mise à jour de la méta (`version = 6.x`).
+- **Structure principale (`store`)** : `consultants`, `activities`, `guidees`, `params` et `meta`, initialisés par `createEmptyStore()` et migrés par `migrateStore()` pour garantir la compatibilité des versions.
+- **Clés de persistance** : `SHERPA_STORE_V6` (session en ligne), `SHERPA_STORE_OFFLINE_V1` (session autonome), `SHERPA_ACTIVE_TAB`, `SHERPA_SYNC_SESSION` et `SHERPA_SIGNOUT_BROADCAST` pour coordonner plusieurs onglets.
+- **Paramètres** : `DEFAULT_PARAMS` définit seuils métiers (délais STB, avis, missions), catalogues de hashtags/mentions, prompts IA et fréquence de synchronisation. Les templates sont fusionnés et resettable via `description_templates`.
+- **Données métier** :
+  - `consultants` : identifiant, nom, mission (`titre_mission`), dates et métadonnées (`updated_at`).
+  - `guidees` : consultant rattaché, objectifs, dates, progression calculée par `computeGuideeProgress()`.
+  - `activities` : type (`ACTIVITY_TYPES`), publication, heures, bénéficiaires, hashtags/mentions, liens guidée, statut d'alerte (`ALERTE` avec `alerte_statut`/`alerte_types`) et probabilité de prolongement (`PROLONGEMENT`).
+- **Synchronisation** : `FIRESTORE_COLLECTIONS` cible `consultants`, `activities`, `guidees`, `params`, `meta`. `loadRemoteStore()` fusionne la donnée distante avec la locale tandis que `saveStoreToFirestore()` écrit des batches transactionnels.
 
 ### Interface
-- **Navigation** : tabs persistés — `👥 Sherpa`, `📌 Activités`, `🧭 Guidées`, `📈 Reporting`, `⚙️ Paramètres`. Header sticky avec statut de sync (`✔️/⌛/⚠️/⏸️` ou `⬇️` hors ligne) et actions d'authentification.
-- **Dashboard (👥)** : indicateurs clés (alertes actives, fins de mission imminentes, absence d'action STB ou d'avis), listes d'actions en cours/à venir, modale d'édition consultant enrichie par l'IA.
-- **Activités (📌)** : tableau filtrable (consultant, type, hashtag, mois) avec badges heures/probabilité, alertes (type/statut), liens vers guidées, génération IA de description et titre.
-- **Guidées (🧭)** : timeline verticale (début, activités, fin), filtres consultant/guidée, calcul de progression (% et heures cumulées), modales IA pour description et résultat.
-- **Reporting (📈)** : document compilé (missions, actions, guidées, alertes, avis, verbatims, prolongements, cordées) prêt à être copié/collé, filtres période par défaut `01/07/2025 → aujourd'hui`.
-- **Paramètres (⚙️)** : réglage des seuils, templates de description, prompts IA, import/export JSON (boutons `📤`/`📥` + raccourci `⬇️`).
-- **Styles** : tokens CSS pour couleurs/ombres, grilles responsives, composants accessibles (navigation clavier, tabs adaptatifs, modales `<dialog>`).
+- **Navigation** : `TABS` définit les sections, pilotées par `openTab()` et persistées dans `localStorage`. Le header affiche l'indicateur de synchro (`#btn-sync-indicator`) et les actions d'authentification (`renderAuthUser()`).
+- **Tableau de bord (`👥 Sherpa`)** : `dashboard()` calcule alertes actives (`getConsultantActiveAlert()`), fins de mission proches (`fin_mission_sous_jours`), STB/avis manquants et met en avant les actions STB en cours/à venir via `buildGuideeEntries()`.
+- **Activités (`📌`)** : `renderActivities()` applique filtres cumulés (consultant, type, hashtag, période), gère la sélection (`state.activities.selectedId`) et ouvre le formulaire `dlg-activity` pour création/édition, avec complétions IA (`invokeAIHelper()`), suggestions hashtags/mentions (`attachHashtagAutocomplete()`), badges de probabilité et d'alerte (`renderProbabilityBadge()`, `renderAlertStatusBadge()`).
+- **Guidées (`🧭`)** : `renderGuideeTimeline()` compose la frise chronologique (évènements début/fin/actions), actualise la progression (`updateGuideeProgress()`) et permet la navigation vers les modales d'édition (`openGuideeModal()`).
+- **Reporting (`📈`)** : `renderReportingDocument()` assemble missions, activités, alertes, avis, verbatims et cordées dans un document HTML prêt à copier (`btn-reporting-copy`, `btn-reporting-copy-html`), avec navigation contextuelle (`reportingInteractiveSelector`).
+- **Paramètres (`⚙️`)** : `renderParams()` expose seuils, catalogues et templates ; `settingsDirtyState` et `showSettingsGuardDialog()` protègent les modifications ; les actions backup (`btn-import-json`, `btn-export-json`, `btn-reset-firestore`, `btn-reset-local`) déclenchent `promptJsonImport()`, `exportStoreToFile()`, `overwriteFirestoreFromLocal()` et `loadRemoteStore({forceApply:true})`.
 
 ### Règles métier & UX
-- **Dashboard** : alertes actives = activités `ALERTE` avec `alerte_active !== false`; fins de mission déclenchées quand `jours_avant_fin ≤ fin_mission_sous_jours`; STB/Avis manquants basés sur l'absence d'activité récente; actions en cours = STB `heures ≤ 0`.
-- **Activités** : tri décroissant par date, filtres cumulables, ligne sélectionnée révélant la date exacte et la guidée liée.
-- **Guidées** : sélection automatique de l'événement courant, badges colorés selon statut (passé/futur/présent), calcul de progression = jours écoulés / durée totale.
-- **Reporting** : tri alpha sur consultants (missions) et tri décroissant sur dates (actions, alertes, avis, verbatims, prolongements, cordées). Texte multi-ligne rendu en `<br/>`.
-- **Accessibilité** : éléments focusables (`tabIndex=0`), commandes clavier (`Enter/Space`), header sticky, tables scrollables avec `hover-scroll`.
+- **Alertes** : `normalizeAlertStatus()` et `normalizeAlertTypes()` garantissent les valeurs (`MAJEUR/MINEUR/INACTIF`, `COMMERCE/RH`). Le tableau de bord classe les alertes actives selon `ALERT_STATUS_PRIORITY` et propose un accès direct à la guidée ou à l'activité.
+- **Filtres temporels** : les découpes `RECENT`, `UPCOMING`, `PLANNED` des activités reposent sur `daysDiff()` et les paramètres `activites_recent_jours`/`activites_a_venir_jours`.
+- **Progression guidées** : `computeGuideeProgress()` calcule pourcentage et somme horaire en fonction des dates d'évènements ; le badge de statut (`progBadge()`) adapte la couleur.
+- **Reporting** : tri des missions par consultant (`buildMissionsTable()`), tri décroissant des actions/alertes (`buildActivitiesTable()`/`buildHighlightsTables()`), mise en forme multi-lignes (`formatDescriptionForHtml()`), et interactions clavier (`reportingDocument` capture `keydown` sur `Enter`/`Space`).
+- **Accessibilité & responsive** : `public/app.css` gère `hover-scroll`, largeur adaptative des onglets (`applyTabLabels()`), modales `<dialog>` avec focus contrôlé, boutons descriptifs (`aria-label`) et raccourcis clavier sur les listes (`on(row,'keydown',…)`).
