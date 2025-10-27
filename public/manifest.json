@@ -1,0 +1,21 @@
+{
+  "name": "Sherpa",
+  "short_name": "Sherpa",
+  "start_url": "app.html",
+  "display": "standalone",
+  "background_color": "#151515",
+  "theme_color": "#151515",
+  "description": "Application Sherpa pour la gestion des activités et du coaching.",
+  "icons": [
+    {
+      "src": "192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
