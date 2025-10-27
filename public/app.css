@@ -12,7 +12,7 @@ body::after{content:"";position:fixed;right:24px;bottom:24px;width:160px;height:
 *{box-sizing:border-box}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 a{color:var(--accent);text-decoration:none}
-header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);height:var(--headH)}
+header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border)}
 .wrap{width:100%;max-width:none;margin:0;padding:6px 10px}
 .header-bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .header-left{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0}
@@ -115,7 +115,7 @@ textarea{width:100%;resize:vertical}
 #dlg-guidee .description-field{height:10.875em;min-height:10.875em;max-height:10.875em}
 .textarea-with-action textarea.description-field{padding-right:44px}
 .pane{display:flex;flex-direction:column;min-height:0;height:100%}
-.pane-header{position:sticky;top:calc(var(--headH));z-index:2;background:var(--bg);border-bottom:1px solid var(--border);padding:4px 0;display:flex;flex-direction:column;gap:4px}
+.pane-header{position:sticky;top:var(--headH);z-index:2;background:var(--bg);border-bottom:1px solid var(--border);padding:4px 0;display:flex;flex-direction:column;gap:4px}
 .header-line{display:flex;align-items:flex-start;justify-content:flex-start;gap:12px;flex-wrap:wrap}
 .header-main{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .filters-line{display:flex;gap:6px;align-items:stretch;flex-wrap:nowrap;overflow-x:auto}
@@ -360,6 +360,11 @@ tr.selected .row-edit{display:inline-flex}
   .reporting-toolbar-actions{flex:1 1 0;display:flex;flex-wrap:nowrap;gap:6px}
   .reporting-toolbar-actions .btn{flex:1 1 0;justify-content:center}
   .reporting-toolbar .spacer{display:none}
+  .timeline-scroll{padding:0 4px}
+  .timeline{max-width:none;margin:0;gap:10px;padding:6px 0 20px}
+  .timeline-item{gap:8px}
+  .timeline-marker{width:20px;height:20px;font-size:12px}
+  .timeline-body{padding:8px 10px}
 }
 
 @media (max-width:520px){
