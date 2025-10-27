@@ -27,25 +27,6 @@ function getDefaultReportingRange(){
   return {startDate:formatDateInput(start),endDate:formatDateInput(end)};
 }
 const isMobile=()=>window.innerWidth<=520;
-const rootStyle=document.documentElement?.style;
-const headerElement=document.querySelector('header');
-let lastMeasuredHeaderHeight=0;
-const updateHeaderHeightVar=()=>{
-  if(!headerElement || !rootStyle) return;
-  const rect=headerElement.getBoundingClientRect();
-  const height=Math.round(rect.height||0);
-  if(!height || height===lastMeasuredHeaderHeight) return;
-  lastMeasuredHeaderHeight=height;
-  rootStyle.setProperty('--headH', `${height}px`);
-};
-if(headerElement){
-  updateHeaderHeightVar();
-  window.addEventListener('resize',()=>{ updateHeaderHeightVar(); });
-  if('ResizeObserver' in window){
-    const headerObserver=new ResizeObserver(()=>{ updateHeaderHeightVar(); });
-    headerObserver.observe(headerElement);
-  }
-}
 function progBadge(p){ const pct=Math.max(0,Math.min(100,Number(p)||0)); return pct<30?'🟥':(pct<70?'🟨':'🟩'); }
 function pctColorClass(p){ const v=Math.max(0,Math.min(100,Number(p)||0)); return v<30?'fill-r':(v<70?'fill-y':'fill-g'); }
 const clamp01=(v)=>Math.max(0,Math.min(100,Number(v)||0));
