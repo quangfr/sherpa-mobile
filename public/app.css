@@ -50,7 +50,7 @@ body.offline-mode .ai-helper{display:none!important}
 .sync-status.is-success{color:var(--green)}
 .sync-status.is-warning{color:var(--yellow)}
 .sync-status.is-error{color:var(--red)}
-main{height:calc(100vh - var(--headH)); overflow:hidden;position:relative;z-index:1}
+main{height:calc(100dvh - var(--headH)); overflow:hidden;position:relative;z-index:1}
 .tabs{display:flex;gap:6px;flex-wrap:nowrap;padding:4px 2px;overflow-x:auto;min-width:0;flex:1}
 .tabs::-webkit-scrollbar{display:none}
 .tab{padding:6px 8px;border:1px solid var(--border);border-bottom-color:transparent;border-radius:10px 10px 0 0;background:var(--card);cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap;flex-shrink:0;transition:background-color .15s ease,color .15s ease,border-color .15s ease}
@@ -319,7 +319,7 @@ tr.selected .row-edit{display:inline-flex}
 .desktop-only{display:revert}
 .mobile-only{display:none}
 @media (max-width:520px){
-  main{height:calc(100vh - var(--headH));min-height:calc(100vh - var(--headH));overflow:hidden;position:relative;z-index:1}
+  main{height:calc(100dvh - var(--headH));min-height:calc(100dvh - var(--headH));overflow:hidden;position:relative;z-index:1}
   .header-bar{flex-wrap:wrap;gap:8px;align-items:flex-start}
   .header-left{order:1;width:100%;gap:6px}
   .header-actions{width:auto;flex:0 1 auto;margin-left:auto;justify-content:flex-end;flex-wrap:wrap;gap:6px;position: absolute; top:10px; right:10px;}
@@ -360,11 +360,11 @@ tr.selected .row-edit{display:inline-flex}
   .reporting-toolbar-actions{flex:1 1 0;display:flex;flex-wrap:nowrap;gap:6px}
   .reporting-toolbar-actions .btn{flex:1 1 0;justify-content:center}
   .reporting-toolbar .spacer{display:none}
-  .timeline-scroll{padding:0 4px}
-  .timeline{max-width:none;margin:0;gap:10px;padding:6px 0 20px}
-  .timeline-item{gap:8px}
+  .timeline-scroll{padding:0}
+  .timeline{max-width:none;margin:0;gap:6px;padding:0}
+  .timeline-item{gap:6px}
   .timeline-marker{width:20px;height:20px;font-size:12px}
-  .timeline-body{padding:8px 10px}
+  .timeline-body{padding:6px}
 }
 
 @media (max-width:520px){
