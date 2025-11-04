@@ -286,11 +286,15 @@ dialog::backdrop{background:#0006}
 .mobile-desc.expanded .text{-webkit-line-clamp:unset;display:block;overflow:visible}
 #activities-table td.main{word-break:break-word;overflow-wrap:anywhere}
 #activities-table td:last-child .btn.small{white-space:nowrap}
-.activity-date-line{display:flex;align-items:center;gap:6px;margin-left:auto}
+.activity-date-line{display:flex;align-items:center;gap:0;margin-left:auto}
+.activity-date-line>button{margin-left:6px}
 .meta-separator{color:var(--muted)}
-.account-ref{color:var(--muted)}
+.account-ref{color:var(--muted);display:inline-flex;align-items:baseline;gap:0;white-space:nowrap}
 .account-ref strong{font-weight:600;color:var(--text)}
+.activity-date-line .account-ref::before{content:'\00a0'}
+.account-ref-prefix::after{content:'\00a0'}
 .account-ref:hover strong{text-decoration:underline}
+.last-update-text+.account-ref::before{content:'\00a0'}
 .last-update-text{color:var(--muted)}
 .row-edit{display:none}
 tr.selected .row-edit{display:inline-flex}
