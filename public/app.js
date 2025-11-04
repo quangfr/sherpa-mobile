@@ -64,14 +64,18 @@ function getAccountDisplay(email, params=store?.params){
     label:resolvedName||resolvedEmail||raw
   };
 }
-function renderAccountChip(email,{prefix='par'}={}){
+function renderAccountChip(email,{prefix='par',className=''}={}){
   const display=getAccountDisplay(email);
   const hasInfo=display.email||display.label;
   if(!hasInfo) return '';
   const safeEmail=esc(display.email||display.label||'');
   const safeLabel=esc(display.label||'');
-  const prefixText=prefix?`${prefix} `:'';
-  return `<span class="account-ref" title="${safeEmail}">${prefixText}<strong>${safeLabel}</strong></span>`;
+  const safePrefix=prefix?esc(prefix):'';
+  const prefixHtml=safePrefix?`<span class="account-ref-prefix">${safePrefix}</span>`:'';
+  const classes=['account-ref'];
+  const extraClass=String(className||'').trim();
+  if(extraClass) classes.push(extraClass);
+  return `<span class="${classes.join(' ')}" title="${safeEmail}">${prefixHtml}<strong>${safeLabel}</strong></span>`;
 }
 function formatLastUpdateLabel(iso){
   if(!iso){
@@ -102,7 +106,7 @@ function renderLastUpdateInfo(iso,email){
   const safeLabel=esc(label);
   const accountHtml=renderAccountChip(email,{prefix:'par'});
   if(!safeLabel && !accountHtml) return '';
-  return `<span class="last-update-text">${safeLabel}</span>${accountHtml?` ${accountHtml}`:''}`;
+  return `<span class="last-update-text">${safeLabel}</span>${accountHtml||''}`;
 }
 function resolveCurrentAccountEmail(){
   const authEmail=String(currentUser?.email||'').trim();
@@ -1016,7 +1020,9 @@ function shouldBlockUsage(){
     if(hasAuthenticatedOnce) return false;
     return !hasOfflineDataAvailable();
   }
-  if(!remoteReady) return true;
+  if(!remoteReady){
+    return !hasOfflineDataAvailable();
+  }
   return isRemoteDataStale();
 }
 function updateUsageGate(options={}){
@@ -1990,9 +1996,9 @@ const rawDateTitle=esc(a.date_publication||'');
 const consultantLabel=renderConsultantChip(c,{selected:isSelected,bold:true});
 const inlineEditButton=()=>`<button class="btn ghost small row-edit" data-inline-edit="${a.id}" title="Éditer l'activité">✏️</button>`;
 const creatorEmail=a.createdByAccount||a.updatedByAccount||'';
-const creatorChip=renderAccountChip(creatorEmail,{prefix:'par'});
-const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${creatorChip?` ${creatorChip}`:''}</div>`;
-const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${creatorChip?` ${creatorChip}`:''}${inlineEditButton()}</div>`;
+const creatorChip=renderAccountChip(creatorEmail,{prefix:'par',className:'sub'});
+const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${creatorChip||''}</div>`;
+const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${creatorChip||''}${inlineEditButton()}</div>`;
 const tr=document.createElement('tr'); tr.classList.add('clickable');
 tr.dataset.activityId=a.id;
 tr.style.setProperty('--selection-color','var(--accent)');
