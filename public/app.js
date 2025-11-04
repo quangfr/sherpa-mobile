@@ -198,6 +198,130 @@ const FIRESTORE_COLLECTIONS={
 };
 const FIRESTORE_PARAMS_DOC='app';
 const FIRESTORE_META_DOC='app';
+const DEVICE_ID_STORAGE_KEY='SHERPA_DEVICE_ID';
+const SYNC_QUEUE_STORAGE_KEY='SHERPA_SYNC_QUEUE_V1';
+const SYNC_QUEUE_MAX_AGE_MS=30*24*60*60*1000;
+const SYNC_STATUS_PENDING='pending';
+const SYNC_STATUS_SYNCED='synced';
+const SYNC_STATUS_ERROR='error';
+
+function ensureDeviceIdentifier(){
+  let storedId=null;
+  try{
+    storedId=localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+  }catch(err){
+    console.warn('Impossible de lire l\'identifiant appareil :',err);
+  }
+  if(storedId && typeof storedId==='string' && storedId.trim()){
+    return storedId.trim();
+  }
+  const generated=uid();
+  try{
+    localStorage.setItem(DEVICE_ID_STORAGE_KEY,generated);
+  }catch(err){
+    console.warn('Impossible d\'enregistrer l\'identifiant appareil :',err);
+  }
+  return generated;
+}
+
+const DEVICE_INSTANCE_ID=ensureDeviceIdentifier();
+
+function loadSyncQueueFromStorage(){
+  try{
+    const raw=localStorage.getItem(SYNC_QUEUE_STORAGE_KEY);
+    if(!raw) return [];
+    const parsed=JSON.parse(raw);
+    if(Array.isArray(parsed)){
+      return parsed.filter(item=>item && item.queueId && item.collection && item.docId);
+    }
+  }catch(err){
+    console.warn('Impossible de charger la file de synchronisation :',err);
+  }
+  return [];
+}
+
+let syncQueue=loadSyncQueueFromStorage();
+
+const STORE_KEY_TO_COLLECTION={
+  consultants:FIRESTORE_COLLECTIONS.consultants,
+  activities:FIRESTORE_COLLECTIONS.activities,
+  guidees:FIRESTORE_COLLECTIONS.guidees,
+};
+
+const COLLECTION_TO_STORE_KEY={
+  [FIRESTORE_COLLECTIONS.consultants]:'consultants',
+  [FIRESTORE_COLLECTIONS.activities]:'activities',
+  [FIRESTORE_COLLECTIONS.guidees]:'guidees',
+};
+
+function persistSyncQueue(){
+  try{
+    localStorage.setItem(SYNC_QUEUE_STORAGE_KEY,JSON.stringify(syncQueue));
+  }catch(err){
+    console.warn('Impossible de sauvegarder la file de synchronisation :',err);
+  }
+}
+
+function purgeSyncQueue(maxAgeMs=SYNC_QUEUE_MAX_AGE_MS){
+  if(!Number.isFinite(maxAgeMs) || maxAgeMs<=0) return;
+  const cutoff=Date.now()-maxAgeMs;
+  const nextQueue=syncQueue.filter(entry=>{
+    if(!entry) return false;
+    if(entry.status===SYNC_STATUS_PENDING) return true;
+    const queuedAt=Number(entry.queuedAt)||0;
+    return queuedAt>=cutoff;
+  });
+  if(nextQueue.length!==syncQueue.length){
+    syncQueue=nextQueue;
+    persistSyncQueue();
+    refreshPendingChangesFlag();
+  }
+}
+
+function makeQueueId(collection,docId){
+  return `${collection}:${docId}`;
+}
+
+function findQueueIndex(collection,docId){
+  const queueId=makeQueueId(collection,docId);
+  return syncQueue.findIndex(entry=>entry?.queueId===queueId);
+}
+
+function hasPendingQueueEntries(){
+  return syncQueue.some(entry=>entry && entry.status===SYNC_STATUS_PENDING);
+}
+
+function getPendingQueueEntries(){
+  return syncQueue.filter(entry=>entry && entry.status===SYNC_STATUS_PENDING);
+}
+
+function updateLocalItemSyncStatus(storeKey, docId, status, details=null){
+  if(!storeKey || !docId) return;
+  const list=Array.isArray(store?.[storeKey])?store[storeKey]:null;
+  if(!list) return;
+  const target=list.find(item=>item && String(item.id)===String(docId));
+  if(!target) return;
+  target.syncStatus=status;
+  if(status===SYNC_STATUS_SYNCED){
+    delete target.lastSyncError;
+  }else if(status===SYNC_STATUS_ERROR){
+    target.lastSyncError=details || null;
+  }
+}
+
+function applyQueueEntryUpdate(entry){
+  const storeKey=COLLECTION_TO_STORE_KEY[entry.collection];
+  if(entry.action==='set' && storeKey){
+    const list=Array.isArray(store?.[storeKey])?store[storeKey]:null;
+    if(list){
+      const idx=list.findIndex(item=>item && String(item.id)===String(entry.docId));
+      if(idx>=0){
+        list[idx]={...list[idx],...entry.payload,syncStatus:SYNC_STATUS_PENDING};
+      }
+    }
+  }
+}
+
 const FIRESTORE_ENABLED=true;
 const REPORTING_COPY_TEXT_DEFAULT_LABEL='Copier texte';
 const REPORTING_COPY_HTML_DEFAULT_LABEL='Copier HTML';
@@ -869,7 +993,13 @@ let isSyncInFlight=false;
 let syncQueued=false;
 let lastRemoteWriteIso=null;
 let lastRemoteReadIso=null;
-let hasPendingChanges=false;
+let hasPendingChanges=hasPendingQueueEntries();
+
+function refreshPendingChangesFlag(){
+  hasPendingChanges=hasPendingQueueEntries();
+}
+
+purgeSyncQueue();
 let syncIndicatorState='error';
 let syncIndicatorIntervalId=null;
 let lastSyncSuccess=0;
@@ -1072,15 +1202,26 @@ function save(reason='local-change', options={}){
   const {syncImmediate=true} = options || {};
   store.meta=store.meta||{};
   store.meta.updated_at=nowISO();
+  store.meta.lastUpdatedBy=DEVICE_INSTANCE_ID;
+  store.meta.syncStatus=SYNC_STATUS_PENDING;
+  const sessionDiff=computeSessionDiff();
+  lastSessionDiff=sessionDiff;
+  const queued=queueDiffEntries(sessionDiff,reason);
+  if(queued){
+    initialStoreSnapshot=deepClone(store);
+  }
   localStorage.setItem(resolveStorageKey('active'),JSON.stringify(store));
   refreshAll();
+  refreshPendingChangesFlag();
   if(isOfflineMode()){
     setSyncStatus('Modifications enregistrées en mode hors-ligne.','info');
     updateSyncIndicator();
     return;
   }
-  markRemoteDirty(reason);
-  if(syncImmediate && typeof syncIfDirty==='function'){
+  if(queued){
+    markRemoteDirty(reason);
+  }
+  if(syncImmediate && queued && typeof syncIfDirty==='function'){
     try{
       const maybePromise=syncIfDirty(reason);
       if(maybePromise && typeof maybePromise.catch==='function'){
@@ -2006,12 +2147,20 @@ function setDescriptionTemplate(key,value){
     store.params.description_templates={...store.params.description_templates};
     delete store.params.description_templates[key];
   }
+  const templateUpdateIso=nowISO();
+  store.params.updated_at=templateUpdateIso;
+  store.params.lastUpdatedBy=DEVICE_INSTANCE_ID;
+  store.params.syncStatus=SYNC_STATUS_PENDING;
 }
 function resetDescriptionTemplate(key){
   if(!key) return;
   if(!store.params) store.params={...DEFAULT_PARAMS};
   store.params.description_templates={...store.params.description_templates};
   delete store.params.description_templates[key];
+  const templateResetIso=nowISO();
+  store.params.updated_at=templateResetIso;
+  store.params.lastUpdatedBy=DEVICE_INSTANCE_ID;
+  store.params.syncStatus=SYNC_STATUS_PENDING;
 }
 function getAiPromptTemplate(){
   const params=store?.params||DEFAULT_PARAMS;
@@ -3415,6 +3564,10 @@ async function saveParamsChanges(button=btnSaveParams){
     if(promptTitleEditor){
       params.ai_title_prompt=(promptTitleEditor.value||'').trim()||DEFAULT_ACTIVITY_TITLE_PROMPT;
     }
+    const paramsUpdateIso=nowISO();
+    params.updated_at=paramsUpdateIso;
+    params.lastUpdatedBy=DEVICE_INSTANCE_ID;
+    params.syncStatus=SYNC_STATUS_PENDING;
     save('settings-manual-save');
     restartAutoSync();
     await syncIfDirty('settings-manual-save');
@@ -3482,6 +3635,9 @@ btnResetPrompt?.addEventListener('click',async()=>{
     store.params.ai_prompt=DEFAULT_COMMON_DESCRIPTION_PROMPT;
     store.params.ai_activity_context_prompt=DEFAULT_ACTIVITY_CONTEXT_PROMPT;
     store.params.ai_title_prompt=DEFAULT_ACTIVITY_TITLE_PROMPT;
+    store.params.updated_at=nowISO();
+    store.params.lastUpdatedBy=DEVICE_INSTANCE_ID;
+    store.params.syncStatus=SYNC_STATUS_PENDING;
     renderPromptEditor();
     save('prompt-reset');
     restartAutoSync();
@@ -4184,7 +4340,27 @@ if(!isProlongement){ delete data.probabilite; }
 if(!isAlerte){ delete data.alerte_statut; delete data.alerte_types; }
 if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
-if(currentActivityId){ Object.assign(store.activities.find(x=>x.id===currentActivityId),data,{updated_at:nowISO()}); }else{ store.activities.push({id:uid(),...data,created_at:nowISO(),updated_at:nowISO()}); }
+const nowActivityIso=nowISO();
+if(currentActivityId){
+  const existing=store.activities.find(x=>x.id===currentActivityId);
+  if(existing){
+    Object.assign(existing,data,{
+      updated_at:nowActivityIso,
+      lastUpdatedBy:DEVICE_INSTANCE_ID,
+      syncStatus:SYNC_STATUS_PENDING
+    });
+  }
+}else{
+  const newId=uid();
+  store.activities.push({
+    id:newId,
+    ...data,
+    created_at:nowActivityIso,
+    updated_at:nowActivityIso,
+    lastUpdatedBy:DEVICE_INSTANCE_ID,
+    syncStatus:SYNC_STATUS_PENDING
+  });
+}
 dlgA.close('ok'); save('activity-save');
 if(isProlongement && data.consultant_id){
   setTimeout(()=>openConsultantModal(data.consultant_id),0);
@@ -4343,18 +4519,28 @@ function buildGuideePayload(){
     resultat:snap.resultat||undefined,
     date_debut:dateDebut,
     date_fin:dateFin,
-    updated_at:nowISO()
+    updated_at:nowISO(),
+    lastUpdatedBy:DEVICE_INSTANCE_ID
   };
 }
 function persistGuideePayload(payload){
   if(!payload) return null;
   if(currentGuideeId){
     const existing=store.guidees.find(x=>x.id===currentGuideeId);
-    if(existing){ Object.assign(existing,payload); }
+    if(existing){
+      Object.assign(existing,payload,{updated_at:nowISO(),lastUpdatedBy:DEVICE_INSTANCE_ID,syncStatus:SYNC_STATUS_PENDING});
+    }
   }else{
     const id=uid();
     currentGuideeId=id;
-    store.guidees.push({id,...payload,created_at:nowISO()});
+    store.guidees.push({
+      id,
+      ...payload,
+      created_at:nowISO(),
+      updated_at:payload.updated_at||nowISO(),
+      lastUpdatedBy:DEVICE_INSTANCE_ID,
+      syncStatus:SYNC_STATUS_PENDING
+    });
   }
   state.guidees.guidee_id=currentGuideeId;
   state.guidees.consultant_id=payload.consultant_id||'';
@@ -4460,7 +4646,10 @@ $$('#dlg-guidee .actions [value="del"]').onclick=(e)=>{
   if(!currentGuideeId){ dlgG.close(); return; }
   if(confirm('Supprimer cette guidée ?')){
     store.guidees=store.guidees.filter(g=>g.id!==currentGuideeId);
-    store.activities=store.activities.map(a=>a.guidee_id===currentGuideeId?{...a,guidee_id:undefined}:a);
+    const unlinkIso=nowISO();
+    store.activities=store.activities.map(a=>a.guidee_id===currentGuideeId
+      ? {...a,guidee_id:undefined,updated_at:unlinkIso,lastUpdatedBy:DEVICE_INSTANCE_ID,syncStatus:SYNC_STATUS_PENDING}
+      : a);
     dlgG.close('del');
     save('guidee-delete');
     renderGuideeFilters();
@@ -4591,11 +4780,26 @@ const data={ nom:nomValue, titre_mission:titreValue||undefined, date_fin:fcFin?.
 if(!currentConsultantId && !nomValue){ dlgC.close('cancel'); return; }
 if(!nomValue){ alert('Nom requis.'); return; }
 let createdConsultantId=null;
+const consultantUpdateIso=nowISO();
 if(currentConsultantId){
-  Object.assign(store.consultants.find(x=>x.id===currentConsultantId),data,{updated_at:nowISO()});
+  const existing=store.consultants.find(x=>x.id===currentConsultantId);
+  if(existing){
+    Object.assign(existing,data,{
+      updated_at:consultantUpdateIso,
+      lastUpdatedBy:DEVICE_INSTANCE_ID,
+      syncStatus:SYNC_STATUS_PENDING
+    });
+  }
 }else{
   createdConsultantId=uid();
-  store.consultants.push({id:createdConsultantId,...data,created_at:nowISO(),updated_at:nowISO()});
+  store.consultants.push({
+    id:createdConsultantId,
+    ...data,
+    created_at:consultantUpdateIso,
+    updated_at:consultantUpdateIso,
+    lastUpdatedBy:DEVICE_INSTANCE_ID,
+    syncStatus:SYNC_STATUS_PENDING
+  });
 }
 dlgC.close('ok'); save('consultant-save');
 if(createdConsultantId){
@@ -4646,6 +4850,195 @@ function computeSessionDiff(){
   const metaDiff=diffParamsObject(store.meta||{}, initialStoreSnapshot.meta||{});
   if(Object.keys(metaDiff).length) diff.meta=metaDiff;
   return diff;
+}
+
+function upsertQueueEntry(entry){
+  if(!entry || !entry.collection || !entry.docId) return;
+  const normalized={
+    status:SYNC_STATUS_PENDING,
+    queuedAt:Date.now(),
+    attemptCount:0,
+    lastAttemptAt:null,
+    lastError:null,
+    ...entry,
+  };
+  normalized.queueId=makeQueueId(normalized.collection,normalized.docId);
+  const idx=findQueueIndex(normalized.collection,normalized.docId);
+  if(idx>=0){
+    const previous=syncQueue[idx];
+    syncQueue[idx]={
+      ...previous,
+      ...normalized,
+      queuedAt:previous?.queuedAt ?? normalized.queuedAt,
+      attemptCount:previous?.attemptCount ?? 0,
+      lastAttemptAt:previous?.lastAttemptAt ?? null,
+      lastError:normalized.lastError ?? null,
+      status:normalized.status||SYNC_STATUS_PENDING
+    };
+  }else{
+    syncQueue.push(normalized);
+  }
+  persistSyncQueue();
+  refreshPendingChangesFlag();
+}
+
+function removeQueueEntry(collection,docId){
+  const idx=findQueueIndex(collection,docId);
+  if(idx>=0){
+    syncQueue.splice(idx,1);
+    persistSyncQueue();
+    refreshPendingChangesFlag();
+  }
+}
+
+function updateQueueEntryAt(index, patch){
+  if(index<0 || index>=syncQueue.length) return;
+  syncQueue[index]={...syncQueue[index],...patch};
+  persistSyncQueue();
+  refreshPendingChangesFlag();
+}
+
+function applyRemoteDataToLocal(collection, docId, data){
+  if(collection===FIRESTORE_COLLECTIONS.params){
+    store.params={...DEFAULT_PARAMS,...(data||{}),syncStatus:SYNC_STATUS_SYNCED};
+    return;
+  }
+  if(collection===FIRESTORE_COLLECTIONS.meta){
+    store.meta={...store.meta,...(data||{}),syncStatus:SYNC_STATUS_SYNCED};
+    return;
+  }
+  const storeKey=COLLECTION_TO_STORE_KEY[collection];
+  if(!storeKey) return;
+  const list=Array.isArray(store?.[storeKey])?store[storeKey]:null;
+  if(!list) return;
+  const idx=list.findIndex(item=>item && String(item.id)===String(docId));
+  if(data){
+    const payload={...data,id:docId,syncStatus:SYNC_STATUS_SYNCED};
+    if(idx>=0){
+      list[idx]=payload;
+    }else{
+      list.push(payload);
+    }
+  }else if(idx>=0){
+    list.splice(idx,1);
+  }
+}
+
+function setCollectionSyncStatus(collection, docId, status, message=null){
+  if(collection===FIRESTORE_COLLECTIONS.params){
+    store.params={...store.params,syncStatus:status};
+    if(status===SYNC_STATUS_ERROR){
+      store.params.lastSyncError=message||null;
+    }else if(store.params){
+      delete store.params.lastSyncError;
+    }
+    return;
+  }
+  if(collection===FIRESTORE_COLLECTIONS.meta){
+    store.meta={...store.meta,syncStatus:status};
+    if(status===SYNC_STATUS_ERROR){
+      store.meta.lastSyncError=message||null;
+    }else if(store.meta){
+      delete store.meta.lastSyncError;
+    }
+    return;
+  }
+  const storeKey=COLLECTION_TO_STORE_KEY[collection];
+  if(storeKey){
+    updateLocalItemSyncStatus(storeKey,docId,status,message);
+  }
+}
+
+function queueDiffEntries(diff, reason='local-change'){
+  if(!diff || typeof diff!=='object') return false;
+  let queued=false;
+  const addEntry=(collectionName, storeKey, item)=>{
+    if(!item) return;
+    const {_status,id,...rest}=item;
+    if(!_status || !id) return;
+    const docId=String(id);
+    if(_status==='deleted'){
+      upsertQueueEntry({
+        collection:collectionName,
+        docId,
+        action:'delete',
+        reason,
+        status:SYNC_STATUS_PENDING,
+        updatedAt:nowISO(),
+        lastUpdatedBy:DEVICE_INSTANCE_ID
+      });
+      queued=true;
+      return;
+    }
+    const payload={
+      ...rest,
+      id:docId,
+      updated_at:rest.updated_at||nowISO(),
+      lastUpdatedBy:rest.lastUpdatedBy||DEVICE_INSTANCE_ID,
+    };
+    delete payload.syncStatus;
+    delete payload.lastSyncError;
+    upsertQueueEntry({
+      collection:collectionName,
+      docId,
+      action:'set',
+      payload:cleanFirestoreData(payload),
+      updatedAt:payload.updated_at,
+      lastUpdatedBy:payload.lastUpdatedBy,
+      reason,
+      status:SYNC_STATUS_PENDING,
+    });
+    updateLocalItemSyncStatus(storeKey,docId,SYNC_STATUS_PENDING);
+    queued=true;
+  };
+  if(Array.isArray(diff.consultants)){
+    diff.consultants.forEach(item=>addEntry(FIRESTORE_COLLECTIONS.consultants,'consultants',item));
+  }
+  if(Array.isArray(diff.activities)){
+    diff.activities.forEach(item=>addEntry(FIRESTORE_COLLECTIONS.activities,'activities',item));
+  }
+  if(Array.isArray(diff.guidees)){
+    diff.guidees.forEach(item=>addEntry(FIRESTORE_COLLECTIONS.guidees,'guidees',item));
+  }
+  if(diff.params){
+    const paramsIso=nowISO();
+    const paramsPayload={...DEFAULT_PARAMS,...diff.params,updated_at:paramsIso,lastUpdatedBy:DEVICE_INSTANCE_ID};
+    delete paramsPayload.syncStatus;
+    delete paramsPayload.lastSyncError;
+    upsertQueueEntry({
+      collection:FIRESTORE_COLLECTIONS.params,
+      docId:FIRESTORE_PARAMS_DOC,
+      action:'set',
+      payload:cleanFirestoreData(paramsPayload),
+      updatedAt:paramsIso,
+      lastUpdatedBy:DEVICE_INSTANCE_ID,
+      reason,
+      status:SYNC_STATUS_PENDING,
+    });
+    queued=true;
+  }
+  if(diff.meta){
+    const metaIso=nowISO();
+    const metaPayload=cleanFirestoreData({...diff.meta,lastUpdatedBy:DEVICE_INSTANCE_ID,updated_at:metaIso});
+    delete metaPayload.syncStatus;
+    delete metaPayload.lastSyncError;
+    upsertQueueEntry({
+      collection:FIRESTORE_COLLECTIONS.meta,
+      docId:FIRESTORE_META_DOC,
+      action:'set',
+      payload:metaPayload,
+      updatedAt:metaIso,
+      lastUpdatedBy:DEVICE_INSTANCE_ID,
+      reason,
+      status:SYNC_STATUS_PENDING,
+    });
+    queued=true;
+  }
+  if(queued){
+    persistSyncQueue();
+    refreshPendingChangesFlag();
+  }
+  return queued;
 }
 function ensureSessionDiff(){
   lastSessionDiff=computeSessionDiff();
@@ -4862,48 +5255,98 @@ function requestForegroundRefresh(reason='foreground'){
 }
 function markRemoteDirty(reason='local-change'){
   setLocalSessionDirtyFlag();
-  if(!isFirestoreAvailable() || !firebaseReady || !currentUser || !remoteReady) return;
-  hasPendingChanges=true;
-  setSyncStatus('Modifications locales en attente de sauvegarde…','warning');
-  syncIndicatorState='pending';
-  updateSyncIndicator();
+  refreshPendingChangesFlag();
+  if(hasPendingChanges){
+    setSyncStatus('Modifications locales en attente de sauvegarde…','warning');
+    syncIndicatorState='pending';
+    updateSyncIndicator();
+  }
+  if(!isFirestoreAvailable() || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
   scheduleAutoSync();
 }
-async function detectRemoteConflict(metaRef, reason){
-  if(reason==='initial-upload') return null;
-  const baselineIso=getRemoteBaselineIso();
-  if(!baselineIso){
-    const err=new Error('Lecture distante requise avant la sauvegarde.');
-    err.code='firestore-baseline-missing';
-    return err;
+async function processQueueEntryById(queueId, reason='auto'){
+  const entryIndex=syncQueue.findIndex(item=>item?.queueId===queueId);
+  if(entryIndex<0) return {status:'missing'};
+  const entry={...syncQueue[entryIndex]};
+  const attemptCount=(entry.attemptCount||0)+1;
+  updateQueueEntryAt(entryIndex,{
+    attemptCount,
+    lastAttemptAt:Date.now(),
+    status:SYNC_STATUS_PENDING,
+    lastError:null
+  });
+  const docRef=firebaseDb?.collection(entry.collection)?.doc(String(entry.docId));
+  if(!docRef){
+    throw new Error('Référence Firestore invalide.');
   }
-  const baselineMs=isoToMillis(baselineIso);
-  if(!Number.isFinite(baselineMs)){
-    const err=new Error('Horodatage local invalide — rechargez les données distantes.');
-    err.code='firestore-baseline-missing';
-    return err;
-  }
+  const nowIso=nowISO();
+  const ensurePayload=(payload)=>{
+    const base={...(payload||{})};
+    base.updated_at=base.updated_at||nowIso;
+    base.lastUpdatedBy=base.lastUpdatedBy||entry.lastUpdatedBy||DEVICE_INSTANCE_ID;
+    return cleanFirestoreData(base);
+  };
   try{
-    const snapshot=await metaRef.get();
-    if(snapshot?.exists){
-      const latestIso=extractMetaIso(snapshot.data()||{});
-      const remoteMs=isoToMillis(latestIso);
-      if(Number.isFinite(remoteMs) && remoteMs>baselineMs){
-        const conflictErr=new Error('La base distante a été modifiée par une autre session.');
-        conflictErr.code='firestore-conflict';
-        conflictErr.remoteIso=latestIso;
-        return conflictErr;
+    if(entry.action==='delete'){
+      const snapshot=await docRef.get();
+      if(snapshot.exists){
+        const remote=cleanFirestoreData(snapshot.data());
+        const remoteUpdated=remote.updated_at||remote.updated_at_iso||null;
+        const remoteMs=isoToMillis(remoteUpdated);
+        const localMs=isoToMillis(entry.updatedAt||nowIso);
+        const remoteBy=remote.lastUpdatedBy||null;
+        if(Number.isFinite(remoteMs) && remoteMs>localMs && (!remoteBy || remoteBy!==entry.lastUpdatedBy)){
+          applyRemoteDataToLocal(entry.collection,entry.docId,{...remote,id:entry.docId});
+          removeQueueEntry(entry.collection,entry.docId);
+          return {status:'remote-newer',remote};
+        }
+        await docRef.delete();
+      }
+      applyRemoteDataToLocal(entry.collection,entry.docId,null);
+      removeQueueEntry(entry.collection,entry.docId);
+      return {status:'deleted'};
+    }
+    const payload=ensurePayload(entry.payload);
+    const snapshot=await docRef.get();
+    if(snapshot.exists){
+      const remote=cleanFirestoreData(snapshot.data());
+      const remoteUpdated=remote.updated_at||remote.updated_at_iso||null;
+      const remoteMs=isoToMillis(remoteUpdated);
+      const localMs=isoToMillis(payload.updated_at);
+      const remoteBy=remote.lastUpdatedBy||null;
+      if(Number.isFinite(remoteMs) && remoteMs>localMs && (!remoteBy || remoteBy!==payload.lastUpdatedBy)){
+        applyRemoteDataToLocal(entry.collection,entry.docId,{...remote,id:entry.docId});
+        removeQueueEntry(entry.collection,entry.docId);
+        return {status:'remote-newer',remote};
+      }
+      if(remoteBy && remoteBy===payload.lastUpdatedBy && Number.isFinite(remoteMs) && remoteMs>=localMs){
+        applyRemoteDataToLocal(entry.collection,entry.docId,{...remote,id:entry.docId});
+        removeQueueEntry(entry.collection,entry.docId);
+        return {status:'already-synced',remote};
       }
     }
+    await docRef.set(payload,{merge:false});
+    applyRemoteDataToLocal(entry.collection,entry.docId,{...payload,id:entry.docId});
+    removeQueueEntry(entry.collection,entry.docId);
+    return {status:'synced'};
   }catch(err){
-    console.warn('Impossible de vérifier les conflits Firestore:',err);
+    const message=err?.message||String(err);
+    setCollectionSyncStatus(entry.collection,entry.docId,SYNC_STATUS_ERROR,message);
+    const idx=findQueueIndex(entry.collection,entry.docId);
+    if(idx>=0){
+      updateQueueEntryAt(idx,{
+        status:SYNC_STATUS_ERROR,
+        lastError:message
+      });
+    }
+    throw err;
   }
-  return null;
 }
-async function syncIfDirty(reason='auto'){
-  if(!isFirestoreAvailable() || !firebaseReady || !currentUser || !remoteReady || isSyncSuspended()) return;
-  const diff=ensureSessionDiff();
-  if(!diff || !Object.keys(diff).length){
+
+async function flushSyncQueue(reason='auto'){
+  if(!firebaseDb || !currentUser) return null;
+  const pending=getPendingQueueEntries();
+  if(!pending.length){
     hasPendingChanges=false;
     if(autoSyncTimeout){
       clearTimeout(autoSyncTimeout);
@@ -4913,134 +5356,81 @@ async function syncIfDirty(reason='auto'){
       syncIndicatorState='ok';
       updateSyncIndicator();
     }
-    return;
+    return null;
   }
   if(isSyncInFlight){
     syncQueued=true;
-    return;
+    return null;
   }
-  hasPendingChanges=false;
-  if(autoSyncTimeout){
-    clearTimeout(autoSyncTimeout);
-    autoSyncTimeout=null;
-  }
+  isSyncInFlight=true;
+  syncIndicatorState='pending';
+  updateSyncIndicator();
+  setSyncStatus('Synchronisation avec Firestore…','warning');
+  const results=[];
   try{
-    await saveStoreToFirestore(reason,diff);
+    for(const entry of pending){
+      if(isSyncSuspended()) break;
+      const result=await processQueueEntryById(entry.queueId,reason);
+      results.push(result);
+    }
+    refreshPendingChangesFlag();
+    localStorage.setItem(resolveStorageKey('active'),JSON.stringify(store));
+    initialStoreSnapshot=deepClone(store);
+    lastSessionDiff={};
+    clearLocalSessionDirtyFlag();
+    hasPendingChanges=hasPendingQueueEntries();
+    if(!hasPendingChanges){
+      const nowIso=nowISO();
+      store.meta=store.meta||{};
+      store.meta.updated_at=nowIso;
+      store.meta.updated_at_iso=nowIso;
+      store.meta.syncStatus=SYNC_STATUS_SYNCED;
+      store.meta.last_writer=currentUser?.email||currentUser?.uid||null;
+      store.meta.last_reason=reason;
+      if(store.meta){
+        delete store.meta.lastSyncError;
+      }
+      remoteReady=true;
+      lastRemoteWriteIso=nowIso;
+      lastRemoteReadIso=nowIso;
+      lastSyncSuccess=Date.now();
+      syncIndicatorState='ok';
+      setSyncStatus(`Dernière sauvegarde : ${formatSyncDate(nowIso)}`,'success');
+      restartRemotePolling();
+    }
+    updateSyncIndicator();
+    return results;
   }catch(err){
-    console.error('syncIfDirty error:',err);
-    hasPendingChanges=true;
+    console.error('flushSyncQueue error:',err);
     syncIndicatorState='error';
     lastSyncError=Date.now();
+    setSyncStatus(`Erreur de synchronisation : ${err.message||err}`,'error');
     updateSyncIndicator();
     scheduleAutoSync();
+    throw err;
   }finally{
+    isSyncInFlight=false;
     if(syncQueued){
       syncQueued=false;
       syncIfDirty('queued');
     }
   }
 }
+
+async function syncIfDirty(reason='auto'){
+  if(!isFirestoreAvailable() || !firebaseReady || !currentUser || isSyncSuspended()) return;
+  return flushSyncQueue(reason);
+}
+
 async function saveStoreToFirestore(reason='auto', diffOverride=null){
-  if(!firebaseDb || !currentUser) return;
-  const diff=diffOverride || ensureSessionDiff();
-  if(!diff || !Object.keys(diff).length){
-    syncIndicatorState='ok';
-    updateSyncIndicator();
-    return;
+  if(diffOverride && Object.keys(diffOverride).length){
+    queueDiffEntries(diffOverride,reason);
+    refreshPendingChangesFlag();
   }
-  isSyncInFlight=true;
-  syncIndicatorState='pending';
-  updateSyncIndicator();
-  const batch=firebaseDb.batch();
-  const nowIso=nowISO();
-  const applyArrayDiff=(collectionName, entries=[])=>{
-    entries.forEach(item=>{
-      const {_status,id,...rest}=item||{};
-      if(!id) return;
-      const docRef=firebaseDb.collection(collectionName).doc(String(id));
-      if(_status==='deleted'){
-        batch.delete(docRef);
-        return;
-      }
-      const payload=cleanFirestoreData({...rest,id,updated_at:rest.updated_at||nowIso});
-      batch.set(docRef,payload,{merge:false});
-    });
-  };
-  if(diff.consultants) applyArrayDiff(FIRESTORE_COLLECTIONS.consultants,diff.consultants);
-  if(diff.activities) applyArrayDiff(FIRESTORE_COLLECTIONS.activities,diff.activities);
-  if(diff.guidees) applyArrayDiff(FIRESTORE_COLLECTIONS.guidees,diff.guidees);
-  if(diff.params){
-    const paramsRef=firebaseDb.collection(FIRESTORE_COLLECTIONS.params).doc(FIRESTORE_PARAMS_DOC);
-    const payload=cleanFirestoreData(diff.params);
-    batch.set(paramsRef,payload,{merge:true});
-    store.params={...store.params,...diff.params};
+  if(!firebaseDb || !currentUser){
+    return null;
   }
-  if(diff.meta){
-    store.meta={...store.meta,...diff.meta};
-  }
-  store.meta=store.meta||{};
-  store.meta.version=6.0;
-  const metaRef=firebaseDb.collection(FIRESTORE_COLLECTIONS.meta).doc(FIRESTORE_META_DOC);
-  const metaPayload=cleanFirestoreData({
-    ...(store.meta||{}),
-    updated_at_iso:nowIso,
-    last_writer:currentUser.email||currentUser.uid||null,
-    last_reason:reason
-  });
-  const serverStamp=(firebase.firestore && firebase.firestore.FieldValue && firebase.firestore.FieldValue.serverTimestamp) ? firebase.firestore.FieldValue.serverTimestamp() : null;
-  if(serverStamp) metaPayload.updated_at=serverStamp;
-  batch.set(metaRef,metaPayload,{merge:true});
-  setSyncStatus('Sauvegarde sur Firestore…','warning');
-  try{
-    const conflict=await detectRemoteConflict(metaRef,reason);
-    if(conflict){
-      hasPendingChanges=true;
-      remoteReady=false;
-      syncIndicatorState='error';
-      lastSyncError=Date.now();
-      const detail=conflict.code==='firestore-conflict'
-        ? 'Des modifications distantes ont été détectées. Rafraîchissez avant de poursuivre.'
-        : 'Synchronisation distante requise avant la sauvegarde. Rafraîchissez vos données.';
-      setSyncStatus(detail,'error');
-      updateUsageGate();
-      throw conflict;
-    }
-    await batch.commit();
-    store.meta=store.meta||{};
-    store.meta.updated_at=nowIso;
-    store.meta.updated_at_iso=nowIso;
-    store.meta.last_writer=currentUser.email||currentUser.uid||null;
-    store.meta.last_reason=reason;
-    initialStoreSnapshot=deepClone(store);
-    lastSessionDiff={};
-    lastRemoteWriteIso=nowIso;
-    lastRemoteReadIso=nowIso;
-    hasPendingChanges=false;
-    clearLocalSessionDirtyFlag();
-    remoteReady=true;
-    syncIndicatorState='ok';
-    lastSyncSuccess=Date.now();
-    setSyncStatus(`Dernière sauvegarde : ${formatSyncDate(nowIso)}`,'success');
-    updateUsageGate();
-    restartRemotePolling();
-  }catch(err){
-    if(err?.code==='firestore-conflict'){
-      console.warn('Conflit Firestore détecté :',err);
-    }else if(err?.code==='firestore-baseline-missing'){
-      console.warn('Horodatage distant manquant :',err);
-    }else{
-      console.error('Firestore save error:',err);
-      hasPendingChanges=true;
-      syncIndicatorState='error';
-      lastSyncError=Date.now();
-      setSyncStatus(`Erreur de sauvegarde Firestore : ${err.message||err}`,'error');
-      updateUsageGate();
-    }
-    throw err;
-  }finally{
-    isSyncInFlight=false;
-    updateSyncIndicator();
-  }
+  return flushSyncQueue(reason);
 }
 async function overwriteFirestoreFromLocal(){
   if(!firebaseDb || !currentUser) throw new Error('Connexion Firestore requise.');
@@ -5202,40 +5592,23 @@ async function loadRemoteStore(options={}){
     const remoteMs=isoToMillis(metaIso);
     const localMs=isoToMillis(localMetaIso);
     const remoteIsNewer=Number.isFinite(remoteMs) && (!Number.isFinite(localMs) || remoteMs>localMs);
-    const localIsNewer=Number.isFinite(localMs) && (!Number.isFinite(remoteMs) || localMs>remoteMs);
-    const hasLocalRecords=storeHasRecords();
-    if(!forceApply && localIsNewer && !remoteIsNewer && hasLocalRecords){
-      initialStoreSnapshot=deepClone(remoteStore);
-      lastSessionDiff=computeSessionDiff();
-      const diffHasChanges=lastSessionDiff && Object.keys(lastSessionDiff).length>0;
-      const localIso=store?.meta?.updated_at || store?.meta?.updated_at_iso || null;
-      const localLabel=localIso?formatSyncDate(localIso):'non horodaté';
+    const pendingQueueCount=getPendingQueueEntries().length;
+    if(!forceApply && pendingQueueCount>0){
+      const localLabel=localMetaIso?formatSyncDate(localMetaIso):'non horodaté';
       const remoteLabel=metaIso?formatSyncDate(metaIso):'non horodaté';
       remoteReady=true;
       lastRemoteReadIso=metaIso;
       updateUsageGate({silent:!showFeedback});
       startRemotePolling();
-      if(!diffHasChanges){
-        hasPendingChanges=false;
-        syncIndicatorState='ok';
-        if(showFeedback){
-          setSyncStatus('Les données locales sont déjà synchronisées avec Firestore.','success');
-        }
-        updateSyncIndicator();
-        scheduleAutoSync();
-        return null;
-      }
       hasPendingChanges=true;
       syncIndicatorState='pending';
       if(showFeedback){
-        setSyncStatus(`Données locales plus récentes détectées (local : ${localLabel} / Firestore : ${remoteLabel}) — envoi automatique en cours…`,'warning');
+        const reasonLabel=remoteIsNewer
+          ? `Des données distantes plus récentes sont disponibles (local : ${localLabel} / Firestore : ${remoteLabel}) — consolidation en cours…`
+          : `Modifications locales en attente détectées (local : ${localLabel} / Firestore : ${remoteLabel}) — envoi automatique en cours…`;
+        setSyncStatus(reasonLabel,'warning');
       }
       updateSyncIndicator();
-      updateUsageGate({silent:!showFeedback});
-      if(store?.meta?.updated_at){
-        lastRemoteWriteIso=store.meta.updated_at;
-      }
-      scheduleAutoSync();
       const syncPromise=syncIfDirty('local-newer-auto');
       if(syncPromise && typeof syncPromise.catch==='function'){
         syncPromise.catch(err=>{
@@ -5541,8 +5914,27 @@ if(launchedFromFile){
 function applyIncomingStore(incoming, sourceLabel, options={}){
   if(!incoming || typeof incoming!=='object') throw new Error('Format vide');
   const migrated=migrateStore(incoming);
+  ['consultants','activities','guidees'].forEach(key=>{
+    if(Array.isArray(migrated[key])){
+      migrated[key]=migrated[key].map(item=>({
+        ...item,
+        syncStatus:SYNC_STATUS_SYNCED
+      }));
+    }
+  });
+  if(migrated.params){
+    migrated.params={...DEFAULT_PARAMS,...migrated.params,syncStatus:SYNC_STATUS_SYNCED};
+    delete migrated.params.lastSyncError;
+  }
+  if(migrated.meta){
+    migrated.meta={...store.meta,...migrated.meta,syncStatus:SYNC_STATUS_SYNCED};
+    delete migrated.meta.lastSyncError;
+  }
   localStorage.setItem(resolveStorageKey('active'), JSON.stringify(migrated));
   store=migrated;
+  syncQueue=[];
+  persistSyncQueue();
+  refreshPendingChangesFlag();
   if(options.updateSnapshot!==false){
     initialStoreSnapshot=deepClone(store);
   }
