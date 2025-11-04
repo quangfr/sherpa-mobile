@@ -144,6 +144,9 @@
     <label style="grid-column:1/-1">Utilisateurs @ disponibles (séparés par un espace)
       <textarea id="p-mentions" rows="2" placeholder="@SherpaCoach @TeamLead"></textarea>
     </label>
+    <label style="grid-column:1/-1">Comptes (une ligne par email, format <code>email=Nom</code>)
+      <textarea id="p-account-profiles" rows="4" placeholder="tranxq@gmail.com=Quang&#10;otholance@gmail.com=Oliver"></textarea>
+    </label>
     <div class="backup-block">
       <div class="subtitle">Backup</div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
@@ -236,6 +239,7 @@
     <button type="button" class="btn ghost small ai-helper" id="fa-openai" title="Générer une description structurée">✨</button>
   </div>
 </label>
+<div class="modal-meta" id="fa-last-update-info"></div>
 </div>
     <div class="actions"><button type="button" class="btn danger" data-action="delete">Supprimer</button><button type="button" class="btn" data-action="duplicate">Dupliquer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
@@ -270,6 +274,7 @@
       </div>
     </label>
   </div>
+  <div class="modal-meta" id="fg-last-update-info"></div>
 <div class="actions"><button value="del" class="btn danger">Supprimer</button><button type="button" class="btn" data-action="duplicate">Dupliquer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
 <dialog id="dlg-consultant"><form method="dialog" class="modal" id="form-consultant">
@@ -293,6 +298,7 @@
   </div>
 </label>
 </div>
+<div class="modal-meta" id="fc-last-update-info"></div>
 <div class="actions"><button value="del" class="btn danger">Supprimer</button><button value="ok" class="btn primary">Enregistrer</button></div>
 </form></dialog>
 <dialog id="dlg-settings-guard"><form method="dialog" class="modal confirm-modal">

@@ -20,6 +20,144 @@ function formatDateInput(date){
   const local=new Date(date.getTime()-offset*60000);
   return local.toISOString().slice(0,10);
 }
+function normalizeAccountEmail(email){
+  return String(email||'').trim().toLowerCase();
+}
+function buildAccountProfileMap(rawProfiles){
+  const map=new Map();
+  if(rawProfiles && typeof rawProfiles==='object'){
+    Object.entries(rawProfiles).forEach(([key,value])=>{
+      const trimmedEmail=String(key||'').trim();
+      const normalized=normalizeAccountEmail(trimmedEmail);
+      if(!normalized) return;
+      let name='';
+      if(typeof value==='string'){ name=value; }
+      else if(value && typeof value==='object'){ name=value.name||''; }
+      const trimmedName=String(name||'').trim();
+      map.set(normalized,{email:trimmedEmail||normalized,name:trimmedName});
+    });
+  }
+  return map;
+}
+function getAccountProfiles(params=store?.params){
+  const map=new Map();
+  const applyProfiles=(profiles)=>{
+    buildAccountProfileMap(profiles).forEach((value,key)=>{ map.set(key,value); });
+  };
+  applyProfiles(DEFAULT_ACCOUNT_PROFILES);
+  if(params?.account_profiles) applyProfiles(params.account_profiles);
+  return map;
+}
+function getAccountDisplay(email, params=store?.params){
+  const raw=String(email||'').trim();
+  if(!raw){
+    return {email:'',label:'Compte inconnu',name:''};
+  }
+  const normalized=normalizeAccountEmail(raw);
+  const profiles=getAccountProfiles(params);
+  const profile=profiles.get(normalized);
+  const resolvedEmail=(profile?.email||raw).trim();
+  const resolvedName=(profile?.name||'').trim();
+  return {
+    email:resolvedEmail,
+    name:resolvedName,
+    label:resolvedName||resolvedEmail||raw
+  };
+}
+function renderAccountChip(email,{prefix='par'}={}){
+  const display=getAccountDisplay(email);
+  const hasInfo=display.email||display.label;
+  if(!hasInfo) return '';
+  const safeEmail=esc(display.email||display.label||'');
+  const safeLabel=esc(display.label||'');
+  const prefixText=prefix?`${prefix} `:'';
+  return `<span class="account-ref" title="${safeEmail}">${prefixText}<strong>${safeLabel}</strong></span>`;
+}
+function formatLastUpdateLabel(iso){
+  if(!iso){
+    return 'Dernière modification inconnue';
+  }
+  const date=new Date(iso);
+  if(Number.isNaN(date.getTime())){
+    return 'Dernière modification inconnue';
+  }
+  const now=Date.now();
+  const diffMs=now-date.getTime();
+  if(diffMs>=0 && diffMs<86400000){
+    const diffMinutes=Math.max(0,Math.floor(diffMs/60000));
+    if(diffMinutes<60){
+      const minutes=diffMinutes;
+      return `Dernière modification il y a ${minutes} minute${minutes>1?'s':''}`;
+    }
+    const hours=Math.floor(diffMinutes/60);
+    return `Dernière modification il y a ${hours} heure${hours>1?'s':''}`;
+  }
+  const formattedDate=date.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const formattedTime=date.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',hour12:false});
+  return `Dernière modification le ${formattedDate} à ${formattedTime}`;
+}
+function renderLastUpdateInfo(iso,email){
+  if(!iso && !email) return '';
+  const label=formatLastUpdateLabel(iso);
+  const safeLabel=esc(label);
+  const accountHtml=renderAccountChip(email,{prefix:'par'});
+  if(!safeLabel && !accountHtml) return '';
+  return `<span class="last-update-text">${safeLabel}</span>${accountHtml?` ${accountHtml}`:''}`;
+}
+function resolveCurrentAccountEmail(){
+  const authEmail=String(currentUser?.email||'').trim();
+  if(authEmail) return authEmail;
+  const metaEmail=String(store?.meta?.lastAccountEmail||'').trim();
+  if(metaEmail) return metaEmail;
+  return LEGACY_DEFAULT_ACCOUNT_EMAIL;
+}
+function rememberLastAccountEmail(email){
+  const trimmed=String(email||'').trim();
+  if(!trimmed) return;
+  store.meta=store.meta||{};
+  store.meta.lastAccountEmail=trimmed;
+}
+function updateModalLastUpdate(target, iso, email){
+  if(!target) return;
+  const html=renderLastUpdateInfo(iso,email);
+  if(html){
+    target.innerHTML=html;
+    target.classList.remove('hidden');
+  }else{
+    target.innerHTML='';
+    target.classList.add('hidden');
+  }
+}
+function accountProfilesToTextareaValue(profiles){
+  let map;
+  if(profiles instanceof Map){
+    map=new Map(profiles);
+  }else{
+    map=buildAccountProfileMap(profiles||{});
+  }
+  const lines=[];
+  Array.from(map.values()).sort((a,b)=>a.email.localeCompare(b.email,'fr',{sensitivity:'base'})).forEach(profile=>{
+    const email=String(profile.email||'').trim();
+    if(!email) return;
+    const name=String(profile.name||'').trim();
+    lines.push(name?`${email}=${name}`:email);
+  });
+  return lines.join('\n');
+}
+function parseAccountProfilesInput(value){
+  const entries={};
+  const lines=String(value||'').split(/\r?\n/);
+  lines.forEach(line=>{
+    const trimmed=line.trim();
+    if(!trimmed) return;
+    const [emailPart,...nameParts]=trimmed.split('=');
+    const email=String(emailPart||'').trim();
+    if(!email) return;
+    const name=nameParts.join('=').trim();
+    entries[email]=name;
+  });
+  return entries;
+}
 function getDefaultReportingRange(){
   const end=new Date();
   const julyStart=new Date(Date.UTC(2025,6,1));
@@ -48,6 +186,13 @@ const DEFAULT_HASHTAG_CATALOG=[
   '#CustomerInsight','#CustomerRelationship','#CustomerValue','#CustomerFeedback','#CustomerExperience'
 ].join(' ');
 const DEFAULT_MENTION_CATALOG='';
+const LEGACY_DEFAULT_ACCOUNT_EMAIL='tranxq@gmail.com';
+const SECONDARY_DEFAULT_ACCOUNT_EMAIL='otholance@gmail.com';
+const DEFAULT_ACCOUNT_PROFILES=Object.freeze({
+  [LEGACY_DEFAULT_ACCOUNT_EMAIL]:'Quang',
+  [SECONDARY_DEFAULT_ACCOUNT_EMAIL]:'Oliver'
+});
+const LEGACY_DEFAULT_LAST_UPDATED_BY='legacy-migration';
 const ACTIVITY_TYPES=['ACTION_ST_BERNARD','CORDEE','NOTE','VERBATIM','AVIS','ALERTE','PROLONGEMENT'];
 const ACTIVITY_LABELS={
   ACTION_ST_BERNARD:'Action STB',
@@ -965,6 +1110,7 @@ const DEFAULT_PARAMS={
   activites_a_venir_jours:30,
   hashtags_catalog:DEFAULT_HASHTAG_CATALOG,
   mentions_catalog:DEFAULT_MENTION_CATALOG,
+  account_profiles:{...DEFAULT_ACCOUNT_PROFILES},
   description_templates:{...DEFAULT_DESCRIPTION_TEMPLATES},
   ai_prompt:DEFAULT_COMMON_DESCRIPTION_PROMPT,
   ai_activity_context_prompt:DEFAULT_ACTIVITY_CONTEXT_PROMPT,
@@ -1064,9 +1210,22 @@ function migrateStore(data){
   const aiTitlePromptRaw=typeof incomingParams.ai_title_prompt==='string'
     ? incomingParams.ai_title_prompt.trim()
     : '';
+  const accountProfilesMap=new Map();
+  buildAccountProfileMap(DEFAULT_ACCOUNT_PROFILES).forEach((value,key)=>{ accountProfilesMap.set(key,value); });
+  if(incomingParams.account_profiles){
+    buildAccountProfileMap(incomingParams.account_profiles).forEach((value,key)=>{ accountProfilesMap.set(key,value); });
+  }
+  const normalizedProfiles={};
+  accountProfilesMap.forEach(profile=>{
+    if(!profile || !profile.email) return;
+    const email=String(profile.email||'').trim();
+    if(!email) return;
+    normalizedProfiles[email]=profile.name||'';
+  });
   migrated.params={
     ...DEFAULT_PARAMS,
     ...incomingParams,
+    account_profiles:normalizedProfiles,
     description_templates:{...mergedTemplates},
     ai_prompt:aiPromptRaw||DEFAULT_COMMON_DESCRIPTION_PROMPT,
     ai_activity_context_prompt:aiActivityContextRaw||DEFAULT_ACTIVITY_CONTEXT_PROMPT,
@@ -1083,6 +1242,9 @@ function migrateStore(data){
       const copy={...c};
       delete copy.url;
       if(copy.boond_id===undefined) copy.boond_id='';
+      if(!copy.lastUpdatedBy) copy.lastUpdatedBy=LEGACY_DEFAULT_LAST_UPDATED_BY;
+      if(!copy.updatedByAccount) copy.updatedByAccount=LEGACY_DEFAULT_ACCOUNT_EMAIL;
+      if(copy.createdByAccount===undefined) copy.createdByAccount=copy.updatedByAccount;
       return copy;
     });
   }
@@ -1124,6 +1286,9 @@ function migrateStore(data){
         const key=String(updated.probabilite||'').toUpperCase();
         updated.probabilite=PROLONGEMENT_PROBABILITIES[key]?key:DEFAULT_PROLONGEMENT_PROBABILITY;
       }
+      if(!updated.lastUpdatedBy) updated.lastUpdatedBy=LEGACY_DEFAULT_LAST_UPDATED_BY;
+      if(!updated.createdByAccount) updated.createdByAccount=LEGACY_DEFAULT_ACCOUNT_EMAIL;
+      if(!updated.updatedByAccount) updated.updatedByAccount=updated.createdByAccount;
       return updated;
     });
   }
@@ -1131,6 +1296,9 @@ function migrateStore(data){
     migrated.guidees=migrated.guidees.map(g=>{
       const copy={...g};
       delete copy.thematique_id;
+      if(!copy.lastUpdatedBy) copy.lastUpdatedBy=LEGACY_DEFAULT_LAST_UPDATED_BY;
+      if(!copy.createdByAccount) copy.createdByAccount=LEGACY_DEFAULT_ACCOUNT_EMAIL;
+      if(!copy.updatedByAccount) copy.updatedByAccount=copy.createdByAccount;
       return copy;
     });
   }
@@ -1139,7 +1307,12 @@ function migrateStore(data){
   const incomingMeta=data.meta||{};
   const cleanedMeta={...incomingMeta};
   delete cleanedMeta.github_repo;
-  migrated.meta={...cleanedMeta,version:6.0,updated_at:nowISO()};
+  const legacyMetaAccount=String(cleanedMeta.lastAccountEmail||'').trim()||LEGACY_DEFAULT_ACCOUNT_EMAIL;
+  const legacyMetaWriter=cleanedMeta.lastUpdatedBy||LEGACY_DEFAULT_LAST_UPDATED_BY;
+  migrated.meta={...cleanedMeta,version:6.0,updated_at:nowISO(),lastAccountEmail:legacyMetaAccount,lastUpdatedBy:legacyMetaWriter};
+  if(!migrated.params.lastUpdatedBy){
+    migrated.params.lastUpdatedBy=LEGACY_DEFAULT_LAST_UPDATED_BY;
+  }
   return migrated;
 }
 function resolveStorageKey(mode='active'){
@@ -1155,7 +1328,7 @@ function createEmptyStore(){
     activities:[],
     guidees:[],
     params:{...DEFAULT_PARAMS},
-    meta:{version:6.0,updated_at:nowISO()}
+    meta:{version:6.0,updated_at:nowISO(),lastAccountEmail:LEGACY_DEFAULT_ACCOUNT_EMAIL,lastUpdatedBy:DEVICE_INSTANCE_ID}
   };
 }
 function load(mode='online', options={}){
@@ -1816,8 +1989,10 @@ const friendlyDateHtml=esc(friendlyDate);
 const rawDateTitle=esc(a.date_publication||'');
 const consultantLabel=renderConsultantChip(c,{selected:isSelected,bold:true});
 const inlineEditButton=()=>`<button class="btn ghost small row-edit" data-inline-edit="${a.id}" title="Éditer l'activité">✏️</button>`;
-const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span></div>`;
-const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${inlineEditButton()}</div>`;
+const creatorEmail=a.createdByAccount||a.updatedByAccount||'';
+const creatorChip=renderAccountChip(creatorEmail,{prefix:'par'});
+const dateLineDesktop=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${creatorChip?` ${creatorChip}`:''}</div>`;
+const dateLineMobile=`<div class="activity-date-line" title="${rawDateTitle}"><span class="sub">${friendlyDateHtml}</span>${creatorChip?` ${creatorChip}`:''}${inlineEditButton()}</div>`;
 const tr=document.createElement('tr'); tr.classList.add('clickable');
 tr.dataset.activityId=a.id;
 tr.style.setProperty('--selection-color','var(--accent)');
@@ -1999,6 +2174,7 @@ const inputActivitesRecent=$('p-activites_recent');
 const inputActivitesAvenir=$('p-activites_avenir');
 const textareaHashtags=$('p-hashtags');
 const textareaMentions=$('p-mentions');
+const textareaAccountProfiles=$('p-account-profiles');
 const btnSaveParams=$('btn-save-params');
 const templateTypeSelect=$('template-type');
 const templateEditor=$('template-editor');
@@ -2368,7 +2544,8 @@ function renderGuideeTimeline(){
         color:defaultColor,
         guidee:g,
         consultant:consultant,
-        status:'future'
+        status:'future',
+        createdByAccount:g?.createdByAccount||g?.updatedByAccount||''
       });
     }
     if(!hideActions){
@@ -2388,7 +2565,8 @@ function renderGuideeTimeline(){
           activity:a,
           alertStatus,
           alertTypes,
-          status:'future'
+          status:'future',
+          createdByAccount:a?.createdByAccount||a?.updatedByAccount||''
         });
       });
     }
@@ -2401,7 +2579,8 @@ function renderGuideeTimeline(){
         color:defaultColor,
         guidee:g,
         consultant:consultant,
-        status:'future'
+        status:'future',
+        createdByAccount:g?.createdByAccount||g?.updatedByAccount||''
       });
     }
   });
@@ -2523,6 +2702,7 @@ function renderGuideeTimeline(){
       : (ev.alertTypes?renderAlertTypeBadge(ev.alertTypes):'');
     const consultantFallback=ev.type==='activity'?'—':'Consultant inconnu';
     const consultantChip=renderConsultantChip(ev.consultant,{selected:isSelected,includeIcon:true,bold:ev.type!=='activity',fallback:consultantFallback});
+    const creatorChip=renderAccountChip(ev.createdByAccount,{prefix:'par'});
     const metaPrimaryPieces=[];
     if(alertTypeBadgeHtml) metaPrimaryPieces.push(alertTypeBadgeHtml);
     if(alertBadge) metaPrimaryPieces.push(alertBadge);
@@ -2541,9 +2721,11 @@ function renderGuideeTimeline(){
       const milestoneLabel=`${verb} ${clickableName}`;
       metaPrimaryPieces.push(milestoneLabel);
     }
-    const dateLinePieces=[consultantChip,`<span class="sub">${friendlyDateHtml}</span>`].filter(Boolean);
+    const dateLinePieces=[consultantChip,`<span class="sub">${friendlyDateHtml}</span>`];
+    if(creatorChip) dateLinePieces.push(creatorChip);
+    const filteredDateLine=dateLinePieces.filter(Boolean);
     let dateLineHtml='';
-    dateLinePieces.forEach((piece,index)=>{
+    filteredDateLine.forEach((piece,index)=>{
       if(index>0) dateLineHtml+=`<span class="timeline-meta-separator">•</span>`;
       dateLineHtml+=piece;
     });
@@ -3535,6 +3717,9 @@ function renderParams(options={}){
   if(textareaMentions){
     textareaMentions.value=p.mentions_catalog ?? DEFAULT_MENTION_CATALOG;
   }
+  if(textareaAccountProfiles){
+    textareaAccountProfiles.value=accountProfilesToTextareaValue(getAccountProfiles(p));
+  }
   renderTemplateEditor();
   renderPromptEditor();
 }
@@ -3554,6 +3739,7 @@ async function saveParamsChanges(button=btnSaveParams){
     params.activites_a_venir_jours=Math.max(1,Number(inputActivitesAvenir?.value||30));
     params.hashtags_catalog=(textareaHashtags?.value||'').trim()||DEFAULT_HASHTAG_CATALOG;
     params.mentions_catalog=(textareaMentions?.value||'').trim()||DEFAULT_MENTION_CATALOG;
+    params.account_profiles=parseAccountProfilesInput(textareaAccountProfiles?.value||'');
     persistTemplateEditorValue();
     if(promptEditor){
       params.ai_prompt=(promptEditor.value||'').trim()||DEFAULT_COMMON_DESCRIPTION_PROMPT;
@@ -3662,7 +3848,8 @@ btnResetPrompt?.addEventListener('click',async()=>{
   inputActivitesRecent,
   inputActivitesAvenir,
   textareaHashtags,
-  textareaMentions
+  textareaMentions,
+  textareaAccountProfiles
 ].filter(Boolean).forEach(input=>{
   input.addEventListener('input',()=>markSettingsPartDirty('general'));
 });
@@ -3937,6 +4124,7 @@ const faOpenAI=$('fa-openai');
 const faDate=$('fa-date');
 const faForm=$('form-activity');
 const faSaveBtn=$$('#dlg-activity .actions [value="ok"]');
+const faLastUpdateInfo=$('fa-last-update-info');
 let activityInitialSnapshot=null;
 function getSelectedAlertTypes(){
   if(!faAlertTypeSelect) return [];
@@ -4249,6 +4437,7 @@ function openActivityModal(id=null,options={}){
   currentActivityId=id;
   activityInitialSnapshot=null;
   updateActivitySaveVisibility();
+  let targetActivity=null;
   if(id && state.activities.selectedId!==id){
     state.activities.selectedId=id;
     renderActivities();
@@ -4267,6 +4456,7 @@ function openActivityModal(id=null,options={}){
   if(id){
     const a=store.activities.find(x=>x.id===id);
     if(!a) return;
+    targetActivity=a;
     faConsult.value=a.consultant_id;
     faType.value=a.type;
     if(faDate) faDate.value=a.date_publication||'';
@@ -4313,6 +4503,9 @@ function openActivityModal(id=null,options={}){
     faType.onchange();
     applyActivityTemplateAutofill(true);
   }
+  const lastIso=targetActivity?.updated_at||targetActivity?.created_at||'';
+  const lastAccount=targetActivity?.updatedByAccount||targetActivity?.createdByAccount||'';
+  updateModalLastUpdate(faLastUpdateInfo,lastIso,lastAccount);
   const snapshot=normalizeActivitySnapshot(snapshotActivityForm());
   activityInitialSnapshot=forceDirty?{...snapshot,__forceDirty:true}:snapshot;
   updateActivityGuideeTooltip();
@@ -4341,12 +4534,15 @@ if(!isAlerte){ delete data.alerte_statut; delete data.alerte_types; }
 if(!currentActivityId && missing){ dlgA.close('cancel'); return; }
 if(missing){ alert('Champs requis manquants.'); return; }
 const nowActivityIso=nowISO();
+const accountEmail=resolveCurrentAccountEmail();
+rememberLastAccountEmail(accountEmail);
 if(currentActivityId){
   const existing=store.activities.find(x=>x.id===currentActivityId);
   if(existing){
     Object.assign(existing,data,{
       updated_at:nowActivityIso,
       lastUpdatedBy:DEVICE_INSTANCE_ID,
+      updatedByAccount:accountEmail,
       syncStatus:SYNC_STATUS_PENDING
     });
   }
@@ -4356,7 +4552,9 @@ if(currentActivityId){
     id:newId,
     ...data,
     created_at:nowActivityIso,
+    createdByAccount:accountEmail,
     updated_at:nowActivityIso,
+    updatedByAccount:accountEmail,
     lastUpdatedBy:DEVICE_INSTANCE_ID,
     syncStatus:SYNC_STATUS_PENDING
   });
@@ -4419,6 +4617,7 @@ const btnFgEditConsultant=$('fg-edit-consultant');
 const fgForm=$('form-guidee');
 const btnFgDuplicate=$$('#dlg-guidee .actions [data-action="duplicate"]');
 const fgSaveBtn=$$('#dlg-guidee .actions [value="ok"]');
+const fgLastUpdateInfo=$('fg-last-update-info');
 function updateGuideeConsultantTooltip(){
   if(!btnFgEditConsultant) return;
   const consultantId=fgConsult?.value||'';
@@ -4525,10 +4724,17 @@ function buildGuideePayload(){
 }
 function persistGuideePayload(payload){
   if(!payload) return null;
+  const accountEmail=resolveCurrentAccountEmail();
+  rememberLastAccountEmail(accountEmail);
   if(currentGuideeId){
     const existing=store.guidees.find(x=>x.id===currentGuideeId);
     if(existing){
-      Object.assign(existing,payload,{updated_at:nowISO(),lastUpdatedBy:DEVICE_INSTANCE_ID,syncStatus:SYNC_STATUS_PENDING});
+      Object.assign(existing,payload,{
+        updated_at:nowISO(),
+        lastUpdatedBy:DEVICE_INSTANCE_ID,
+        updatedByAccount:accountEmail,
+        syncStatus:SYNC_STATUS_PENDING
+      });
     }
   }else{
     const id=uid();
@@ -4537,7 +4743,9 @@ function persistGuideePayload(payload){
       id,
       ...payload,
       created_at:nowISO(),
+      createdByAccount:accountEmail,
       updated_at:payload.updated_at||nowISO(),
+      updatedByAccount:accountEmail,
       lastUpdatedBy:DEVICE_INSTANCE_ID,
       syncStatus:SYNC_STATUS_PENDING
     });
@@ -4563,9 +4771,17 @@ function openGuideeModal(id=null,options={}){
     ? defaultConsultantId
     : fgConsult.options[0]?.value||'';
   const newGuideeTemplate={id:uid(),nom:'',description:'',resultat:'',consultant_id:preferred,date_debut:todayStr(),date_fin:''};
-  const g=id
-    ? store.guidees.find(x=>x.id===id)
-    : (prefillGuidee ? {...newGuideeTemplate,...prefillGuidee} : newGuideeTemplate);
+  let targetGuideeRecord=null;
+  let g;
+  if(id){
+    targetGuideeRecord=store.guidees.find(x=>x.id===id)||null;
+    if(!targetGuideeRecord) return;
+    g=targetGuideeRecord;
+  }else if(prefillGuidee){
+    g={...newGuideeTemplate,...prefillGuidee};
+  }else{
+    g=newGuideeTemplate;
+  }
   const templateGuidee=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee);
   const templateResult=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.guidee_result);
   if(fgDesc) fgDesc.placeholder=templateGuidee||'';
@@ -4594,6 +4810,9 @@ function openGuideeModal(id=null,options={}){
   const defaultEnd=consultant?.date_fin||start;
   fgFin.value=g?.date_fin||defaultEnd;
   updateGuideeConsultantTooltip();
+  const guideeLastIso=targetGuideeRecord?.updated_at||targetGuideeRecord?.created_at||'';
+  const guideeLastAccount=targetGuideeRecord?.updatedByAccount||targetGuideeRecord?.createdByAccount||'';
+  updateModalLastUpdate(fgLastUpdateInfo,guideeLastIso,guideeLastAccount);
   const snapshot=normalizeGuideeSnapshot(snapshotGuideeForm());
   guideeInitialSnapshot=forceDirty?{...snapshot,__forceDirty:true}:snapshot;
   updateGuideeSaveVisibility();
@@ -4674,6 +4893,7 @@ function updateConsultantDescriptionPlaceholder(){
 const btnFcBoondLink=$('fc-boond-link');
 const fcForm=$('form-consultant');
 const fcSaveBtn=$$('#dlg-consultant .actions [value="ok"]');
+const fcLastUpdateInfo=$('fc-last-update-info');
 function updateDescriptionPlaceholders(){
   updateActivityDescriptionPlaceholder();
   updateGuideeDescriptionPlaceholders();
@@ -4746,7 +4966,15 @@ function openConsultantModal(id=null){
 currentConsultantId=id;
 consultantInitialSnapshot=null;
 updateConsultantSaveVisibility();
-const c=id? store.consultants.find(x=>x.id===id) : {nom:'',titre_mission:'',date_fin:'',boond_id:'',description:''};
+let targetConsultant=null;
+let c;
+if(id){
+  targetConsultant=store.consultants.find(x=>x.id===id)||null;
+  if(!targetConsultant) return;
+  c=targetConsultant;
+}else{
+  c={nom:'',titre_mission:'',date_fin:'',boond_id:'',description:''};
+}
 const templateConsultant=getDescriptionTemplate(DESCRIPTION_TEMPLATE_KEYS.consultant);
 if(fcNom) fcNom.value=c?.nom||'';
 if(fcTitre) fcTitre.value=c?.titre_mission||'';
@@ -4765,6 +4993,9 @@ if(fcDesc){
 updateBoondLink(c?.boond_id||'');
 consultantInitialSnapshot=normalizeConsultantSnapshot(snapshotConsultantForm());
 updateConsultantSaveVisibility();
+const consultantLastIso=targetConsultant?.updated_at||targetConsultant?.created_at||'';
+const consultantLastAccount=targetConsultant?.updatedByAccount||targetConsultant?.createdByAccount||'';
+updateModalLastUpdate(fcLastUpdateInfo,consultantLastIso,consultantLastAccount);
 dlgC.showModal();
 }
 if(fcBoond){
@@ -4781,12 +5012,15 @@ if(!currentConsultantId && !nomValue){ dlgC.close('cancel'); return; }
 if(!nomValue){ alert('Nom requis.'); return; }
 let createdConsultantId=null;
 const consultantUpdateIso=nowISO();
+const accountEmail=resolveCurrentAccountEmail();
+rememberLastAccountEmail(accountEmail);
 if(currentConsultantId){
   const existing=store.consultants.find(x=>x.id===currentConsultantId);
   if(existing){
     Object.assign(existing,data,{
       updated_at:consultantUpdateIso,
       lastUpdatedBy:DEVICE_INSTANCE_ID,
+      updatedByAccount:accountEmail,
       syncStatus:SYNC_STATUS_PENDING
     });
   }
@@ -4797,6 +5031,8 @@ if(currentConsultantId){
     ...data,
     created_at:consultantUpdateIso,
     updated_at:consultantUpdateIso,
+    createdByAccount:accountEmail,
+    updatedByAccount:accountEmail,
     lastUpdatedBy:DEVICE_INSTANCE_ID,
     syncStatus:SYNC_STATUS_PENDING
   });
