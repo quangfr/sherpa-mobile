@@ -1023,7 +1023,7 @@ function shouldBlockUsage(){
   if(!remoteReady){
     return !hasOfflineDataAvailable();
   }
-  return isRemoteDataStale();
+  return false;
 }
 function updateUsageGate(options={}){
   const {silent=false}=options;
@@ -1033,8 +1033,10 @@ function updateUsageGate(options={}){
   }
   const locked=shouldBlockUsage();
   toggleAuthGate(locked);
-  if(silent || !locked || !currentUser) return;
+  if(!currentUser) return;
+  if(authGateForced) return;
   if(syncIndicatorState==='error') return;
+  if(silent) return;
   if(!remoteReady){
     setSyncStatus('Chargement des données distantes en cours…','warning');
   }else if(isRemoteDataStale()){
