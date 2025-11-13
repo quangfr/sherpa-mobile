@@ -1491,6 +1491,10 @@ function openTab(id, persist=false){
     const view=$$('#view-'+id); if(view) view.classList.add('active');
     activeTabId=id;
     if(persist) localStorage.setItem(TAB_KEY,id);
+    if(id==='guidee'){
+      renderGuideeFilters();
+      renderGuideeTimeline();
+    }
   };
   if(activeTabId==='reglages' && id!=='reglages' && settingsDirty){
     guardUnsavedSettings(activate);
@@ -2797,7 +2801,7 @@ function renderGuideeTimeline(){
     timelineEl.appendChild(item);
   });
   const needsCenter=shouldScroll || state.guidees.shouldCenter;
-  if(needsCenter){
+  if(needsCenter && activeTabId==='guidee'){
     const rawId=state.guidees.selectedEventId||'';
     const safeId=typeof CSS!=='undefined' && typeof CSS.escape==='function' ? CSS.escape(rawId) : rawId;
     const target=timelineEl.querySelector(`[data-event-id="${safeId}"]`);
@@ -3223,13 +3227,18 @@ function renderReporting(){
     if(!eventRef){
       return '—';
     }
-    const {prefixAlert=true}=options||{};
+    const opts=options||{};
+    const prefixAlert=opts.prefixAlert!==undefined?opts.prefixAlert:true;
+    const extraLabel=opts.extraLabel?String(opts.extraLabel):'';
     const label=(eventRef.label||'—').trim()||'—';
     const normalizedStatus=eventRef.status?normalizeAlertStatus(eventRef.status)||eventRef.status:null;
     const statusLabel=eventRef.statusLabel || (normalizedStatus?ALERT_STATUS_LABELS[normalizedStatus]||normalizedStatus:'');
     const alertTypesRaw=prefixAlert?(eventRef.alertTypes||eventRef.alerte_types||[]):[];
     const typesShort=prefixAlert?formatAlertTypesShort(alertTypesRaw):'';
     const prefixPieces=[];
+    if(extraLabel){
+      prefixPieces.push(extraLabel);
+    }
     if(prefixAlert && typesShort){
       prefixPieces.push(typesShort);
     }
@@ -3276,12 +3285,10 @@ function renderReporting(){
       return '—';
     }
     const probabilityLabel=(item.prolongement?.probabilityLabel||'').trim();
-    const innerHtml=renderGuideeEvent(item.prolongement,interactive);
     if(!probabilityLabel){
-      return innerHtml;
+      return renderGuideeEvent(item.prolongement,interactive);
     }
-    const prefix=`<span class="muted">${esc(probabilityLabel)} • </span>`;
-    return `${prefix}${innerHtml}`;
+    return renderGuideeEvent(item.prolongement,interactive,{extraLabel:`${probabilityLabel} • `});
   };
   const renderMissionsRow=(item,interactive)=>{
     const missionEndPieces=[];

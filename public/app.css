@@ -240,14 +240,14 @@ dialog::backdrop{background:#0006}
   .timeline-meta-separator{display:none}
 }
 .timeline-item-milestone .timeline-meta-date .sub{color:rgba(255,255,255,.85)}
-.timeline-item-milestone .timeline-body{align-items:flex-end;text-align:right}
-.timeline-item-milestone .timeline-meta{align-items:flex-end;text-align:right;width:100%}
-.timeline-item-milestone .timeline-meta-primary{justify-content:flex-end}
-.timeline-item-milestone .timeline-meta-date{justify-content:flex-end}
-.timeline-item-milestone .timeline-meta-secondary{justify-content:flex-end}
-.timeline-item-milestone .timeline-description{text-align:right}
+.timeline-item-milestone .timeline-body{align-items:flex-start;text-align:left}
+.timeline-item-milestone .timeline-meta{align-items:flex-start;text-align:left;width:100%}
+.timeline-item-milestone .timeline-meta-primary{justify-content:flex-start}
+.timeline-item-milestone .timeline-meta-date{justify-content:flex-start}
+.timeline-item-milestone .timeline-meta-secondary{justify-content:flex-start}
+.timeline-item-milestone .timeline-description{text-align:left}
 @media (max-width:600px){
-  .timeline-item-milestone .timeline-meta-date{align-items:flex-end}
+  .timeline-item-milestone .timeline-meta-date{align-items:flex-start}
 }
 .timeline-text{font-size:13px;line-height:1.45;color:inherit;display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;word-break:break-word}
 .timeline-text.clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
