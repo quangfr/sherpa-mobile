@@ -3073,9 +3073,32 @@ function renderReporting(){
         date:formatReportDate(a.date_publication||''),
         title:(a.title||'').trim()||'Sans titre',
         titleEvent:{label:(a.title||'').trim()||'Sans titre',guideeId:a.guidee_id||'',activityId:a.id||''},
+      descriptionHtml:formatReportMultiline(a.description),
+      descriptionLines,
+      guidee:buildGuideeData(guidee)
+    };
+  });
+  const notesActivities=(store.activities||[])
+    .filter(a=>a.type==='NOTE')
+    .sort((a,b)=>(b.date_publication||'').localeCompare(a.date_publication||''));
+  const notesData=notesActivities
+    .filter(a=>withinRange(a.date_publication||''))
+    .map(a=>{
+      const consultant=store.consultants.find(c=>c.id===a.consultant_id)||null;
+      const beneficiaries=Array.isArray(a.beneficiaires)?a.beneficiaires.filter(Boolean):[];
+      const participants=buildParticipants(a.consultant_id,consultant?.nom||'',beneficiaries);
+      const descriptionPlain=formatReportPlainText(a.description);
+      const descriptionLines=descriptionPlain==='—'
+        ? []
+        : descriptionPlain.split('\n').map(line=>line.trim()).filter(Boolean);
+      return {
+        participants,
+        participantsLabel:participants.length?participants.map(p=>p.name).join(', '):'—',
+        date:formatReportDate(a.date_publication||''),
+        title:(a.title||'').trim()||'Sans titre',
+        titleEvent:{label:(a.title||'').trim()||'Sans titre',guideeId:a.guidee_id||'',activityId:a.id||''},
         descriptionHtml:formatReportMultiline(a.description),
-        descriptionLines,
-        guidee:buildGuideeData(guidee)
+        descriptionLines
       };
     });
   const normalizeRangeDate=(value)=>{
@@ -3358,10 +3381,16 @@ function renderReporting(){
   const cordeeRowsPlain=cordeeData.map(item=>renderCordeeRow(item,false));
   const cordeeTable=wrapTable('Cordées',cordeeHeader,cordeeRowsInteractive,4);
   const cordeeTablePlain=wrapTable('Cordées',cordeeHeader,cordeeRowsPlain,4);
+  const notesHeader='<tr><th>Consultants</th><th>Date</th><th>Titre</th><th>Description</th></tr>';
+  const renderNotesRow=(item,interactive)=>`<tr><td>${renderParticipants(item.participants,interactive)}</td><td>${esc(item.date)}</td><td>${renderGuideeEvent(item.titleEvent,interactive)}</td><td>${item.descriptionHtml}</td></tr>`;
+  const notesRowsInteractive=notesData.map(item=>renderNotesRow(item,true));
+  const notesRowsPlain=notesData.map(item=>renderNotesRow(item,false));
+  const notesTable=wrapTable('Notes',notesHeader,notesRowsInteractive,4);
+  const notesTablePlain=wrapTable('Notes',notesHeader,notesRowsPlain,4);
   const highlightTablesHtml=highlightTables.map(table=>table.interactive);
   const highlightTablesPlain=highlightTables.map(table=>table.plain);
-  reportingDocument.innerHTML=[missionsTable,actionsTable,guideesTable,...highlightTablesHtml,cordeeTable].join('');
-  lastReportingHtml=[missionsTablePlain,actionsTablePlain,guideesTablePlain,...highlightTablesPlain,cordeeTablePlain].join('');
+  reportingDocument.innerHTML=[missionsTable,actionsTable,guideesTable,...highlightTablesHtml,cordeeTable,notesTable].join('');
+  lastReportingHtml=[missionsTablePlain,actionsTablePlain,guideesTablePlain,...highlightTablesPlain,cordeeTablePlain,notesTablePlain].join('');
   const missionsTextLines=[];
   if(missionsData.length){
     missionsData.forEach(m=>{
@@ -3482,6 +3511,22 @@ function renderReporting(){
     });
     while(cordeeTextLines.length && cordeeTextLines[cordeeTextLines.length-1]==='') cordeeTextLines.pop();
   }
+  const notesTextLines=[];
+  if(notesData.length){
+    notesData.forEach(item=>{
+      notesTextLines.push(`CONSULTANTS : ${item.participantsLabel||'—'}`);
+      notesTextLines.push(`DATE : ${item.date}`);
+      notesTextLines.push(`TITRE : ${item.title}`);
+      notesTextLines.push('DESCRIPTION :');
+      if(item.descriptionLines.length){
+        item.descriptionLines.forEach(line=>notesTextLines.push(line));
+      }else{
+        notesTextLines.push('—');
+      }
+      notesTextLines.push('');
+    });
+    while(notesTextLines.length && notesTextLines[notesTextLines.length-1]==='') notesTextLines.pop();
+  }
   const periodStartText=formatReportDate(startValue||'');
   const periodEndText=formatReportDate(endValue||'');
   const sections=[
@@ -3558,6 +3603,19 @@ function renderReporting(){
   }else{
     sections.push(
       'Consultant : —',
+      'Date : —',
+      'Titre : —',
+      'Description :',
+      '—'
+    );
+  }
+  if(sections[sections.length-1] !== '') sections.push('');
+  sections.push('== NOTES ==','');
+  if(notesTextLines.length){
+    sections.push(...notesTextLines);
+  }else{
+    sections.push(
+      'Consultants : —',
       'Date : —',
       'Titre : —',
       'Description :',

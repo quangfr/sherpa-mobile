@@ -48,6 +48,7 @@ Sherpa est une application monopage HTML/JS bâtie sur `public/app.html` et `pub
 - **Guidées (`🧭`)** : la frise chronologique met en scène les jalons début/fin, les actions associées et la progression calculée. Les cartes permettent de naviguer vers les modales d'édition et de relier rapidement les activités pertinentes.
 - **Guidées (`🧭`)** : chaque événement de la timeline précise le compte créateur ; les modales de guidée synthétisent également la dernière modification.
 - **Reporting (`📈`)** : la page assemble missions, activités, alertes, avis, verbatims et cordées dans un document HTML prêt à copier (versions texte et riche) avec navigation contextuelle et raccourcis clavier pour parcourir les sections.
+- **Reporting : notes et dates** : le document se termine par un nouveau tableau `Notes` (Consultants, Date, Titre, Description) et les exports texte/HTML gardent un format `DD/MM` quand l’événement est sur l’année courante, ce qui rend la période et les saisies plus lisibles.
 - **Paramètres (`⚙️`)** : cette section expose seuils métiers, catalogues, prompts IA, gestion des backups (import/export JSON, remise à zéro locale ou Firestore) et options d'affichage. Des garde-fous préviennent les changements non sauvegardés.
 
 ### Règles métier & UX
