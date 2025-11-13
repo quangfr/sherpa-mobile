@@ -164,8 +164,7 @@ function parseAccountProfilesInput(value){
 }
 function getDefaultReportingRange(){
   const end=new Date();
-  const julyStart=new Date(Date.UTC(2025,6,1));
-  const start=end<julyStart?end:julyStart;
+  const start=new Date(end.getFullYear(), end.getMonth()-1, 1);
   return {startDate:formatDateInput(start),endDate:formatDateInput(end)};
 }
 const isMobile=()=>window.innerWidth<=520;
@@ -2845,7 +2844,12 @@ btnEditGuidee?.addEventListener('click',()=>{
 function formatReportDate(dateStr){
   const date=parseDate(dateStr||'');
   if(!date) return '—';
-  return date.toLocaleDateString('fr-FR');
+  const now=new Date();
+  const options={day:'2-digit',month:'2-digit'};
+  if(date.getFullYear()!==now.getFullYear()){
+    options.year='numeric';
+  }
+  return date.toLocaleDateString('fr-FR',options);
 }
 function formatReportMultiline(text){
   const value=String(text||'').trim();
@@ -2978,7 +2982,8 @@ function renderReporting(){
         label:formatTitleDate(lastPro.title,lastPro.date_publication||''),
         guideeId:lastPro.guidee_id||'',
         activityId:lastPro.id||'',
-        eventId:lastPro.id?`act-${lastPro.id}`:''
+        eventId:lastPro.id?`act-${lastPro.id}`:'',
+        probabilityLabel:PROLONGEMENT_PROBABILITIES[lastPro.probabilite]?.label||''
       }:null,
       guidee:buildGuideeData(activeGuidee),
       verbatim:lastVerbatim?{label:formatTitleDate(lastVerbatim.title,lastVerbatim.date_publication||''),guideeId:lastVerbatim.guidee_id||'',activityId:lastVerbatim.id||''}:null,
@@ -3242,7 +3247,18 @@ function renderReporting(){
     const body=rows.length?rows.join(''):`<tr><td colspan="${colspan}">—</td></tr>`;
     return `<div class="reporting-section"><table><caption>${captionHtml}</caption><thead>${headerRow}</thead><tbody>${body}</tbody></table></div>`;
   };
-  const missionsHeader='<tr><th>Consultant</th><th>Titre</th><th>Fin de mission</th><th>Guidée en cours</th><th>Dernier verbatim</th><th>Dernier avis</th><th>Alerte en cours</th></tr>';
+  const missionsHeader='<tr><th>Consultant</th><th>Titre</th><th>Fin de mission / Prolongement</th><th>Guidée en cours</th><th>Dernier verbatim</th><th>Dernier avis</th><th>Alerte en cours</th></tr>';
+  const renderProlongementWithProbability=(item,interactive)=>{
+    if(!item.prolongement){
+      return '—';
+    }
+    const probabilityLabel=(item.prolongement?.probabilityLabel||'').trim();
+    const innerHtml=renderGuideeEvent(item.prolongement,interactive);
+    if(!probabilityLabel){
+      return innerHtml;
+    }
+    return `${esc(probabilityLabel)} • ${innerHtml}`;
+  };
   const renderMissionsRow=(item,interactive)=>{
     const missionEndPieces=[];
     const hasEndText=item.missionEndText && item.missionEndText!=='—';
@@ -3250,7 +3266,7 @@ function renderReporting(){
       missionEndPieces.push(esc(item.missionEndText));
     }
     if(item.prolongement){
-      missionEndPieces.push(renderGuideeEvent(item.prolongement,interactive));
+      missionEndPieces.push(renderProlongementWithProbability(item,interactive));
     }
     if(!missionEndPieces.length){
       missionEndPieces.push('—');
@@ -3353,7 +3369,10 @@ function renderReporting(){
       missionsTextLines.push(`CONSULTANT : ${m.consultant.name||'—'}`);
       missionsTextLines.push(`TITRE : ${m.missionTitle||'—'}`);
       missionsTextLines.push(`FIN DE MISSION : ${m.missionEndText||'—'}`);
-      missionsTextLines.push(`PROLONGEMENT : ${m.prolongement?.label||'—'}`);
+      const prolongementProbabilityLabel=m.prolongement?.probabilityLabel?.trim();
+      const prolongementLabel=m.prolongement?.label?.trim()||'—';
+      const prolongementLinePrefix=prolongementProbabilityLabel?`${prolongementProbabilityLabel} • `:'';
+      missionsTextLines.push(`PROLONGEMENT : ${prolongementLinePrefix}${prolongementLabel}`);
       missionsTextLines.push(`GUIDÉE EN COURS : ${guideeLabel}`);
       missionsTextLines.push(`DERNIER VERBATIM : ${m.verbatim?.label||'—'}`);
       missionsTextLines.push(`DERNIER AVIS : ${m.avis?.label||'—'}`);
