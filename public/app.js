@@ -3270,7 +3270,7 @@ function renderReporting(){
     const body=rows.length?rows.join(''):`<tr><td colspan="${colspan}">—</td></tr>`;
     return `<div class="reporting-section"><table><caption>${captionHtml}</caption><thead>${headerRow}</thead><tbody>${body}</tbody></table></div>`;
   };
-  const missionsHeader='<tr><th>Consultant</th><th>Titre</th><th>Fin de mission / Prolongement</th><th>Guidée en cours</th><th>Dernier verbatim</th><th>Dernier avis</th><th>Alerte en cours</th></tr>';
+  const missionsHeader='<tr><th>Consultant</th><th>Titre</th><th>Fin contractuel / Prolongement</th><th>Guidée en cours</th><th>Dernier verbatim</th><th>Dernier avis</th><th>Alerte en cours</th></tr>';
   const renderProlongementWithProbability=(item,interactive)=>{
     if(!item.prolongement){
       return '—';
@@ -3280,7 +3280,8 @@ function renderReporting(){
     if(!probabilityLabel){
       return innerHtml;
     }
-    return `${esc(probabilityLabel)} • ${innerHtml}`;
+    const prefix=`<span class="muted">${esc(probabilityLabel)} • </span>`;
+    return `${prefix}${innerHtml}`;
   };
   const renderMissionsRow=(item,interactive)=>{
     const missionEndPieces=[];
