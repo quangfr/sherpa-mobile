@@ -3288,7 +3288,7 @@ function renderReporting(){
     if(!probabilityLabel){
       return renderGuideeEvent(item.prolongement,interactive);
     }
-    return renderGuideeEvent(item.prolongement,interactive,{extraLabel:`${probabilityLabel} • `});
+    return renderGuideeEvent(item.prolongement,interactive,{extraLabel:`${probabilityLabel}`});
   };
   const renderMissionsRow=(item,interactive)=>{
     const missionEndPieces=[];
@@ -3408,7 +3408,7 @@ function renderReporting(){
       missionsTextLines.push(`FIN DE MISSION : ${m.missionEndText||'—'}`);
       const prolongementProbabilityLabel=m.prolongement?.probabilityLabel?.trim();
       const prolongementLabel=m.prolongement?.label?.trim()||'—';
-      const prolongementLinePrefix=prolongementProbabilityLabel?`${prolongementProbabilityLabel} • `:'';
+      const prolongementLinePrefix=prolongementProbabilityLabel?`${prolongementProbabilityLabel}`:'';
       missionsTextLines.push(`PROLONGEMENT : ${prolongementLinePrefix}${prolongementLabel}`);
       missionsTextLines.push(`GUIDÉE EN COURS : ${guideeLabel}`);
       missionsTextLines.push(`DERNIER VERBATIM : ${m.verbatim?.label||'—'}`);
